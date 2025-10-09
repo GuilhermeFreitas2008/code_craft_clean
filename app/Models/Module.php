@@ -12,7 +12,7 @@ class Module extends Model
     use HasFactory;
 
     // Campos que podem ser preenchidos automaticamente
-    protected $fillable = ['course_id', 'title', 'description', 'position'];
+    protected $fillable = ['course_id', 'title', 'description', 'position', 'slug'];
 
     /**
      * Um módulo pertence a um curso

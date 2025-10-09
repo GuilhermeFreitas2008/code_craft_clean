@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lesson extends Model
 {
-    protected $fillable = ['module_id', 'title', 'content', 'video_url', 'position'];
+    protected $fillable = ['module_id', 'title', 'content', 'video_url', 'position', 'slug'];
 
     /**
      * Uma lição pertence a um módulo

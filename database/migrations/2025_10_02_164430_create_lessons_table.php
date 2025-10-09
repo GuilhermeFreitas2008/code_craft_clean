@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('module_id');
             $table->string('title', 255);
+            $table->string('slug', 150)->unique();
             $table->text('content')->nullable();
             $table->string('video_url', 255)->nullable();
             $table->integer('position')->default(0);
