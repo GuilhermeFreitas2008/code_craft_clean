@@ -8,10 +8,12 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Sanctum\HasApiTokens; // 👈 ADICIONA ESTA LINHA
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens; // 👈 ADICIONA ESTA LINHA    
 
     /**
      * Campos que podem ser preenchidos automaticamente
