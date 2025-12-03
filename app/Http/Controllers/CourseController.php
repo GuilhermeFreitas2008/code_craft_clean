@@ -4,9 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class CourseController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Course::class, 'course');
+        // para users: $this->authorizeResource(User::class, 'user');
+    }
+
     public function index()
     {
         return response()->json(Course::with('modules')->get());
@@ -48,4 +55,6 @@ class CourseController extends Controller
         Course::findOrFail($id)->delete();
         return response()->json(['message' => 'Course deleted']);
     }
+
+
 }

@@ -14,23 +14,28 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 // Rotas protegidas por autenticação
 Route::middleware('auth:sanctum')->group(function () {
-    
-    // Apenas administradores
+
+    // Rotas de administrador
     Route::middleware('role:admin')->group(function () {
-        Route::apiResource('users', UserController::class);
+        Route::apiResource('users', UserController::class)->except(['show', 'update']);
         Route::apiResource('roles', RoleController::class);
         Route::apiResource('courses', CourseController::class);
         Route::apiResource('modules', ModuleController::class);
         Route::apiResource('lessons', LessonController::class);
     });
 
-    // Estudantes → inscrições e progresso
+    // Rotas acessíveis a qualquer utilizador autenticado (sem role:)
+    Route::apiResource('users', UserController::class)->only(['show', 'update']);
+
+    // Rotas de progresso e inscrições
     Route::middleware('role:admin,user')->group(function () {
         Route::apiResource('enrollments', EnrollmentController::class)->only(['store', 'index']);
         Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'update']);
         Route::apiResource('user-progress', UserProgressController::class)->only(['index', 'update']);
     });
 });
+
+
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([
@@ -46,7 +51,16 @@ Route::post('/login', function (Request $request) {
 
     $token = $user->createToken('api_token')->plainTextToken;
 
-    return response()->json(['token' => $token, 'role' => $user->role->name]);
+    return response()->json([
+        'token' => $token,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->username,
+            'email' => $user->email,
+            'role' => $user->role->name,
+        ],
+    ]);
+
 });
 
 Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {

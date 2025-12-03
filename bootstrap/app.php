@@ -33,6 +33,20 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })
+    
+    ->withProviders([
+        App\Providers\AuthServiceProvider::class,
+    ])
+    
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+       
+        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+        // Verifica se o pedido é para a API (JSON)
+        if ($request->expectsJson()) {
+            return response()->json([
+                'error' => 'Não tens permissão para esta ação.',
+            ], 403);
+        }
+        });
+        
     })->create();

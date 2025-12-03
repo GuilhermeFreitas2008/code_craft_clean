@@ -9,16 +9,21 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(User::class, 'user');
+    }
+
     // Lista todos os utilizadores
     public function index()
     {
         return response()->json(User::with('role')->get());
     }
 
-    // Mostra um utilizador específico
-    public function show($id)
+    // Mostra um utilizador específico - ✅ CORRIGIDO: Route Model Binding
+    public function show(User $user)
     {
-        return response()->json(User::with('role')->findOrFail($id));
+        return response()->json($user->load('role'));
     }
 
     // Cria novo utilizador
@@ -45,17 +50,15 @@ class UserController extends Controller
             'slug' => Str::slug($data['username']),
         ]);
 
-        return response()->json($user, 201);
+        return response()->json($user->load('role'), 201);
     }
 
-    // Atualiza um utilizador existente
-    public function update(Request $request, $id)
+    // Atualiza um utilizador existente - ✅ CORRIGIDO: Route Model Binding
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
-
         $data = $request->validate([
-            'username' => 'string|unique:users,username,' . $id,
-            'email' => 'email|unique:users,email,' . $id,
+            'username' => 'string|unique:users,username,' . $user->id,
+            'email' => 'email|unique:users,email,' . $user->id,
             'password_hash' => 'string|nullable',
             'role_id' => 'exists:roles,id|nullable',
         ]);
@@ -71,13 +74,13 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return response()->json($user);
+        return response()->json($user->load('role'));
     }
 
-    // Apaga um utilizador
-    public function destroy($id)
+    // Apaga um utilizador - ✅ CORRIGIDO: Route Model Binding
+    public function destroy(User $user)
     {
-        User::findOrFail($id)->delete();
+        $user->delete();
         return response()->json(['message' => 'User deleted']);
     }
 }
