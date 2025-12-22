@@ -10,30 +10,32 @@ class Course extends Model
 {
     use HasFactory;
 
-    // Campos que podem ser preenchidos automaticamente
-    protected $fillable = ['title', 'description', 'slug'];
+    protected $fillable = [
+        'title',
+        'description',
+        'slug',
+        'is_public',
+        'is_draft',
+        'created_by'
+    ];
 
-    /**
-     * Um curso tem vários módulos
-     */
     public function modules(): HasMany
     {
         return $this->hasMany(Module::class);
     }
 
-    /**
-     * Um curso tem várias inscrições
-     */
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
     }
 
-    /**
-     * Progresso dos utilizadores neste curso
-     */
     public function userProgress(): HasMany
     {
         return $this->hasMany(UserCourseProgress::class);
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

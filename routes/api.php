@@ -18,14 +18,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rotas de administrador
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('users', UserController::class)->except(['show', 'update']);
+        Route::apiResource('courses', CourseController::class)->except(['index', 'show']);
         Route::apiResource('roles', RoleController::class);
-        Route::apiResource('courses', CourseController::class);
         Route::apiResource('modules', ModuleController::class);
         Route::apiResource('lessons', LessonController::class);
     });
 
     // Rotas acessíveis a qualquer utilizador autenticado (sem role:)
     Route::apiResource('users', UserController::class)->only(['show', 'update']);
+    Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
 
     // Rotas de progresso e inscrições
     Route::middleware('role:admin,user')->group(function () {

@@ -10,7 +10,7 @@ class CoursePolicy
 {
     use HandlesAuthorization;
 
-    // Admin tem acesso total
+    // ADMIN tem acesso total
     public function before(User $authUser, $ability)
     {
         if ($authUser->role && $authUser->role->name === 'admin') {
@@ -18,34 +18,28 @@ class CoursePolicy
         }
     }
 
-    // Ver lista de cursos -> qualquer utilizador autenticado pode ver (ou público via rota GET pública)
     public function viewAny(User $authUser)
     {
         return true;
     }
 
-    // Ver um curso específico
     public function view(User $authUser, Course $course)
     {
-        // se quiseres tornar público, basta return true
         return true;
     }
 
-    // Criar curso -> só admin (handled by before) -> devolve false para user
     public function create(User $authUser)
     {
-        return false;
+        return false; // apenas admin
     }
 
-    // Atualizar curso -> só admin por agora
     public function update(User $authUser, Course $course)
     {
-        return false;
+        return false; // apenas admin
     }
 
-    // Apagar curso -> só admin por agora
     public function delete(User $authUser, Course $course)
     {
-        return false;
+        return false; // apenas admin
     }
 }
