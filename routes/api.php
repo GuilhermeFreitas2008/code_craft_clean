@@ -28,9 +28,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('users', UserController::class)->only(['show', 'update']);
     Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
 
+    //não autenticado pois está a ser verificado via policy (Como está a usar policy, não precisa de role:)
+    Route::apiResource('enrollments', EnrollmentController::class)->only(['index', 'destroy']);
+
+
     // Rotas de progresso e inscrições
-    Route::middleware('role:admin,user')->group(function () {
-        Route::apiResource('enrollments', EnrollmentController::class)->only(['store', 'index']);
+    Route::middleware('role:user')->group(function () {
+        Route::apiResource('enrollments', EnrollmentController::class)->only(['store']);
         Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'update']);
         Route::apiResource('user-progress', UserProgressController::class)->only(['index', 'update']);
     });
