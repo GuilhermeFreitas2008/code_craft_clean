@@ -20,13 +20,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('users', UserController::class)->except(['show', 'update']);
         Route::apiResource('courses', CourseController::class)->except(['index', 'show']);
         Route::apiResource('roles', RoleController::class);
-        Route::apiResource('modules', ModuleController::class);
-        Route::apiResource('lessons', LessonController::class);
+        Route::apiResource('modules', ModuleController::class)->except(['index', 'show']);
+        Route::apiResource('lessons', LessonController::class)->except(['index', 'show']);
     });
 
     // Rotas acessíveis a qualquer utilizador autenticado (sem role:)
     Route::apiResource('users', UserController::class)->only(['show', 'update']);
     Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
+    Route::apiResource('modules', ModuleController::class)->only(['index', 'show']);
+    Route::apiResource('lessons', LessonController::class)->only(['index', 'show']);
 
     //não autenticado pois está a ser verificado via policy (Como está a usar policy, não precisa de role:)
     Route::apiResource('enrollments', EnrollmentController::class)->only(['index', 'destroy']);
