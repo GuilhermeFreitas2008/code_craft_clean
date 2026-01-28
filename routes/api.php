@@ -32,13 +32,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //não autenticado pois está a ser verificado via policy (Como está a usar policy, não precisa de role:)
     Route::apiResource('enrollments', EnrollmentController::class)->only(['index', 'destroy']);
-
+    
+    // Rota para marcar lição como completa
+    Route::post(
+        '/lessons/{lesson}/complete',
+        [UserProgressController::class, 'store']
+    );
 
     // Rotas de progresso e inscrições
     Route::middleware('role:user')->group(function () {
         Route::apiResource('enrollments', EnrollmentController::class)->only(['store']);
         Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'update']);
-        Route::apiResource('user-progress', UserProgressController::class)->only(['index', 'update']);
     });
 });
 

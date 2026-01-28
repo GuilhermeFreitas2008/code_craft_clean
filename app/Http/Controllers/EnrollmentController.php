@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Enrollment;
 use App\Models\Course;
+use App\Models\UserProgress;
 use Illuminate\Http\Request;
+
 
 class EnrollmentController extends Controller
 {
@@ -79,13 +81,25 @@ class EnrollmentController extends Controller
      */
     public function destroy(Enrollment $enrollment)
     {
-    $this->authorize('delete', $enrollment);
+        // 🔐 Policy (user só apaga a sua, admin pode tudo)
+        $this->authorize('delete', $enrollment);
 
-    $enrollment->delete();
+        // 🧹 1️⃣ Apagar progresso do user neste curso
+        UserProgress::where('user_id', $enrollment->user_id)
+            ->whereIn('lesson_id', function ($query) use ($enrollment) {
+                $query->select('lessons.id')
+                    ->from('lessons')
+                    ->join('modules', 'lessons.module_id', '=', 'modules.id')
+                    ->where('modules.course_id', $enrollment->course_id);
+            })
+            ->delete();
 
-    return response()->json([
-        'message' => 'Enrollment deleted successfully'
-    ]);
+        // 🗑️ 2️⃣ Apagar enrollment
+        $enrollment->delete();
+
+        return response()->json([
+            'message' => 'Enrollment and related progress deleted successfully'
+        ]);
     }
 
 }

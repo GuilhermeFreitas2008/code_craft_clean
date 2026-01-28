@@ -2,48 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Lesson;
 use App\Models\UserProgress;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class UserProgressController extends Controller
 {
-    public function index()
+    public function store(Request $request, Lesson $lesson)
     {
-        return response()->json(UserProgress::with(['user', 'lesson'])->get());
-    }
+        // 🔐 policy
+        $this->authorize('complete', [UserProgress::class, $lesson]);
 
-    public function show($id)
-    {
-        return response()->json(UserProgress::with(['user', 'lesson'])->findOrFail($id));
-    }
+        // 🔁 evitar duplicados
+        $progress = UserProgress::updateOrCreate(
+            [
+                'user_id' => $request->user()->id,
+                'lesson_id' => $lesson->id,
+            ],
+            [
+                'completed' => true,
+                'completed_at' => now(),
+            ]
+        );
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'lesson_id' => 'required|exists:lessons,id',
-            'is_completed' => 'required|boolean',
+        return response()->json([
+            'message' => 'Lesson marked as completed',
+            'progress' => $progress
         ]);
-
-        $progress = UserProgress::create($data);
-        return response()->json($progress, 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $progress = UserProgress::findOrFail($id);
-
-        $data = $request->validate([
-            'is_completed' => 'boolean',
-        ]);
-
-        $progress->update($data);
-        return response()->json($progress);
-    }
-
-    public function destroy($id)
-    {
-        UserProgress::findOrFail($id)->delete();
-        return response()->json(['message' => 'Progress deleted']);
     }
 }
