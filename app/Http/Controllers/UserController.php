@@ -20,7 +20,7 @@ class UserController extends Controller
         return response()->json(User::with('role')->get());
     }
 
-    // Mostra um utilizador específico - ✅ CORRIGIDO: Route Model Binding
+    // Mostra um utilizador específico - CORRIGIDO: Route Model Binding
     public function show(User $user)
     {
         return response()->json($user->load('role'));
@@ -53,7 +53,7 @@ class UserController extends Controller
         return response()->json($user->load('role'), 201);
     }
 
-    // Atualiza um utilizador existente - ✅ CORRIGIDO: Route Model Binding
+    // Atualiza um utilizador existente - CORRIGIDO: Route Model Binding
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
@@ -77,7 +77,7 @@ class UserController extends Controller
         return response()->json($user->load('role'));
     }
 
-    // Apaga um utilizador - ✅ CORRIGIDO: Route Model Binding
+    // Apaga um utilizador - CORRIGIDO: Route Model Binding
     public function destroy(User $user)
     {
         $user->delete();

@@ -13,12 +13,12 @@ class UserProgressPolicy
      */
     public function complete(User $user, Lesson $lesson): bool
     {
-        // ❌ admin não conclui lições
+        // admin não conclui lições
         if ($user->role->name === 'admin') {
             return false;
         }
 
-        // ✅ user só se estiver inscrito
+        // user só se estiver inscrito
         return $lesson->module
             ->course
             ->enrollments()

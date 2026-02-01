@@ -22,6 +22,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('roles', RoleController::class);
         Route::apiResource('modules', ModuleController::class)->except(['index', 'show']);
         Route::apiResource('lessons', LessonController::class)->except(['index', 'show']);
+        // Admin pode VER progresso dos alunos
+        Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'show']);
     });
 
     // Rotas acessíveis a qualquer utilizador autenticado (sem role:)

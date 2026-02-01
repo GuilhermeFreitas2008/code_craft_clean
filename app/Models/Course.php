@@ -21,7 +21,13 @@ class Course extends Model
 
     public function modules(): HasMany
     {
-        return $this->hasMany(Module::class);
+        return $this->hasMany(Module::class)->orderBy('position');
+    }
+
+    // Relação útil para ir buscar todas as lições do curso diretamente
+    public function lessons()
+    {
+        return $this->hasManyThrough(Lesson::class, Module::class);
     }
 
     public function enrollments(): HasMany

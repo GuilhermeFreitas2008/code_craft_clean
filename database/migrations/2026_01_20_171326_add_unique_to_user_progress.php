@@ -9,7 +9,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('user_progress', function (Blueprint $table) {
-            // 🔒 impede progresso duplicado da mesma lição
+            // impede progresso duplicado da mesma lição
             $table->unique(['user_id', 'lesson_id'],'user_progress_user_lesson_unique');
         });
     }

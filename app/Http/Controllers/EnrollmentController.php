@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Enrollment;
 use App\Models\Course;
 use App\Models\UserProgress;
+use App\Models\UserCourseProgress;
 use Illuminate\Http\Request;
 
 
@@ -39,22 +40,22 @@ class EnrollmentController extends Controller
      */
     public function store(Request $request)
     {
-        // 1️⃣ Validar request
+        // Validar request
         $request->validate([
             'course_id' => 'required|exists:courses,id',
         ]);
 
-        // 2️⃣ Buscar curso
+        // Buscar curso
         $course = Course::findOrFail($request->course_id);
 
-        // 3️⃣ Bloquear cursos privados ou draft
+        // Bloquear cursos privados ou draft
         if (!$course->is_public || $course->is_draft) {
             return response()->json([
                 'error' => 'You cannot enroll in this course'
             ], 403);
         }
 
-        // 4️⃣ Evitar inscrições duplicadas
+        // Evitar inscrições duplicadas
         $alreadyEnrolled = Enrollment::where('user_id', $request->user()->id)
             ->where('course_id', $course->id)
             ->exists();
@@ -65,7 +66,7 @@ class EnrollmentController extends Controller
             ], 409);
         }
 
-        // 5️⃣ Criar inscrição
+        // Criar inscrição
         $enrollment = Enrollment::create([
             'user_id'   => $request->user()->id,
             'course_id' => $course->id,
@@ -81,10 +82,10 @@ class EnrollmentController extends Controller
      */
     public function destroy(Enrollment $enrollment)
     {
-        // 🔐 Policy (user só apaga a sua, admin pode tudo)
+        // Policy (user só apaga a sua, admin pode tudo)
         $this->authorize('delete', $enrollment);
 
-        // 🧹 1️⃣ Apagar progresso do user neste curso
+        // Apagar progresso do user neste curso
         UserProgress::where('user_id', $enrollment->user_id)
             ->whereIn('lesson_id', function ($query) use ($enrollment) {
                 $query->select('lessons.id')
@@ -94,7 +95,14 @@ class EnrollmentController extends Controller
             })
             ->delete();
 
-        // 🗑️ 2️⃣ Apagar enrollment
+
+        // Se o user sai do curso, o registo "tem 50% feito" deixa de fazer sentido.
+        UserCourseProgress::where('user_id', $enrollment->user_id)
+            ->where('course_id', $enrollment->course_id)
+            ->delete();
+
+        
+        // Apagar enrollment
         $enrollment->delete();
 
         return response()->json([

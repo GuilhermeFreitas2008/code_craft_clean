@@ -6,15 +6,14 @@ use App\Models\Lesson;
 use App\Models\UserProgress;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\CourseProgressService;
 
 class UserProgressController extends Controller
 {
     public function store(Request $request, Lesson $lesson)
     {
-        // 🔐 policy
         $this->authorize('complete', [UserProgress::class, $lesson]);
 
-        // 🔁 evitar duplicados
         $progress = UserProgress::updateOrCreate(
             [
                 'user_id' => $request->user()->id,
@@ -26,9 +25,14 @@ class UserProgressController extends Controller
             ]
         );
 
+        // atualizar progresso do curso
+        $course = $lesson->module->course;
+        CourseProgressService::update($request->user(), $course);
+
         return response()->json([
             'message' => 'Lesson marked as completed',
-            'progress' => $progress
+            'lesson_progress' => $progress,
         ]);
     }
 }
+

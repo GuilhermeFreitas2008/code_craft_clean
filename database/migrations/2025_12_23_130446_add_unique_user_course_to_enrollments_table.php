@@ -7,7 +7,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            // 🔒 impede inscrições duplicadas
+            // impede inscrições duplicadas
             $table->unique(['user_id', 'course_id'], 'enrollments_user_course_unique');
         });
     }

@@ -6,7 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful; // 🔥 ADICIONA ISTO
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful; // ADICIONA ISTO
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
 
-        // 🔥 Adiciona o Sanctum ao grupo API
+        // Adiciona o Sanctum ao grupo API
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
         ]);
