@@ -1,26 +1,12 @@
-import { AppPageProps } from '@/types/index';
+/// <reference types="vite/client" />
 
-// Extend ImportMeta interface for Vite...
-declare module 'vite/client' {
-    interface ImportMetaEnv {
-        readonly VITE_APP_NAME: string;
-        [key: string]: string | boolean | undefined;
-    }
+declare module '*.vue' {
+    import type { DefineComponent } from 'vue';
 
-    interface ImportMeta {
-        readonly env: ImportMetaEnv;
-        readonly glob: <T>(pattern: string) => Record<string, () => Promise<T>>;
-    }
+    const component: DefineComponent<Record<string, unknown>, Record<string, unknown>, unknown>;
+    export default component;
 }
 
-declare module '@inertiajs/core' {
-    interface PageProps extends InertiaPageProps, AppPageProps {}
-}
-
-declare module 'vue' {
-    interface ComponentCustomProperties {
-        $inertia: typeof Router;
-        $page: Page;
-        $headManager: ReturnType<typeof createHeadManager>;
-    }
+interface ImportMetaEnv {
+    readonly VITE_APP_NAME?: string;
 }

@@ -5,15 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Laravel\Sanctum\HasApiTokens; // ADICIONA ESTA LINHA
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
-    use HasApiTokens; // ADICIONA ESTA LINHA    
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * Campos que podem ser preenchidos automaticamente
@@ -31,7 +29,6 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password_hash',
-        'remember_token',
     ];
 
     /**
@@ -40,7 +37,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            //
         ];
     }
 
