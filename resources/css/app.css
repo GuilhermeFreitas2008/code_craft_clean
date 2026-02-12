@@ -1,15 +1,36 @@
-/* app.css */
 @import "tailwindcss";
 
 @theme {
+  /* Cores que já tinhas, mapeadas para o padrão v4 */
   --color-background: #020617;
   --color-foreground: #f8fafc;
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;
   --color-card: #0f172a;
   --color-border: rgba(255, 255, 255, 0.1);
+
+  /* Adicionando animações personalizadas para a Landing Page */
+  --animate-fade-in-up: fade-in-up 0.5s ease-out;
+  --animate-bounce-slow: bounce-slow 3s infinite ease-in-out;
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
 }
 
+/* Utilitários de Grid que seram reaproveitados */
 @utility bg-grid-white {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.04)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
 }
@@ -18,8 +39,28 @@
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' width='48' height='48' fill='none' stroke='rgb(255 255 255 / 0.04)'%3e%3cpath d='M0 .5H47.5V48'/%3e%3c/svg%3e");
 }
 
+/* Estilos de Scrollbar para não quebrar o visual Dark (reaproveitado) */
 @layer base {
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #020617;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 5px;
+    border: 2px solid #020617;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
   }
 }
