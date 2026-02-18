@@ -9,6 +9,7 @@ use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserCourseProgressController;
 use App\Http\Controllers\UserProgressController;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -22,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('roles', RoleController::class);
         Route::apiResource('modules', ModuleController::class)->except(['index', 'show']);
         Route::apiResource('lessons', LessonController::class)->except(['index', 'show']);
+        Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
         // Admin pode VER progresso dos alunos
         Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'show']);
     });
@@ -31,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
     Route::apiResource('modules', ModuleController::class)->only(['index', 'show']);
     Route::apiResource('lessons', LessonController::class)->only(['index', 'show']);
+    Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 
     //não autenticado pois está a ser verificado via policy (Como está a usar policy, não precisa de role:)
     Route::apiResource('enrollments', EnrollmentController::class)->only(['index', 'destroy']);

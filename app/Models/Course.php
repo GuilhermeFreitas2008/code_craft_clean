@@ -16,7 +16,8 @@ class Course extends Model
         'slug',
         'is_public',
         'is_draft',
-        'created_by'
+        'created_by',
+        'category_id'
     ];
 
     public function modules(): HasMany
@@ -44,4 +45,10 @@ class Course extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
 }

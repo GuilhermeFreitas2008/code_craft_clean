@@ -10,5 +10,6 @@ class DatabaseSeeder extends Seeder
     {
         // Apenas cria os roles
         $this->call(RoleSeeder::class);
+        $this->call(CategorySeeder::class);
     }
 }
