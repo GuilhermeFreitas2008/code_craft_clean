@@ -1,3 +1,4 @@
+<!-- UserPage.vue -->
 <template>
   <div class="flex min-h-screen flex-col bg-background">
     <!-- Navbar -->
@@ -27,84 +28,136 @@
         :class="sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
-          <!-- Header with Title and Filter -->
+          <!-- Header with Title and Filters -->
           <div class="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <h1 class="text-3xl font-bold tracking-tight text-foreground animate-fade-in-up lg:text-4xl">
               All Series
             </h1>
 
-            <!-- Categories Dropdown com Checkboxes -->
-            <div class="relative">
-              <button
-                @click.stop="toggleCategoryDropdown"
-                class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
-              >
-                <span>{{ selectedCategoriesDisplay || 'All Categories' }}</span>
-                <ChevronDown 
-                  :size="16" 
-                  class="transition-transform duration-300"
-                  :class="{ 'rotate-180': categoryDropdownOpen }"
-                />
-              </button>
+            <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:space-x-4">
+              <!-- Categories Dropdown -->
+              <div class="relative">
+                <button
+                  @click.stop="toggleCategoryDropdown"
+                  class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
+                >
+                  <span>{{ selectedCategoriesDisplay || 'All Categories' }}</span>
+                  <ChevronDown 
+                    :size="16" 
+                    class="transition-transform duration-300"
+                    :class="{ 'rotate-180': categoryDropdownOpen }"
+                  />
+                </button>
 
-              <div
-                v-if="categoryDropdownOpen"
-                class="absolute right-0 top-8 z-50 min-w-[220px] rounded-lg border border-border bg-card py-2 shadow-lg animate-fade-in"
-              >
-                <!-- Category checkboxes com estilo personalizado -->
-                <div class="max-h-60 overflow-y-auto">
-                  <div
-                    v-for="cat in categories"
-                    :key="cat"
-                    class="px-4 py-2 hover:bg-white/5 transition-colors duration-150"
-                  >
-                    <label class="flex cursor-pointer items-center space-x-3">
-                      <!-- Checkbox personalizado -->
-                      <div class="relative flex items-center justify-center">
-                        <input
-                          type="checkbox"
-                          :value="cat"
-                          v-model="selectedCategories"
-                          class="checkbox-hidden"
-                        />
-                        <div 
-                          class="checkbox-custom"
-                          :class="{ 'checkbox-checked': selectedCategories.includes(cat) }"
-                        >
-                          <Check 
-                            v-if="selectedCategories.includes(cat)"
-                            :size="14" 
-                            class="text-white"
+                <div
+                  v-if="categoryDropdownOpen"
+                  class="absolute right-0 top-8 z-50 min-w-[220px] rounded-lg border border-border bg-card py-2 shadow-lg animate-fade-in"
+                >
+                  <div class="max-h-60 overflow-y-auto">
+                    <div
+                      v-for="cat in categories"
+                      :key="cat"
+                      class="px-4 py-2 hover:bg-white/5 transition-colors duration-150"
+                    >
+                      <label class="flex cursor-pointer items-center space-x-3">
+                        <div class="relative flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            :value="cat"
+                            v-model="selectedCategories"
+                            class="checkbox-hidden"
                           />
+                          <div 
+                            class="checkbox-custom"
+                            :class="{ 'checkbox-checked': selectedCategories.includes(cat) }"
+                          >
+                            <Check 
+                              v-if="selectedCategories.includes(cat)"
+                              :size="14" 
+                              class="text-white"
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <span class="text-sm" :class="selectedCategories.includes(cat) ? 'text-primary' : 'text-foreground/80'">
-                        {{ cat }}
-                      </span>
-                    </label>
+                        <span class="text-sm" :class="selectedCategories.includes(cat) ? 'text-primary' : 'text-foreground/80'">
+                          {{ cat }}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Difficulties Dropdown -->
+              <div class="relative">
+                <button
+                  @click.stop="toggleDifficultyDropdown"
+                  class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
+                >
+                  <span>{{ selectedDifficultiesDisplay || 'All Difficulties' }}</span>
+                  <ChevronDown 
+                    :size="16" 
+                    class="transition-transform duration-300"
+                    :class="{ 'rotate-180': difficultyDropdownOpen }"
+                  />
+                </button>
+
+                <div
+                  v-if="difficultyDropdownOpen"
+                  class="absolute right-0 top-8 z-50 min-w-[220px] rounded-lg border border-border bg-card py-2 shadow-lg animate-fade-in"
+                >
+                  <div class="max-h-60 overflow-y-auto">
+                    <div
+                      v-for="diff in difficulties"
+                      :key="diff"
+                      class="px-4 py-2 hover:bg-white/5 transition-colors duration-150"
+                    >
+                      <label class="flex cursor-pointer items-center space-x-3">
+                        <div class="relative flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            :value="diff"
+                            v-model="selectedDifficulties"
+                            class="checkbox-hidden"
+                          />
+                          <div 
+                            class="checkbox-custom"
+                            :class="{ 'checkbox-checked': selectedDifficulties.includes(diff) }"
+                          >
+                            <Check 
+                              v-if="selectedDifficulties.includes(diff)"
+                              :size="14" 
+                              class="text-white"
+                            />
+                          </div>
+                        </div>
+                        <span class="text-sm capitalize" :class="selectedDifficulties.includes(diff) ? 'text-primary' : 'text-foreground/80'">
+                          {{ diff }}
+                        </span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Courses Grid -->
+          <!-- Courses Grid - ALINHADO À ESQUERDA -->
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div
               v-for="course in filteredCourses"
               :key="course.id"
               class="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
             >
-              <!-- Technology Icon -->
-              <div class="mb-4 flex justify-center">
-                <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <component :is="course.icon" :size="40" />
+              <!-- Technology Icon - ALINHADO À ESQUERDA -->
+              <div class="mb-4 flex justify-start">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <component :is="course.icon" :size="32" />
                 </div>
               </div>
 
-              <!-- Title -->
-              <div class="flex min-h-[4rem] flex-col justify-center">
-                <h3 class="text-center text-lg font-semibold text-foreground">
+              <!-- Title - ALINHADO À ESQUERDA -->
+              <div class="mb-2">
+                <h3 class="text-left text-lg font-semibold text-foreground">
                   {{ course.title }}
                 </h3>
               </div>
@@ -112,12 +165,18 @@
               <!-- Separator -->
               <div class="my-4 border-t border-white/5"></div>
 
-              <!-- Metadata -->
-              <div class="flex flex-col items-center gap-2 text-xs">
+              <!-- Metadata - ALINHADO À ESQUERDA -->
+              <div class="flex flex-col items-start gap-2 text-xs">
                 <!-- Lessons -->
                 <div class="flex items-center space-x-1 text-foreground/60">
                   <Film :size="14" />
                   <span>{{ course.lessons }} {{ course.lessons === 1 ? 'lesson' : 'lessons' }}</span>
+                </div>
+                
+                <!-- Difficulty -->
+                <div class="flex items-center space-x-1 text-foreground/60">
+                  <component :is="getDifficultyIcon(course.difficulty)" :size="14" />
+                  <span class="capitalize">{{ course.difficulty }}</span>
                 </div>
                 
                 <!-- Category -->
@@ -133,14 +192,14 @@
           </div>
 
           <div v-if="filteredCourses.length === 0" class="mt-12 text-center">
-            <p class="text-foreground/60">No courses found with the selected categories.</p>
+            <p class="text-foreground/60">No courses found with the selected filters.</p>
           </div>
         </main>
       </div>
     </div>
 
     <div 
-      v-if="categoryDropdownOpen"
+      v-if="categoryDropdownOpen || difficultyDropdownOpen"
       class="fixed inset-0 z-40"
       @click="closeAllDropdowns"
     ></div>
@@ -163,7 +222,10 @@ import {
   Check,
   Smartphone,
   Palette,
-  Cloud
+  Cloud,
+  Award,
+  TrendingUp,
+  Sparkles
 } from 'lucide-vue-next'
 
 import NavBar from '@/components/layout/NavBar.vue'
@@ -174,6 +236,7 @@ interface Course {
   id: number
   title: string
   category: string
+  difficulty: string
   lessons: number
   icon: any
 }
@@ -195,46 +258,66 @@ const sidebarVisible = ref(true)
 
 // Filter States
 const selectedCategories = ref<string[]>([])
+const selectedDifficulties = ref<string[]>([])
 const categoryDropdownOpen = ref(false)
+const difficultyDropdownOpen = ref(false)
 
 // Filter Options
 const categories = ['Back end', 'Front end', 'DevOps', 'Mobile', 'UI/UX Design', 'Data Science']
+const difficulties = ['beginner', 'intermediate', 'advanced']
 
 // Courses Data
 const courses = ref<Course[]>([
-  { id: 1, title: 'Python for Beginners', category: 'Back end', lessons: 24, icon: Terminal },
-  { id: 2, title: 'Advanced SQL & Optimization', category: 'Data Science', lessons: 18, icon: Database },
-  { id: 3, title: 'Modern JavaScript ES6+', category: 'Front end', lessons: 32, icon: Code2 },
-  { id: 4, title: 'React from Zero to Deploy', category: 'Front end', lessons: 28, icon: Layers },
-  { id: 5, title: 'C# and .NET Core', category: 'Back end', lessons: 22, icon: Coffee },
-  { id: 6, title: 'Kotlin for Android', category: 'Mobile', lessons: 26, icon: Smartphone },
-  { id: 7, title: 'TypeScript in Practice', category: 'Front end', lessons: 20, icon: Binary },
-  { id: 8, title: 'Docker & Kubernetes', category: 'DevOps', lessons: 16, icon: Cloud },
-  { id: 9, title: 'Figma for Designers', category: 'UI/UX Design', lessons: 14, icon: Palette },
-  { id: 10, title: 'SwiftUI Masterclass', category: 'Mobile', lessons: 30, icon: Smartphone },
-  { id: 11, title: 'CI/CD Pipelines', category: 'DevOps', lessons: 12, icon: Cloud },
-  { id: 12, title: 'Data Analysis with Python', category: 'Data Science', lessons: 24, icon: Database }
+  { id: 1, title: 'Python for Beginners', category: 'Back end', difficulty: 'beginner', lessons: 24, icon: Terminal },
+  { id: 2, title: 'Advanced SQL & Optimization', category: 'Data Science', difficulty: 'advanced', lessons: 18, icon: Database },
+  { id: 3, title: 'Modern JavaScript ES6+', category: 'Front end', difficulty: 'intermediate', lessons: 32, icon: Code2 },
+  { id: 4, title: 'React from Zero to Deploy', category: 'Front end', difficulty: 'intermediate', lessons: 28, icon: Layers },
+  { id: 5, title: 'C# and .NET Core', category: 'Back end', difficulty: 'intermediate', lessons: 22, icon: Coffee },
+  { id: 6, title: 'Kotlin for Android', category: 'Mobile', difficulty: 'intermediate', lessons: 26, icon: Smartphone },
+  { id: 7, title: 'TypeScript in Practice', category: 'Front end', difficulty: 'intermediate', lessons: 20, icon: Binary },
+  { id: 8, title: 'Docker & Kubernetes', category: 'DevOps', difficulty: 'intermediate', lessons: 16, icon: Cloud },
+  { id: 9, title: 'Figma for Designers', category: 'UI/UX Design', difficulty: 'beginner', lessons: 14, icon: Palette },
+  { id: 10, title: 'SwiftUI Masterclass', category: 'Mobile', difficulty: 'intermediate', lessons: 30, icon: Smartphone },
+  { id: 11, title: 'CI/CD Pipelines', category: 'DevOps', difficulty: 'advanced', lessons: 12, icon: Cloud },
+  { id: 12, title: 'Data Analysis with Python', category: 'Data Science', difficulty: 'intermediate', lessons: 24, icon: Database }
 ])
 
-// Computed
+// Computed Displays
 const selectedCategoriesDisplay = computed(() => {
   if (selectedCategories.value.length === 0) return ''
   if (selectedCategories.value.length === 1) return selectedCategories.value[0]
   return `${selectedCategories.value.length} categories`
 })
 
+const selectedDifficultiesDisplay = computed(() => {
+  if (selectedDifficulties.value.length === 0) return ''
+  if (selectedDifficulties.value.length === 1) return selectedDifficulties.value[0]
+  return `${selectedDifficulties.value.length} difficulties`
+})
+
+// Filtered Courses
 const filteredCourses = computed(() => {
-  if (selectedCategories.value.length === 0) return courses.value
-  return courses.value.filter(course => selectedCategories.value.includes(course.category))
+  return courses.value.filter(course => {
+    const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(course.category)
+    const matchesDifficulty = selectedDifficulties.value.length === 0 || selectedDifficulties.value.includes(course.difficulty)
+    return matchesCategory && matchesDifficulty
+  })
 })
 
 // Dropdown Functions
 const toggleCategoryDropdown = () => {
   categoryDropdownOpen.value = !categoryDropdownOpen.value
+  if (categoryDropdownOpen.value) difficultyDropdownOpen.value = false
+}
+
+const toggleDifficultyDropdown = () => {
+  difficultyDropdownOpen.value = !difficultyDropdownOpen.value
+  if (difficultyDropdownOpen.value) categoryDropdownOpen.value = false
 }
 
 const closeAllDropdowns = () => {
   categoryDropdownOpen.value = false
+  difficultyDropdownOpen.value = false
 }
 
 // Menu Functions
@@ -247,6 +330,16 @@ const setActiveMenu = (menuName: string) => {
 // Sidebar Toggle
 const toggleSidebar = () => {
   sidebarVisible.value = !sidebarVisible.value
+}
+
+// Difficulty Helper
+const getDifficultyIcon = (difficulty: string) => {
+  switch(difficulty) {
+    case 'beginner': return Award
+    case 'intermediate': return TrendingUp
+    case 'advanced': return Sparkles
+    default: return Award
+  }
 }
 
 // Click outside

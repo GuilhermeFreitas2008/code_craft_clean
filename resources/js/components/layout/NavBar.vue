@@ -1,3 +1,4 @@
+<!-- NavBar.vue -->
 <template>
   <header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
     <div class="flex h-16 items-center justify-between pl-5 pr-8">
@@ -16,7 +17,7 @@
         </button>
 
         <!-- Linha vertical de separação -->
-        <div class="hidden h-16 w-px bg-white/20 lg:block"></div>
+        <div class="hidden h-16 w-px bg-white/5 lg:block"></div>
 
         <!-- Mobile Menu Toggle -->
         <button 
@@ -26,11 +27,15 @@
           <Menu :size="24" />
         </button>
         
-        <!-- Logo -->
-        <div class="flex items-center space-x-1 lg:space-x-1">
+        <!-- Logo - AGORA COM CLIQUE PARA REINICIAR -->
+        <button 
+          @click="reloadPage"
+          class="flex items-center space-x-1 lg:space-x-1 hover:opacity-80 transition-opacity duration-200"
+          title="Reiniciar página"
+        >
           <img src="/images/Logo.svg" alt="CodeCraft" class="h-10 w-10 lg:h-14 lg:w-14" />
           <span class="text-2xl font-bold text-foreground lg:text-2xl">Code<span class="text-primary">Craft</span></span>
-        </div>
+        </button>
       </div>
 
       <!-- Lado Direito - Avatar com Popup -->
@@ -47,7 +52,7 @@
           <span class="hidden text-sm font-medium text-foreground lg:block">{{ userName }}</span>
         </button>
 
-        <!-- Popup Menu com animação clean -->
+        <!-- Popup Menu -->
         <Transition
           enter-active-class="transition-all duration-200 ease-out"
           enter-from-class="opacity-0 scale-95 translate-y-[-8px]"
@@ -61,7 +66,7 @@
             ref="userMenuPopup"
             class="absolute right-0 top-12 z-50 w-64 rounded-lg border border-border bg-card py-3 shadow-xl origin-top-right"
           >
-            <!-- Perfil do Utilizador (versão maior) -->
+            <!-- Perfil do Utilizador -->
             <div class="px-4 py-3 border-b border-white/5">
               <div class="flex items-center space-x-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
@@ -93,7 +98,7 @@
               </button>
             </div>
 
-            <!-- Logout (com linha separadora) -->
+            <!-- Logout -->
             <div class="border-t border-white/5 pt-1">
               <button
                 @click="handleLogoutClick"
@@ -146,7 +151,12 @@ const closeUserMenu = () => {
   userMenuOpen.value = false
 }
 
-// Placeholder functions (apenas visuais, não funcionais)
+// Função para reiniciar a página
+const reloadPage = () => {
+  window.location.reload()
+}
+
+// Placeholder functions
 const handleProfileClick = () => {
   console.log('Profile clicked')
   closeUserMenu()
