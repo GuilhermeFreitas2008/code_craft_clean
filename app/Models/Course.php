@@ -17,7 +17,8 @@ class Course extends Model
         'is_public',
         'is_draft',
         'created_by',
-        'category_id'
+        'category_id',
+        'difficulty_id'
     ];
 
     public function modules(): HasMany
@@ -51,4 +52,8 @@ class Course extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function difficulty()
+    {
+        return $this->belongsTo(Difficulty::class);
+    }
 }

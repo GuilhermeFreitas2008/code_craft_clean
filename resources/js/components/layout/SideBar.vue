@@ -1,10 +1,9 @@
-<!-- SideBar.vue -->
 <template>
   <!-- Desktop Sidebar -->
   <aside 
     v-if="!isMobile"
-    v-show="sidebarVisible"
-    class="fixed left-0 top-16 z-30 h-[calc(100vh-4rem)] w-64 flex-col border-r border-border bg-card p-6 lg:flex"
+    class="fixed left-0 top-16 z-30 h-[calc(100vh-4rem)] w-64 flex-col border-r border-border bg-card p-6 lg:flex transition-all duration-300 ease-out"
+    :class="sidebarVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'"
   >
     <nav class="flex flex-col space-y-2">
       <button
@@ -24,19 +23,28 @@
     </nav>
   </aside>
 
-  <!-- Mobile Sidebar (Overlay) -->
+  <!-- Mobile Sidebar - OCUPA ECRÃ TODO -->
   <Teleport to="body">
+    <!-- Overlay escuro -->
     <div 
       v-if="isMobile && isOpen"
-      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+      :class="isOpen ? 'opacity-100' : 'opacity-0'"
       @click="$emit('close')"
     ></div>
     
+    <!-- Sidebar mobile - ocupa altura total, começa no topo (0) -->
     <div 
       v-if="isMobile"
-      class="fixed left-0 top-16 z-50 h-[calc(100vh-4rem)] w-64 transform bg-card p-6 transition-transform duration-300 lg:hidden"
-      :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
+      class="fixed left-0 top-0 z-50 h-screen w-64 bg-card p-6 transition-all duration-300 ease-out lg:hidden shadow-xl"
+      :class="isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'"
     >
+      <!-- Logo no mobile (opcional, para manter consistência) -->
+      <div class="mb-6 flex items-center space-x-2 pb-4 border-b border-white/5">
+        <img src="/images/Logo.svg" alt="CodeCraft" class="h-10 w-10" />
+        <span class="text-xl font-bold text-foreground">Code<span class="text-primary">Craft</span></span>
+      </div>
+
       <nav class="flex flex-col space-y-2">
         <button
           v-for="item in menuItems"
@@ -77,7 +85,7 @@ const iconMap = {
 defineProps<{
   isOpen: boolean
   isMobile: boolean
-  sidebarVisible: boolean  // NOVA PROP
+  sidebarVisible: boolean
   menuItems: Array<{
     name: string
     icon: string

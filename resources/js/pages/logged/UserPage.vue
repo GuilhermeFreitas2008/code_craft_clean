@@ -1,14 +1,12 @@
-<!-- UserPage.vue -->
 <template>
   <div class="flex min-h-screen flex-col bg-background">
     <!-- Navbar -->
     <NavBar 
-      :is-dark="isDark"
       :sidebar-visible="sidebarVisible"
       user-name="João Dias"
       user-initials="JD"
+      user-email="joao.dias@codecraft.com"
       @toggle-mobile-menu="mobileMenuOpen = !mobileMenuOpen"
-      @toggle-theme="toggleTheme"
       @toggle-sidebar="toggleSidebar"
     />
 
@@ -23,134 +21,126 @@
         @menu-click="setActiveMenu"
       />
 
-      <!-- Conteúdo Principal - Ajusta a margem conforme sidebar -->
+      <!-- Main Content -->
       <div 
-        class="flex-1 transition-all duration-300"
+        class="flex-1 transition-all duration-300 ease-out"
         :class="sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
-          <!-- Header com Título e Filtros -->
+          <!-- Header with Title and Filter -->
           <div class="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <h1 class="text-3xl font-bold tracking-tight text-foreground animate-fade-in-up lg:text-4xl">
-              Todas as Séries
+              All Series
             </h1>
 
-            <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:space-x-4">
-              <!-- Dropdown Categorias -->
-              <div class="relative">
-                <button
-                  @click.stop="toggleCategoryDropdown"
-                  class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
-                >
-                  <span>{{ selectedCategory || 'Todas as Categorias' }}</span>
-                  <ChevronDown 
-                    :size="16" 
-                    class="transition-transform duration-300"
-                    :class="{ 'rotate-180': categoryDropdownOpen }"
-                  />
-                </button>
+            <!-- Categories Dropdown com Checkboxes -->
+            <div class="relative">
+              <button
+                @click.stop="toggleCategoryDropdown"
+                class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
+              >
+                <span>{{ selectedCategoriesDisplay || 'All Categories' }}</span>
+                <ChevronDown 
+                  :size="16" 
+                  class="transition-transform duration-300"
+                  :class="{ 'rotate-180': categoryDropdownOpen }"
+                />
+              </button>
 
-                <div
-                  v-if="categoryDropdownOpen"
-                  class="absolute right-0 top-8 z-50 min-w-[180px] rounded-lg border border-border bg-card py-2 shadow-lg"
-                >
-                  <button
+              <div
+                v-if="categoryDropdownOpen"
+                class="absolute right-0 top-8 z-50 min-w-[220px] rounded-lg border border-border bg-card py-2 shadow-lg animate-fade-in"
+              >
+                <!-- Category checkboxes com estilo personalizado -->
+                <div class="max-h-60 overflow-y-auto">
+                  <div
                     v-for="cat in categories"
                     :key="cat"
-                    @click="selectCategory(cat)"
-                    class="w-full px-4 py-2 text-left text-sm transition-colors hover:bg-white/5"
-                    :class="selectedCategory === cat ? 'text-primary' : 'text-foreground/80'"
+                    class="px-4 py-2 hover:bg-white/5 transition-colors duration-150"
                   >
-                    {{ cat }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Dropdown Tópicos -->
-              <div class="relative">
-                <button
-                  @click.stop="toggleTopicDropdown"
-                  class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
-                >
-                  <span>{{ selectedTopic || 'Todos os Tópicos' }}</span>
-                  <ChevronDown 
-                    :size="16" 
-                    class="transition-transform duration-300"
-                    :class="{ 'rotate-180': topicDropdownOpen }"
-                  />
-                </button>
-
-                <div
-                  v-if="topicDropdownOpen"
-                  class="absolute right-0 top-8 z-50 min-w-[180px] rounded-lg border border-border bg-card py-2 shadow-lg"
-                >
-                  <button
-                    v-for="topic in topics"
-                    :key="topic"
-                    @click="selectTopic(topic)"
-                    class="w-full px-4 py-2 text-left text-sm transition-colors hover:bg-white/5"
-                    :class="selectedTopic === topic ? 'text-primary' : 'text-foreground/80'"
-                  >
-                    {{ topic }}
-                  </button>
+                    <label class="flex cursor-pointer items-center space-x-3">
+                      <!-- Checkbox personalizado -->
+                      <div class="relative flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          :value="cat"
+                          v-model="selectedCategories"
+                          class="checkbox-hidden"
+                        />
+                        <div 
+                          class="checkbox-custom"
+                          :class="{ 'checkbox-checked': selectedCategories.includes(cat) }"
+                        >
+                          <Check 
+                            v-if="selectedCategories.includes(cat)"
+                            :size="14" 
+                            class="text-white"
+                          />
+                        </div>
+                      </div>
+                      <span class="text-sm" :class="selectedCategories.includes(cat) ? 'text-primary' : 'text-foreground/80'">
+                        {{ cat }}
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Grid de Cursos -->
+          <!-- Courses Grid -->
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div
               v-for="course in filteredCourses"
               :key="course.id"
-              class="group relative overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+              class="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
             >
+              <!-- Technology Icon -->
               <div class="mb-4 flex justify-center">
                 <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <component :is="course.icon" :size="40" />
                 </div>
               </div>
 
-              <h3 class="mb-1 text-center text-lg font-semibold text-foreground">
-                {{ course.title }}
-              </h3>
+              <!-- Title -->
+              <div class="flex min-h-[4rem] flex-col justify-center">
+                <h3 class="text-center text-lg font-semibold text-foreground">
+                  {{ course.title }}
+                </h3>
+              </div>
 
-              <p class="mb-4 text-center text-sm text-foreground/60">
-                Com {{ course.instructor }}
-              </p>
+              <!-- Separator -->
+              <div class="my-4 border-t border-white/5"></div>
 
-              <div class="flex flex-wrap items-center justify-center gap-3 border-t border-white/5 pt-4 text-xs">
+              <!-- Metadata -->
+              <div class="flex flex-col items-center gap-2 text-xs">
+                <!-- Lessons -->
                 <div class="flex items-center space-x-1 text-foreground/60">
                   <Film :size="14" />
-                  <span>{{ course.episodes }} eps</span>
+                  <span>{{ course.lessons }} {{ course.lessons === 1 ? 'lesson' : 'lessons' }}</span>
                 </div>
-                <div class="flex items-center space-x-1 text-foreground/60">
-                  <component 
-                    :is="getLevelIcon(course.level)" 
-                    :size="14"
-                    :class="getLevelColor(course.level)"
-                  />
-                  <span>{{ course.level }}</span>
-                </div>
+                
+                <!-- Category -->
                 <div class="flex items-center space-x-1 text-foreground/60">
                   <Tag :size="14" />
                   <span>{{ course.category }}</span>
                 </div>
               </div>
 
-              <div class="absolute inset-0 rounded-xl bg-gradient-to-t from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+              <!-- Hover Effect -->
+              <div class="absolute inset-0 rounded-xl bg-gradient-to-t from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
             </div>
           </div>
 
           <div v-if="filteredCourses.length === 0" class="mt-12 text-center">
-            <p class="text-foreground/60">Nenhum curso encontrado com os filtros selecionados.</p>
+            <p class="text-foreground/60">No courses found with the selected categories.</p>
           </div>
         </main>
       </div>
     </div>
 
     <div 
-      v-if="categoryDropdownOpen || topicDropdownOpen"
+      v-if="categoryDropdownOpen"
       class="fixed inset-0 z-40"
       @click="closeAllDropdowns"
     ></div>
@@ -162,8 +152,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { 
   Film,
   Tag,
-  Award,
-  TrendingUp,
   Layers,
   Database,
   Code2,
@@ -171,7 +159,11 @@ import {
   Terminal,
   Binary,
   Cpu,
-  ChevronDown
+  ChevronDown,
+  Check,
+  Smartphone,
+  Palette,
+  Cloud
 } from 'lucide-vue-next'
 
 import NavBar from '@/components/layout/NavBar.vue'
@@ -181,10 +173,8 @@ import SideBar from '@/components/layout/SideBar.vue'
 interface Course {
   id: number
   title: string
-  instructor: string
-  level: string
   category: string
-  episodes: number
+  lessons: number
   icon: any
 }
 
@@ -193,7 +183,7 @@ const menuItems = ref([
   { name: 'All Series', icon: 'LayoutGrid', active: true },
   { name: 'Continue', icon: 'PlayCircle', active: false },
   { name: 'Watchlist', icon: 'Bookmark', active: false },
-  { name: 'Completos', icon: 'CheckCircle', active: false }
+  { name: 'Completed', icon: 'CheckCircle', active: false }
 ])
 
 // Mobile detection
@@ -203,64 +193,48 @@ const mobileMenuOpen = ref(false)
 // Sidebar visibility state
 const sidebarVisible = ref(true)
 
-// Theme
-const isDark = ref(true)
-
 // Filter States
-const selectedCategory = ref('')
-const selectedTopic = ref('')
+const selectedCategories = ref<string[]>([])
 const categoryDropdownOpen = ref(false)
-const topicDropdownOpen = ref(false)
 
 // Filter Options
-const categories = ['Back-end', 'Front-end', 'Base de Dados', 'Frameworks', 'Técnicas']
-const topics = ['Iniciante', 'Intermédio', 'Avançado']
+const categories = ['Back end', 'Front end', 'DevOps', 'Mobile', 'UI/UX Design', 'Data Science']
 
 // Courses Data
 const courses = ref<Course[]>([
-  { id: 1, title: 'Python para Iniciantes', instructor: 'Carlos Silva', level: 'Iniciante', category: 'Back-end', episodes: 24, icon: Terminal },
-  { id: 2, title: 'SQL Avançado e Otimização', instructor: 'Ana Martins', level: 'Avançado', category: 'Base de Dados', episodes: 18, icon: Database },
-  { id: 3, title: 'JavaScript Moderno ES6+', instructor: 'Rui Santos', level: 'Intermédio', category: 'Front-end', episodes: 32, icon: Code2 },
-  { id: 4, title: 'React do Zero ao Deploy', instructor: 'Marta Ferreira', level: 'Intermédio', category: 'Frameworks', episodes: 28, icon: Layers },
-  { id: 5, title: 'C# e .NET Core', instructor: 'Pedro Costa', level: 'Intermédio', category: 'Back-end', episodes: 22, icon: Coffee },
-  { id: 6, title: 'Java: POO e Design Patterns', instructor: 'Joana Pereira', level: 'Avançado', category: 'Back-end', episodes: 26, icon: Coffee },
-  { id: 7, title: 'TypeScript na Prática', instructor: 'Diogo Nunes', level: 'Intermédio', category: 'Front-end', episodes: 20, icon: Binary },
-  { id: 8, title: 'Automação com Python', instructor: 'Sofia Almeida', level: 'Iniciante', category: 'Técnicas', episodes: 16, icon: Cpu }
+  { id: 1, title: 'Python for Beginners', category: 'Back end', lessons: 24, icon: Terminal },
+  { id: 2, title: 'Advanced SQL & Optimization', category: 'Data Science', lessons: 18, icon: Database },
+  { id: 3, title: 'Modern JavaScript ES6+', category: 'Front end', lessons: 32, icon: Code2 },
+  { id: 4, title: 'React from Zero to Deploy', category: 'Front end', lessons: 28, icon: Layers },
+  { id: 5, title: 'C# and .NET Core', category: 'Back end', lessons: 22, icon: Coffee },
+  { id: 6, title: 'Kotlin for Android', category: 'Mobile', lessons: 26, icon: Smartphone },
+  { id: 7, title: 'TypeScript in Practice', category: 'Front end', lessons: 20, icon: Binary },
+  { id: 8, title: 'Docker & Kubernetes', category: 'DevOps', lessons: 16, icon: Cloud },
+  { id: 9, title: 'Figma for Designers', category: 'UI/UX Design', lessons: 14, icon: Palette },
+  { id: 10, title: 'SwiftUI Masterclass', category: 'Mobile', lessons: 30, icon: Smartphone },
+  { id: 11, title: 'CI/CD Pipelines', category: 'DevOps', lessons: 12, icon: Cloud },
+  { id: 12, title: 'Data Analysis with Python', category: 'Data Science', lessons: 24, icon: Database }
 ])
 
 // Computed
+const selectedCategoriesDisplay = computed(() => {
+  if (selectedCategories.value.length === 0) return ''
+  if (selectedCategories.value.length === 1) return selectedCategories.value[0]
+  return `${selectedCategories.value.length} categories`
+})
+
 const filteredCourses = computed(() => {
-  return courses.value.filter(course => {
-    const matchesCategory = !selectedCategory.value || course.category === selectedCategory.value
-    const matchesTopic = !selectedTopic.value || course.level === selectedTopic.value
-    return matchesCategory && matchesTopic
-  })
+  if (selectedCategories.value.length === 0) return courses.value
+  return courses.value.filter(course => selectedCategories.value.includes(course.category))
 })
 
 // Dropdown Functions
 const toggleCategoryDropdown = () => {
   categoryDropdownOpen.value = !categoryDropdownOpen.value
-  topicDropdownOpen.value = false
-}
-
-const toggleTopicDropdown = () => {
-  topicDropdownOpen.value = !topicDropdownOpen.value
-  categoryDropdownOpen.value = false
-}
-
-const selectCategory = (category: string) => {
-  selectedCategory.value = selectedCategory.value === category ? '' : category
-  categoryDropdownOpen.value = false
-}
-
-const selectTopic = (topic: string) => {
-  selectedTopic.value = selectedTopic.value === topic ? '' : topic
-  topicDropdownOpen.value = false
 }
 
 const closeAllDropdowns = () => {
   categoryDropdownOpen.value = false
-  topicDropdownOpen.value = false
 }
 
 // Menu Functions
@@ -273,18 +247,6 @@ const setActiveMenu = (menuName: string) => {
 // Sidebar Toggle
 const toggleSidebar = () => {
   sidebarVisible.value = !sidebarVisible.value
-}
-
-// Theme
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-}
-
-// Level Helpers
-const getLevelIcon = (level: string) => level === 'Intermédio' ? TrendingUp : Award
-const getLevelColor = (level: string) => {
-  const colors = { Iniciante: 'text-green-400', Intermédio: 'text-yellow-400', Avançado: 'text-red-400' }
-  return colors[level as keyof typeof colors] || 'text-foreground/60'
 }
 
 // Click outside
@@ -312,11 +274,28 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Smooth transitions */
-button, .group {
+/* Smooth transitions - versão mais clean */
+.transition-all {
+  transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }
 
+/* Animação suave para o conteúdo principal */
+.flex-1 {
+  transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects mais subtis */
+.group {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group:hover {
+  transform: translateY(-2px);
+}
+
+/* Rotação suave */
 .rotate-180 {
   transform: rotate(180deg);
 }
@@ -325,5 +304,73 @@ button, .group {
 *:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Checkbox personalizado */
+.checkbox-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.checkbox-custom {
+  display: flex;
+  height: 1.25rem;
+  width: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border-width: 2px;
+  border-color: var(--color-border);
+  background-color: rgba(15, 23, 42, 0.5);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.checkbox-custom:hover {
+  border-color: var(--color-primary);
+  opacity: 0.5;
+}
+
+.checkbox-checked {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+}
+
+/* Animação de fade-in para o dropdown */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar personalizada */
+.max-h-60::-webkit-scrollbar {
+  width: 6px;
+}
+
+.max-h-60::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.max-h-60::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+  transition: background 200ms;
+}
+
+.max-h-60::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 </style>

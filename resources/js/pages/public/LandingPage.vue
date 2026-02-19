@@ -7,7 +7,7 @@
           <!-- Logo -->
           <div class="flex items-center gap-1">
             <img src="/images/Logo.svg" alt="CodeCraft Logo" class="w-14 h-14"/>
-            <span class="text-xl font-bold">CodeCraft</span>
+            <span class="text-2xl font-bold text-foreground lg:text-2xl">Code<span class="text-primary">Craft</span></span>
           </div>
 
           <!-- Desktop Menu -->
