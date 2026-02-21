@@ -14,6 +14,7 @@ use App\Http\Controllers\DifficultyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+
 // Rotas protegidas por autenticação
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -55,8 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-
-
+// LOGIN - CORRIGIDO com role_id
 Route::post('/login', function (Request $request) {
     $data = $request->validate([
         'email' => 'required|email',
@@ -78,11 +78,12 @@ Route::post('/login', function (Request $request) {
             'name' => $user->username,
             'email' => $user->email,
             'role' => $user->role->name,
+            'role_id' => $user->role_id, // 👈 ADICIONADO!
         ],
     ]);
-
 });
 
+// LOGOUT
 Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
     $request->user()->currentAccessToken()->delete();
     return response()->json(['message' => 'Logged out']);

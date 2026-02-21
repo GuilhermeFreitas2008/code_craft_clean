@@ -8,11 +8,8 @@
     >
       <!-- Aura no centro -->
       <div class="absolute inset-0 flex items-center justify-center">
-        <!-- Glow principal -->
         <div class="absolute h-[600px] w-[600px] rounded-full bg-primary/5 blur-3xl"></div>
-        <!-- Glow secundário para mais profundidade -->
         <div class="absolute h-[400px] w-[400px] rounded-full bg-primary/10 blur-2xl"></div>
-        <!-- Partículas brilhantes -->
         <div class="absolute h-2 w-2 rounded-full bg-primary/30 blur-sm" style="top: 45%; left: 48%;"></div>
         <div class="absolute h-3 w-3 rounded-full bg-primary/20 blur-sm" style="top: 52%; left: 55%;"></div>
         <div class="absolute h-2 w-2 rounded-full bg-primary/30 blur-sm" style="top: 48%; left: 45%;"></div>
@@ -234,11 +231,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/services/axios'
 import { 
   Code2, Globe, Database, Server, Hash, Eye,  EyeOff,
   Terminal, Cpu, Binary, GitBranch, Braces, Cloud, Box,
   Wrench, Workflow, Shield, Zap, Layers, Sparkles
 } from 'lucide-vue-next'
+
+const router = useRouter()
 
 // Form state
 const showPassword = ref(false)
@@ -292,23 +293,7 @@ const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-// Simulate API call
-const simulateLogin = async (email: string, password: string) => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // Demo credentials - In production, this would be a real API call
-  const DEMO_EMAIL = 'demo@codecraft.com'
-  const DEMO_PASSWORD = 'password123'
-  
-  if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-    return { success: true, user: { email: DEMO_EMAIL } }
-  } else {
-    throw new Error('Invalid email or password')
-  }
-}
-
-// Form submit handler
+// Form submit handler - VERSÃO LIMPA
 const handleSubmit = async (e: Event) => {
   e.preventDefault()
   
@@ -318,27 +303,54 @@ const handleSubmit = async (e: Event) => {
     password: true
   }
   
-  if (!isFormValid.value) {
-    return
-  }
-  
+  if (!isFormValid.value) return
+
   isLoading.value = true
   authError.value = ''
-  
+
   try {
-    const response = await simulateLogin(email.value, password.value)
-    console.log('Login successful:', response)
-    
-    // Store auth token, redirect to dashboard, etc.
+    const response = await api.post('/login', {
+      email: email.value,
+      password: password.value
+    })
+
+    const { user, token } = response.data
+
+    // Verificar se os dados existem
+    if (!user || !token) {
+      throw new Error('Resposta inválida do servidor')
+    }
+
+    // Guardar dados
+    localStorage.setItem('auth_token', token)
+    localStorage.setItem('user', JSON.stringify(user))
+
     if (rememberMe.value) {
       localStorage.setItem('rememberMe', 'true')
     }
+
+    // REDIRECIONAMENTO - user normal (role_id = 2)
+    if (user.role_id === 2) {
+      window.location.href = '/user'
+    }
+    // Admin (role_id = 1)
+    else if (user.role_id === 1) {
+      window.location.href = '/admin'
+    }
+    else {
+      authError.value = 'Acesso não autorizado para este tipo de usuário'
+    }
+
+  } catch (error: any) {
+    console.error('Erro no login:', error)
     
-    // Redirect to dashboard (example)
-    // router.push('/dashboard')
-    
-  } catch (error) {
-    authError.value = 'Invalid email or password'
+    if (error.response) {
+      authError.value = error.response.data?.error || 'Erro no servidor'
+    } else if (error.request) {
+      authError.value = 'Servidor não respondeu'
+    } else {
+      authError.value = error.message || 'Email ou password inválidos'
+    }
   } finally {
     isLoading.value = false
   }

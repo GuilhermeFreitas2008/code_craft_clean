@@ -1,7 +1,6 @@
-<!-- RegisterPage.vue -->
 <template>
   <div class="flex min-h-screen flex-col lg:flex-row">
-    <!-- Left Side - Branding/Visual - Hidden on medium screens and below -->
+    <!-- Left Side - Branding/Visual -->
     <div 
       v-show="showLeftPanel"
       class="relative hidden flex-1 items-center justify-center overflow-hidden bg-card p-8 lg:flex lg:p-12"
@@ -9,11 +8,8 @@
     >
       <!-- Aura no centro -->
       <div class="absolute inset-0 flex items-center justify-center">
-        <!-- Glow principal -->
         <div class="absolute h-[600px] w-[600px] rounded-full bg-primary/5 blur-3xl"></div>
-        <!-- Glow secundário para mais profundidade -->
         <div class="absolute h-[400px] w-[400px] rounded-full bg-primary/10 blur-2xl"></div>
-        <!-- Partículas brilhantes -->
         <div class="absolute h-2 w-2 rounded-full bg-primary/30 blur-sm" style="top: 45%; left: 48%;"></div>
         <div class="absolute h-3 w-3 rounded-full bg-primary/20 blur-sm" style="top: 52%; left: 55%;"></div>
         <div class="absolute h-2 w-2 rounded-full bg-primary/30 blur-sm" style="top: 48%; left: 45%;"></div>
@@ -79,6 +75,16 @@
           </p>
         </div>
 
+        <!-- Error Alert -->
+        <div
+          v-if="registerError"
+          class="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 animate-fade-in-up"
+        >
+          <p class="text-sm text-red-400">
+            {{ registerError }}
+          </p>
+        </div>
+
         <!-- Form -->
         <form @submit="handleSubmit" class="space-y-4">
           <!-- Username Field -->
@@ -102,6 +108,7 @@
               placeholder="johndoe"
               :disabled="isLoading"
               @blur="touched.username = true"
+              @input="clearRegisterError"
             />
             <p v-if="errors.username" class="text-xs text-red-400 animate-fade-in-up">
               {{ errors.username }}
@@ -129,6 +136,7 @@
               placeholder="you@example.com"
               :disabled="isLoading"
               @blur="touched.email = true"
+              @input="clearRegisterError"
             />
             <p v-if="errors.email" class="text-xs text-red-400 animate-fade-in-up">
               {{ errors.email }}
@@ -157,6 +165,7 @@
                 placeholder="••••••••"
                 :disabled="isLoading"
                 @blur="touched.password = true"
+                @input="clearRegisterError"
               />
               <button
                 type="button"
@@ -194,6 +203,7 @@
                 placeholder="••••••••"
                 :disabled="isLoading"
                 @blur="touched.confirmPassword = true"
+                @input="clearRegisterError"
               />
               <button
                 type="button"
@@ -223,6 +233,7 @@
                 ]"
                 :disabled="isLoading"
                 @blur="touched.acceptTerms = true"
+                @change="clearRegisterError"
               />
               <span class="text-xs text-foreground/60">
                 I agree to the 
@@ -292,11 +303,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/services/axios'
 import { 
   Code2, Globe, Database, Server, Hash, Eye,  EyeOff,
   Terminal, Cpu, Binary, GitBranch, Braces, Cloud, Box,
   Wrench, Workflow, Shield, Zap, Layers, Sparkles
 } from 'lucide-vue-next'
+
+const router = useRouter()
 
 // Form state
 const showPassword = ref(false)
@@ -310,7 +325,10 @@ const acceptTerms = ref(false)
 // Loading state
 const isLoading = ref(false)
 
-// Validation state - track which fields have been touched
+// Register error state
+const registerError = ref('')
+
+// Validation state
 const touched = ref({
   username: false,
   email: false,
@@ -392,7 +410,80 @@ const isFormValid = computed(() => {
   )
 })
 
-// Array of icons for background pattern
+// Clear register error
+const clearRegisterError = () => {
+  registerError.value = ''
+}
+
+// Check window size
+const checkWindowSize = () => {
+  showLeftPanel.value = window.innerWidth >= BREAKPOINT
+}
+
+// Toggle password visibility
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value
+}
+
+const toggleConfirmPasswordVisibility = () => {
+  showConfirmPassword.value = !showConfirmPassword.value
+}
+
+// Form submit handler
+const handleSubmit = async (e: Event) => {
+  e.preventDefault()
+  
+  touched.value = {
+    username: true,
+    email: true,
+    password: true,
+    confirmPassword: true,
+    acceptTerms: true
+  }
+
+  if (!isFormValid.value) return
+
+  isLoading.value = true
+  registerError.value = ''
+
+  try {
+    const response = await api.post('/register', {
+      name: username.value,
+      email: email.value,
+      password: password.value,
+      password_confirmation: confirmPassword.value
+    })
+
+    const { user, token } = response.data
+
+    // Guardar token
+    localStorage.setItem('auth_token', token)
+    localStorage.setItem('user', JSON.stringify(user))
+
+    // Redirecionar para login
+    router.push('/login')
+
+  } catch (error: any) {
+    registerError.value =
+      error.response?.data?.message ||
+      'Erro ao criar conta. Tente novamente.'
+    console.error(error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  checkWindowSize()
+  window.addEventListener('resize', checkWindowSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkWindowSize)
+})
+
+// Background icons array
 const backgroundIcons = [
   { icon: Code2, rotation: -12, delay: 0, top: '2%', left: '3%', size: 24, duration: 28 },
   { icon: Database, rotation: 8, delay: 0.5, top: '7%', left: '12%', size: 26, duration: 32 },
@@ -440,68 +531,6 @@ const backgroundIcons = [
   { icon: Code2, rotation: 8, delay: 21.5, top: '98%', left: '48%', size: 22, duration: 28 },
   { icon: Zap, rotation: -5, delay: 22, top: '92%', left: '98%', size: 24, duration: 33 },
 ]
-
-// Function to check window width
-const checkWindowSize = () => {
-  showLeftPanel.value = window.innerWidth >= BREAKPOINT
-}
-
-// Toggle password visibility
-const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value
-}
-
-// Toggle confirm password visibility
-const toggleConfirmPasswordVisibility = () => {
-  showConfirmPassword.value = !showConfirmPassword.value
-}
-
-// Form submit handler
-const handleSubmit = async (e: Event) => {
-  e.preventDefault()
-  
-  // Mark all fields as touched to show validation errors
-  touched.value = {
-    username: true,
-    email: true,
-    password: true,
-    confirmPassword: true,
-    acceptTerms: true
-  }
-  
-  if (!isFormValid.value) {
-    return
-  }
-  
-  isLoading.value = true
-  
-  try {
-    // API call simulation - Replace with real logic
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log('Registration attempt:', { 
-      username: username.value,
-      email: email.value, 
-      password: password.value,
-      acceptTerms: acceptTerms.value
-    })
-    
-    // Redirect to login or dashboard
-    // router.push('/login')
-    
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Lifecycle hooks
-onMounted(() => {
-  checkWindowSize()
-  window.addEventListener('resize', checkWindowSize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', checkWindowSize)
-})
 </script>
 
 <style scoped>

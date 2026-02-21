@@ -1,12 +1,11 @@
-<!-- UserPage.vue -->
 <template>
   <div class="flex min-h-screen flex-col bg-background">
     <!-- Navbar -->
     <NavBar 
       :sidebar-visible="sidebarVisible"
-      user-name="João Dias"
-      user-initials="JD"
-      user-email="joao.dias@codecraft.com"
+      :user-name="currentUser?.name"
+      :user-email="currentUser?.email"
+      :user-initials="currentUser?.name?.charAt(0)"
       @toggle-mobile-menu="mobileMenuOpen = !mobileMenuOpen"
       @toggle-sidebar="toggleSidebar"
     />
@@ -141,21 +140,45 @@
             </div>
           </div>
 
-          <!-- Courses Grid - ALINHADO À ESQUERDA -->
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <!-- Loading State -->
+          <div v-if="isLoading" class="flex justify-center items-center py-20">
+            <svg 
+              class="h-8 w-8 animate-spin text-primary" 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24"
+            >
+              <circle 
+                class="opacity-25" 
+                cx="12" 
+                cy="12" 
+                r="10" 
+                stroke="currentColor" 
+                stroke-width="4"
+              />
+              <path 
+                class="opacity-75" 
+                fill="currentColor" 
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+          </div>
+
+          <!-- Courses Grid -->
+          <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div
               v-for="course in filteredCourses"
               :key="course.id"
               class="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
             >
-              <!-- Technology Icon - ALINHADO À ESQUERDA -->
+              <!-- Technology Icon -->
               <div class="mb-4 flex justify-start">
                 <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <component :is="course.icon" :size="32" />
+                  <component :is="getCourseIcon(getCategoryName(course.category))" :size="32" />
                 </div>
               </div>
 
-              <!-- Title - ALINHADO À ESQUERDA -->
+              <!-- Title -->
               <div class="mb-2">
                 <h3 class="text-left text-lg font-semibold text-foreground">
                   {{ course.title }}
@@ -165,24 +188,24 @@
               <!-- Separator -->
               <div class="my-4 border-t border-white/5"></div>
 
-              <!-- Metadata - ALINHADO À ESQUERDA -->
+              <!-- Metadata -->
               <div class="flex flex-col items-start gap-2 text-xs">
                 <!-- Lessons -->
                 <div class="flex items-center space-x-1 text-foreground/60">
                   <Film :size="14" />
-                  <span>{{ course.lessons }} {{ course.lessons === 1 ? 'lesson' : 'lessons' }}</span>
+                  <span>{{ getTotalLessons(course) }} {{ getTotalLessons(course) === 1 ? 'lesson' : 'lessons' }}</span>
                 </div>
                 
                 <!-- Difficulty -->
                 <div class="flex items-center space-x-1 text-foreground/60">
-                  <component :is="getDifficultyIcon(course.difficulty)" :size="14" />
-                  <span class="capitalize">{{ course.difficulty }}</span>
+                  <component :is="getDifficultyIcon(getDifficultyName(course.difficulty))" :size="14" />
+                  <span class="capitalize">{{ getDifficultyName(course.difficulty) }}</span>
                 </div>
                 
                 <!-- Category -->
                 <div class="flex items-center space-x-1 text-foreground/60">
                   <Tag :size="14" />
-                  <span>{{ course.category }}</span>
+                  <span>{{ getCategoryName(course.category) }}</span>
                 </div>
               </div>
 
@@ -191,7 +214,7 @@
             </div>
           </div>
 
-          <div v-if="filteredCourses.length === 0" class="mt-12 text-center">
+          <div v-if="!isLoading && filteredCourses.length === 0" class="mt-12 text-center">
             <p class="text-foreground/60">No courses found with the selected filters.</p>
           </div>
         </main>
@@ -208,6 +231,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import api from '@/services/axios'
 import { 
   Film,
   Tag,
@@ -232,14 +256,37 @@ import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
 
 // Types
+interface Category {
+  id: number
+  name: string
+}
+
+interface Difficulty {
+  id: number
+  name: string
+}
+
+interface Module {
+  id: number
+  title: string
+  lessons?: any[]
+}
+
 interface Course {
   id: number
   title: string
-  category: string
-  difficulty: string
-  lessons: number
-  icon: any
+  description?: string
+  category?: Category | string | null
+  difficulty?: Difficulty | string | null
+  technology?: string
+  modules?: Module[]
 }
+
+// Current user state
+const currentUser = ref<any>(null)
+
+// Loading state
+const isLoading = ref(false)
 
 // Menu Items
 const menuItems = ref([
@@ -267,20 +314,35 @@ const categories = ['Back end', 'Front end', 'DevOps', 'Mobile', 'UI/UX Design',
 const difficulties = ['beginner', 'intermediate', 'advanced']
 
 // Courses Data
-const courses = ref<Course[]>([
-  { id: 1, title: 'Python for Beginners', category: 'Back end', difficulty: 'beginner', lessons: 24, icon: Terminal },
-  { id: 2, title: 'Advanced SQL & Optimization', category: 'Data Science', difficulty: 'advanced', lessons: 18, icon: Database },
-  { id: 3, title: 'Modern JavaScript ES6+', category: 'Front end', difficulty: 'intermediate', lessons: 32, icon: Code2 },
-  { id: 4, title: 'React from Zero to Deploy', category: 'Front end', difficulty: 'intermediate', lessons: 28, icon: Layers },
-  { id: 5, title: 'C# and .NET Core', category: 'Back end', difficulty: 'intermediate', lessons: 22, icon: Coffee },
-  { id: 6, title: 'Kotlin for Android', category: 'Mobile', difficulty: 'intermediate', lessons: 26, icon: Smartphone },
-  { id: 7, title: 'TypeScript in Practice', category: 'Front end', difficulty: 'intermediate', lessons: 20, icon: Binary },
-  { id: 8, title: 'Docker & Kubernetes', category: 'DevOps', difficulty: 'intermediate', lessons: 16, icon: Cloud },
-  { id: 9, title: 'Figma for Designers', category: 'UI/UX Design', difficulty: 'beginner', lessons: 14, icon: Palette },
-  { id: 10, title: 'SwiftUI Masterclass', category: 'Mobile', difficulty: 'intermediate', lessons: 30, icon: Smartphone },
-  { id: 11, title: 'CI/CD Pipelines', category: 'DevOps', difficulty: 'advanced', lessons: 12, icon: Cloud },
-  { id: 12, title: 'Data Analysis with Python', category: 'Data Science', difficulty: 'intermediate', lessons: 24, icon: Database }
-])
+const courses = ref<Course[]>([])
+
+// FUNÇÕES AUXILIARES PARA EXTRAIR NOMES
+const getCategoryName = (category: Category | string | null | undefined): string => {
+  if (!category) return 'Uncategorized'
+  if (typeof category === 'object' && category !== null) {
+    return category.name || 'Uncategorized'
+  }
+  return String(category)
+}
+
+const getDifficultyName = (difficulty: Difficulty | string | null | undefined): string => {
+  if (!difficulty) return 'unknown'
+  if (typeof difficulty === 'object' && difficulty !== null) {
+    return difficulty.name || 'unknown'
+  }
+  return String(difficulty)
+}
+
+// FUNÇÃO PARA CONTAR LIÇÕES ATRAVÉS DOS MÓDULOS
+const getTotalLessons = (course: Course): number => {
+  if (!course.modules || !Array.isArray(course.modules)) {
+    return 0
+  }
+  
+  return course.modules.reduce((total, module) => {
+    return total + (module.lessons?.length || 0)
+  }, 0)
+}
 
 // Computed Displays
 const selectedCategoriesDisplay = computed(() => {
@@ -298,8 +360,15 @@ const selectedDifficultiesDisplay = computed(() => {
 // Filtered Courses
 const filteredCourses = computed(() => {
   return courses.value.filter(course => {
-    const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(course.category)
-    const matchesDifficulty = selectedDifficulties.value.length === 0 || selectedDifficulties.value.includes(course.difficulty)
+    const courseCategory = getCategoryName(course.category)
+    const courseDifficulty = getDifficultyName(course.difficulty)
+    
+    const matchesCategory = selectedCategories.value.length === 0 || 
+      selectedCategories.value.includes(courseCategory)
+    
+    const matchesDifficulty = selectedDifficulties.value.length === 0 || 
+      selectedDifficulties.value.includes(courseDifficulty)
+    
     return matchesCategory && matchesDifficulty
   })
 })
@@ -334,11 +403,33 @@ const toggleSidebar = () => {
 
 // Difficulty Helper
 const getDifficultyIcon = (difficulty: string) => {
-  switch(difficulty) {
+  switch(difficulty?.toLowerCase()) {
     case 'beginner': return Award
     case 'intermediate': return TrendingUp
     case 'advanced': return Sparkles
     default: return Award
+  }
+}
+
+// Course Icon Helper
+const getCourseIcon = (category: string) => {
+  switch(category?.toLowerCase()) {
+    case 'back end':
+    case 'backend':
+      return Terminal
+    case 'front end':
+    case 'frontend':
+      return Code2
+    case 'data science':
+      return Database
+    case 'mobile':
+      return Smartphone
+    case 'devops':
+      return Cloud
+    case 'ui/ux design':
+      return Palette
+    default:
+      return Layers
   }
 }
 
@@ -355,9 +446,32 @@ const handleResize = () => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
+  
+  // Carregar usuário do localStorage
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    currentUser.value = JSON.parse(storedUser)
+  }
+
+  // Carregar cursos da API
+  try {
+    isLoading.value = true
+    const response = await api.get('/courses')
+    courses.value = response.data
+    
+    // DEBUG: Ver estrutura dos cursos (podes remover depois)
+    if (courses.value.length > 0) {
+      console.log('📚 Estrutura do primeiro curso:', JSON.stringify(courses.value[0], null, 2))
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro ao carregar cursos:', error)
+  } finally {
+    isLoading.value = false
+  }
 })
 
 onUnmounted(() => {

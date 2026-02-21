@@ -17,9 +17,10 @@ class CourseController extends Controller
         $user = $request->user();
 
         if ($user->role->name === 'admin') {
-            $courses = Course::with('modules')->get();
+            $courses = Course::with(['category', 'difficulty', 'modules.lessons']) // 👈 CORRIGIDO
+                ->get();
         } else {
-            $courses = Course::with('modules')
+            $courses = Course::with(['category', 'difficulty', 'modules.lessons']) // 👈 CORRIGIDO
                 ->where('is_public', true)
                 ->where('is_draft', false)
                 ->get();
@@ -36,7 +37,8 @@ class CourseController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-        $course = Course::with('modules')->findOrFail($id);
+        $course = Course::with(['category', 'difficulty', 'modules.lessons']) // 👈 CORRIGIDO
+            ->findOrFail($id);
 
         if ($user->role->name === 'admin') {
             return response()->json($course);
@@ -63,6 +65,8 @@ class CourseController extends Controller
             'title' => 'required|string|unique:courses',
             'description' => 'required|string',
             'slug' => 'required|string|unique:courses',
+            'category_id' => 'required|exists:categories,id', // 👈 ADICIONA SE PRECISARES
+            'difficulty_id' => 'required|exists:difficulties,id', // 👈 ADICIONA SE PRECISARES
             'is_public' => 'boolean',
             'is_draft' => 'boolean',
         ]);
@@ -91,6 +95,8 @@ class CourseController extends Controller
             'title' => 'string|unique:courses,title,' . $id,
             'description' => 'string',
             'slug' => 'string|unique:courses,slug,' . $id,
+            'category_id' => 'exists:categories,id',
+            'difficulty_id' => 'exists:difficulties,id',
             'is_public' => 'boolean',
             'is_draft' => 'boolean',
         ]);

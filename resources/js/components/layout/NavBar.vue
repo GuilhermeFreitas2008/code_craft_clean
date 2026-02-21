@@ -1,10 +1,9 @@
-<!-- NavBar.vue -->
 <template>
   <header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
     <div class="flex h-16 items-center justify-between pl-5 pr-8">
-      <!-- Lado Esquerdo - Botão Toggle, Logo e Mobile Menu -->
+      <!-- Lado Esquerdo -->
       <div class="flex items-center space-x-2 lg:space-x-3">
-        <!-- Botão Toggle Sidebar (apenas desktop) -->
+        <!-- Botão Toggle Sidebar -->
         <button 
           @click="$emit('toggle-sidebar')"
           class="hidden rounded-lg pr-2 text-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground lg:block"
@@ -16,7 +15,7 @@
           />
         </button>
 
-        <!-- Linha vertical de separação -->
+        <!-- Linha vertical -->
         <div class="hidden h-16 w-px bg-white/5 lg:block"></div>
 
         <!-- Mobile Menu Toggle -->
@@ -27,7 +26,7 @@
           <Menu :size="24" />
         </button>
         
-        <!-- Logo - AGORA COM CLIQUE PARA REINICIAR -->
+        <!-- Logo -->
         <button 
           @click="reloadPage"
           class="flex items-center space-x-1 lg:space-x-1 hover:opacity-80 transition-opacity duration-200"
@@ -38,18 +37,17 @@
         </button>
       </div>
 
-      <!-- Lado Direito - Avatar com Popup -->
+      <!-- Lado Direito - Avatar -->
       <div class="relative" ref="userMenuContainer">
-        <!-- User Avatar (clicável) -->
         <button 
           ref="userMenuButton"
           @click="toggleUserMenu"
           class="flex items-center space-x-3 rounded-lg p-2 hover:bg-white/5 transition-colors duration-200"
         >
           <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary">
-            <span class="text-sm font-semibold">{{ userInitials }}</span>
+            <span class="text-sm font-semibold">{{ userInitials || 'U' }}</span>
           </div>
-          <span class="hidden text-sm font-medium text-foreground lg:block">{{ userName }}</span>
+          <span class="hidden text-sm font-medium text-foreground lg:block">{{ userName || 'User' }}</span>
         </button>
 
         <!-- Popup Menu -->
@@ -70,11 +68,11 @@
             <div class="px-4 py-3 border-b border-white/5">
               <div class="flex items-center space-x-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  <span class="text-lg font-semibold">{{ userInitials }}</span>
+                  <span class="text-lg font-semibold">{{ userInitials || 'U' }}</span>
                 </div>
                 <div class="flex flex-col">
-                  <span class="text-base font-medium text-foreground">{{ userName }}</span>
-                  <span class="text-xs text-foreground/40">{{ userEmail || 'joao.dias@codecraft.com' }}</span>
+                  <span class="text-base font-medium text-foreground">{{ userName || 'User' }}</span>
+                  <span class="text-xs text-foreground/40">{{ userEmail || 'user@example.com' }}</span>
                 </div>
               </div>
             </div>
@@ -102,10 +100,32 @@
             <div class="border-t border-white/5 pt-1">
               <button
                 @click="handleLogoutClick"
-                class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-white/5 hover:text-red-300"
+                :disabled="isLoggingOut"
+                class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-white/5 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <LogOut :size="18" />
-                <span>Logout</span>
+                <LogOut v-if="!isLoggingOut" :size="18" />
+                <svg 
+                  v-else
+                  class="h-4 w-4 animate-spin text-red-400" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="none" 
+                  viewBox="0 0 24 24"
+                >
+                  <circle 
+                    class="opacity-25" 
+                    cx="12" 
+                    cy="12" 
+                    r="10" 
+                    stroke="currentColor" 
+                    stroke-width="4"
+                  />
+                  <path 
+                    class="opacity-75" 
+                    fill="currentColor" 
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span>{{ isLoggingOut ? 'Logging out...' : 'Logout' }}</span>
               </button>
             </div>
           </div>
@@ -118,6 +138,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Menu, PanelRightClose, PanelLeftClose, User, Settings, LogOut } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import api from '@/services/axios'
+
+const router = useRouter()
 
 // Props
 defineProps<{
@@ -135,8 +159,9 @@ defineEmits<{
 
 // User menu state
 const userMenuOpen = ref(false)
+const isLoggingOut = ref(false)
 
-// Refs para os elementos do menu
+// Refs
 const userMenuButton = ref<HTMLElement | null>(null)
 const userMenuPopup = ref<HTMLElement | null>(null)
 const userMenuContainer = ref<HTMLElement | null>(null)
@@ -151,12 +176,12 @@ const closeUserMenu = () => {
   userMenuOpen.value = false
 }
 
-// Função para reiniciar a página
+// Reload page
 const reloadPage = () => {
   window.location.reload()
 }
 
-// Placeholder functions
+// Handlers
 const handleProfileClick = () => {
   console.log('Profile clicked')
   closeUserMenu()
@@ -167,9 +192,31 @@ const handleSettingsClick = () => {
   closeUserMenu()
 }
 
-const handleLogoutClick = () => {
-  console.log('Logout clicked')
-  closeUserMenu()
+// Logout - CORRIGIDO
+const handleLogoutClick = async () => {
+  if (isLoggingOut.value) return
+  
+  isLoggingOut.value = true
+  
+  try {
+    // Tentar logout na API
+    await api.post('/logout').catch(() => {
+      console.log('Logout endpoint not available, performing local logout only')
+    })
+  } catch (error) {
+    console.error('Erro durante logout:', error)
+  } finally {
+    // Limpar dados do localStorage
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('rememberMe')
+    
+    // Redirecionar para login
+    router.push('/login')
+    
+    closeUserMenu()
+    isLoggingOut.value = false
+  }
 }
 
 // Click outside handler
@@ -192,12 +239,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Transições suaves */
 button {
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Garantir que a origem da transformação é no topo direito */
 .origin-top-right {
   transform-origin: top right;
 }
