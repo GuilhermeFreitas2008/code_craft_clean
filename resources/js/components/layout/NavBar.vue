@@ -5,12 +5,12 @@
       <div class="flex items-center space-x-2 lg:space-x-3">
         <!-- Botão Toggle Sidebar -->
         <button 
-          @click="$emit('toggle-sidebar')"
+          @click="uiStore.toggleSidebar()"
           class="hidden rounded-lg pr-2 text-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground lg:block"
-          :title="sidebarVisible ? 'Fechar menu' : 'Abrir menu'"
+          :title="uiStore.sidebarVisible ? 'Fechar menu' : 'Abrir menu'"
         >
           <component 
-            :is="sidebarVisible ? PanelLeftClose : PanelRightClose" 
+            :is="uiStore.sidebarVisible ? PanelLeftClose : PanelRightClose" 
             :size="29" 
           />
         </button>
@@ -20,7 +20,7 @@
 
         <!-- Mobile Menu Toggle -->
         <button 
-          @click="$emit('toggle-mobile-menu')"
+          @click="uiStore.toggleMobileMenu()"
           class="rounded-lg p-2 text-foreground/60 hover:bg-white/5 hover:text-foreground lg:hidden"
         >
           <Menu :size="24" />
@@ -45,9 +45,9 @@
           class="flex items-center space-x-3 rounded-lg p-2 hover:bg-white/5 transition-colors duration-200"
         >
           <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary">
-            <span class="text-sm font-semibold">{{ userInitials || 'U' }}</span>
+            <span class="text-sm font-semibold">{{ userStore.user?.name?.charAt(0) || 'U' }}</span>
           </div>
-          <span class="hidden text-sm font-medium text-foreground lg:block">{{ userName || 'User' }}</span>
+          <span class="hidden text-sm font-medium text-foreground lg:block">{{ userStore.user?.name || 'User' }}</span>
         </button>
 
         <!-- Popup Menu -->
@@ -68,11 +68,11 @@
             <div class="px-4 py-3 border-b border-white/5">
               <div class="flex items-center space-x-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  <span class="text-lg font-semibold">{{ userInitials || 'U' }}</span>
+                  <span class="text-lg font-semibold">{{ userStore.user?.name?.charAt(0) || 'U' }}</span>
                 </div>
                 <div class="flex flex-col">
-                  <span class="text-base font-medium text-foreground">{{ userName || 'User' }}</span>
-                  <span class="text-xs text-foreground/40">{{ userEmail || 'user@example.com' }}</span>
+                  <span class="text-base font-medium text-foreground">{{ userStore.user?.name || 'User' }}</span>
+                  <span class="text-xs text-foreground/40">{{ userStore.user?.email || 'user@example.com' }}</span>
                 </div>
               </div>
             </div>
@@ -99,11 +99,11 @@
             <!-- Logout -->
             <div class="border-t border-white/5 pt-1">
               <button
-                @click="handleLogoutClick"
-                :disabled="isLoggingOut"
+                @click="handleLogout"
+                :disabled="userStore.isLoading"
                 class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-white/5 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <LogOut v-if="!isLoggingOut" :size="18" />
+                <LogOut v-if="!userStore.isLoading" :size="18" />
                 <svg 
                   v-else
                   class="h-4 w-4 animate-spin text-red-400" 
@@ -125,7 +125,7 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                <span>{{ isLoggingOut ? 'Logging out...' : 'Logout' }}</span>
+                <span>{{ userStore.isLoading ? 'Logging out...' : 'Logout' }}</span>
               </button>
             </div>
           </div>
@@ -138,28 +138,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Menu, PanelRightClose, PanelLeftClose, User, Settings, LogOut } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
-import api from '@/services/axios'
+import { useUserStore } from '@/stores/userStore'
+import { useUiStore } from '@/stores/uiStore'
 
-const router = useRouter()
-
-// Props
-defineProps<{
-  sidebarVisible: boolean
-  userName?: string
-  userInitials?: string
-  userEmail?: string
-}>()
-
-// Emits
-defineEmits<{
-  (e: 'toggle-mobile-menu'): void
-  (e: 'toggle-sidebar'): void
-}>()
+const userStore = useUserStore()
+const uiStore = useUiStore()
 
 // User menu state
 const userMenuOpen = ref(false)
-const isLoggingOut = ref(false)
 
 // Refs
 const userMenuButton = ref<HTMLElement | null>(null)
@@ -192,31 +178,10 @@ const handleSettingsClick = () => {
   closeUserMenu()
 }
 
-// Logout - CORRIGIDO
-const handleLogoutClick = async () => {
-  if (isLoggingOut.value) return
-  
-  isLoggingOut.value = true
-  
-  try {
-    // Tentar logout na API
-    await api.post('/logout').catch(() => {
-      console.log('Logout endpoint not available, performing local logout only')
-    })
-  } catch (error) {
-    console.error('Erro durante logout:', error)
-  } finally {
-    // Limpar dados do localStorage
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('user')
-    localStorage.removeItem('rememberMe')
-    
-    // Redirecionar para login
-    router.push('/login')
-    
-    closeUserMenu()
-    isLoggingOut.value = false
-  }
+// Logout
+const handleLogout = async () => {
+  await userStore.logout()
+  closeUserMenu()
 }
 
 // Click outside handler

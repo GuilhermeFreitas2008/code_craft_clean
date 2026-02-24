@@ -2,29 +2,29 @@
   <div class="flex min-h-screen flex-col bg-background">
     <!-- Navbar -->
     <NavBar 
-      :sidebar-visible="sidebarVisible"
-      :user-name="currentUser?.name"
-      :user-email="currentUser?.email"
-      :user-initials="currentUser?.name?.charAt(0)"
-      @toggle-mobile-menu="mobileMenuOpen = !mobileMenuOpen"
-      @toggle-sidebar="toggleSidebar"
+      :sidebar-visible="uiStore.sidebarVisible"
+      :user-name="userStore.user?.name"
+      :user-email="userStore.user?.email"
+      :user-initials="userStore.user?.name?.charAt(0)"
+      @toggle-mobile-menu="uiStore.toggleMobileMenu()"
+      @toggle-sidebar="uiStore.toggleSidebar()"
     />
 
     <div class="flex flex-1">
       <!-- Sidebar -->
       <SideBar 
-        :is-open="mobileMenuOpen"
+        :is-open="uiStore.mobileMenuOpen"
         :is-mobile="isMobile"
-        :sidebar-visible="sidebarVisible"
-        :menu-items="menuItems"
-        @close="mobileMenuOpen = false"
-        @menu-click="setActiveMenu"
+        :sidebar-visible="uiStore.sidebarVisible"
+        :menu-items="uiStore.menuItems"
+        @close="uiStore.closeMobileMenu()"
+        @menu-click="handleMenuClick"
       />
 
       <!-- Main Content -->
       <div 
         class="flex-1 transition-all duration-300 ease-out"
-        :class="sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
+        :class="uiStore.sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
           <!-- Header with Title and Filters -->
@@ -40,7 +40,7 @@
                   @click.stop="toggleCategoryDropdown"
                   class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
                 >
-                  <span>{{ selectedCategoriesDisplay || 'All Categories' }}</span>
+                  <span>{{ filterStore.selectedCategoriesDisplay() || 'All Categories' }}</span>
                   <ChevronDown 
                     :size="16" 
                     class="transition-transform duration-300"
@@ -54,7 +54,7 @@
                 >
                   <div class="max-h-60 overflow-y-auto">
                     <div
-                      v-for="cat in categories"
+                      v-for="cat in filterStore.availableCategories"
                       :key="cat"
                       class="px-4 py-2 hover:bg-white/5 transition-colors duration-150"
                     >
@@ -63,21 +63,22 @@
                           <input
                             type="checkbox"
                             :value="cat"
-                            v-model="selectedCategories"
+                            :checked="filterStore.selectedCategories.includes(cat)"
+                            @change="filterStore.toggleCategory(cat)"
                             class="checkbox-hidden"
                           />
                           <div 
                             class="checkbox-custom"
-                            :class="{ 'checkbox-checked': selectedCategories.includes(cat) }"
+                            :class="{ 'checkbox-checked': filterStore.selectedCategories.includes(cat) }"
                           >
                             <Check 
-                              v-if="selectedCategories.includes(cat)"
+                              v-if="filterStore.selectedCategories.includes(cat)"
                               :size="14" 
                               class="text-white"
                             />
                           </div>
                         </div>
-                        <span class="text-sm" :class="selectedCategories.includes(cat) ? 'text-primary' : 'text-foreground/80'">
+                        <span class="text-sm" :class="filterStore.selectedCategories.includes(cat) ? 'text-primary' : 'text-foreground/80'">
                           {{ cat }}
                         </span>
                       </label>
@@ -92,7 +93,7 @@
                   @click.stop="toggleDifficultyDropdown"
                   class="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
                 >
-                  <span>{{ selectedDifficultiesDisplay || 'All Difficulties' }}</span>
+                  <span>{{ filterStore.selectedDifficultiesDisplay() || 'All Difficulties' }}</span>
                   <ChevronDown 
                     :size="16" 
                     class="transition-transform duration-300"
@@ -106,7 +107,7 @@
                 >
                   <div class="max-h-60 overflow-y-auto">
                     <div
-                      v-for="diff in difficulties"
+                      v-for="diff in filterStore.availableDifficulties"
                       :key="diff"
                       class="px-4 py-2 hover:bg-white/5 transition-colors duration-150"
                     >
@@ -115,21 +116,22 @@
                           <input
                             type="checkbox"
                             :value="diff"
-                            v-model="selectedDifficulties"
+                            :checked="filterStore.selectedDifficulties.includes(diff)"
+                            @change="filterStore.toggleDifficulty(diff)"
                             class="checkbox-hidden"
                           />
                           <div 
                             class="checkbox-custom"
-                            :class="{ 'checkbox-checked': selectedDifficulties.includes(diff) }"
+                            :class="{ 'checkbox-checked': filterStore.selectedDifficulties.includes(diff) }"
                           >
                             <Check 
-                              v-if="selectedDifficulties.includes(diff)"
+                              v-if="filterStore.selectedDifficulties.includes(diff)"
                               :size="14" 
                               class="text-white"
                             />
                           </div>
                         </div>
-                        <span class="text-sm capitalize" :class="selectedDifficulties.includes(diff) ? 'text-primary' : 'text-foreground/80'">
+                        <span class="text-sm capitalize" :class="filterStore.selectedDifficulties.includes(diff) ? 'text-primary' : 'text-foreground/80'">
                           {{ diff }}
                         </span>
                       </label>
@@ -231,6 +233,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/services/axios'
 import { 
   Film,
@@ -252,8 +255,19 @@ import {
   Sparkles
 } from 'lucide-vue-next'
 
+import { useUserStore } from '@/stores/userStore'
+import { useUiStore } from '@/stores/uiStore'
+import { useFilterStore } from '@/stores/filterStore'
+
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
+
+// Stores
+const userStore = useUserStore()
+const uiStore = useUiStore()
+const filterStore = useFilterStore()
+
+const router = useRouter()
 
 // Types
 interface Category {
@@ -282,36 +296,15 @@ interface Course {
   modules?: Module[]
 }
 
-// Current user state
-const currentUser = ref<any>(null)
-
 // Loading state
 const isLoading = ref(false)
 
-// Menu Items
-const menuItems = ref([
-  { name: 'All Series', icon: 'LayoutGrid', active: true },
-  { name: 'Continue', icon: 'PlayCircle', active: false },
-  { name: 'Watchlist', icon: 'Bookmark', active: false },
-  { name: 'Completed', icon: 'CheckCircle', active: false }
-])
-
 // Mobile detection
 const isMobile = ref(window.innerWidth < 1024)
-const mobileMenuOpen = ref(false)
 
-// Sidebar visibility state
-const sidebarVisible = ref(true)
-
-// Filter States
-const selectedCategories = ref<string[]>([])
-const selectedDifficulties = ref<string[]>([])
+// Dropdown states (continuam locais porque são UI temporária)
 const categoryDropdownOpen = ref(false)
 const difficultyDropdownOpen = ref(false)
-
-// Filter Options
-const categories = ['Back end', 'Front end', 'DevOps', 'Mobile', 'UI/UX Design', 'Data Science']
-const difficulties = ['beginner', 'intermediate', 'advanced']
 
 // Courses Data
 const courses = ref<Course[]>([])
@@ -344,30 +337,17 @@ const getTotalLessons = (course: Course): number => {
   }, 0)
 }
 
-// Computed Displays
-const selectedCategoriesDisplay = computed(() => {
-  if (selectedCategories.value.length === 0) return ''
-  if (selectedCategories.value.length === 1) return selectedCategories.value[0]
-  return `${selectedCategories.value.length} categories`
-})
-
-const selectedDifficultiesDisplay = computed(() => {
-  if (selectedDifficulties.value.length === 0) return ''
-  if (selectedDifficulties.value.length === 1) return selectedDifficulties.value[0]
-  return `${selectedDifficulties.value.length} difficulties`
-})
-
 // Filtered Courses
 const filteredCourses = computed(() => {
   return courses.value.filter(course => {
     const courseCategory = getCategoryName(course.category)
     const courseDifficulty = getDifficultyName(course.difficulty)
     
-    const matchesCategory = selectedCategories.value.length === 0 || 
-      selectedCategories.value.includes(courseCategory)
+    const matchesCategory = filterStore.selectedCategories.length === 0 || 
+      filterStore.selectedCategories.includes(courseCategory)
     
-    const matchesDifficulty = selectedDifficulties.value.length === 0 || 
-      selectedDifficulties.value.includes(courseDifficulty)
+    const matchesDifficulty = filterStore.selectedDifficulties.length === 0 || 
+      filterStore.selectedDifficulties.includes(courseDifficulty)
     
     return matchesCategory && matchesDifficulty
   })
@@ -390,15 +370,11 @@ const closeAllDropdowns = () => {
 }
 
 // Menu Functions
-const setActiveMenu = (menuName: string) => {
-  menuItems.value.forEach(item => {
-    item.active = item.name === menuName
-  })
-}
-
-// Sidebar Toggle
-const toggleSidebar = () => {
-  sidebarVisible.value = !sidebarVisible.value
+const handleMenuClick = (menuName: string) => {
+  uiStore.setActiveMenu(menuName)
+  if (menuName === 'All Series') {
+    // Já estamos na página
+  }
 }
 
 // Difficulty Helper
@@ -442,30 +418,19 @@ const handleClickOutside = (event: MouseEvent) => {
 // Window resize
 const handleResize = () => {
   isMobile.value = window.innerWidth < 1024
-  if (!isMobile.value) mobileMenuOpen.value = false
+  if (!isMobile.value) uiStore.closeMobileMenu()
 }
 
 // Lifecycle
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
-  
-  // Carregar usuário do localStorage
-  const storedUser = localStorage.getItem('user')
-  if (storedUser) {
-    currentUser.value = JSON.parse(storedUser)
-  }
 
   // Carregar cursos da API
   try {
     isLoading.value = true
     const response = await api.get('/courses')
     courses.value = response.data
-    
-    // DEBUG: Ver estrutura dos cursos (podes remover depois)
-    if (courses.value.length > 0) {
-      console.log('📚 Estrutura do primeiro curso:', JSON.stringify(courses.value[0], null, 2))
-    }
     
   } catch (error) {
     console.error('❌ Erro ao carregar cursos:', error)

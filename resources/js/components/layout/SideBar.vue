@@ -33,13 +33,13 @@
       @click="$emit('close')"
     ></div>
     
-    <!-- Sidebar mobile - ocupa altura total, começa no topo (0) -->
+    <!-- Sidebar mobile -->
     <div 
       v-if="isMobile"
       class="fixed left-0 top-0 z-50 h-screen w-64 bg-card p-6 transition-all duration-300 ease-out lg:hidden shadow-xl"
       :class="isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'"
     >
-      <!-- Logo no mobile (opcional, para manter consistência) -->
+      <!-- Logo no mobile -->
       <div class="mb-6 flex items-center space-x-2 pb-4 border-b border-white/5">
         <img src="/images/Logo.svg" alt="CodeCraft" class="h-10 w-10" />
         <span class="text-xl font-bold text-foreground">Code<span class="text-primary">Craft</span></span>

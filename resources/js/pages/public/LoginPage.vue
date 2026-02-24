@@ -1,12 +1,12 @@
 <template>
   <div class="flex min-h-screen flex-col lg:flex-row">
-    <!-- Left Side - Branding/Visual - Hidden on medium screens and below -->
+    <!-- Left Side - Branding/Visual -->
     <div 
       v-show="showLeftPanel"
       class="relative hidden flex-1 items-center justify-center overflow-hidden bg-card p-8 lg:flex lg:p-12"
       :class="['bg-grid-white-large']"
     >
-      <!-- Aura no centro -->
+      <!-- Aura no centro (mesmo código) -->
       <div class="absolute inset-0 flex items-center justify-center">
         <div class="absolute h-[600px] w-[600px] rounded-full bg-primary/5 blur-3xl"></div>
         <div class="absolute h-[400px] w-[400px] rounded-full bg-primary/10 blur-2xl"></div>
@@ -19,7 +19,7 @@
         <div class="absolute h-2 w-2 rounded-full bg-primary/30 blur-sm" style="top: 47%; left: 58%;"></div>
       </div>
 
-      <!-- Background pattern with icons -->
+      <!-- Background pattern with icons (mesmo código) -->
       <div class="absolute inset-0">
         <div
           v-for="(item, index) in backgroundIcons"
@@ -106,7 +106,7 @@
                   : 'border-border focus:border-primary focus:ring-primary/20'
               ]"
               placeholder="you@example.com"
-              :disabled="isLoading"
+              :disabled="userStore.isLoading"
               @blur="touched.email = true"
               @input="clearAuthError"
             />
@@ -144,7 +144,7 @@
                     : 'border-border focus:border-primary focus:ring-primary/20'
                 ]"
                 placeholder="••••••••"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
                 @blur="touched.password = true"
                 @input="clearAuthError"
               />
@@ -152,7 +152,7 @@
                 type="button"
                 @click="togglePasswordVisibility"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/60 transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-md p-1"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
               >
                 <component :is="showPassword ? EyeOff : Eye" :size="20" />
               </button>
@@ -169,7 +169,7 @@
                 v-model="rememberMe"
                 type="checkbox"
                 class="h-4 w-4 rounded border-border bg-card/50 text-primary transition-colors focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
               />
               <span class="text-sm text-foreground/60">Remember me</span>
             </label>
@@ -178,16 +178,16 @@
           <!-- Sign in button -->
           <button
             type="submit"
-            :disabled="isLoading || !isFormValid"
+            :disabled="userStore.isLoading || !isFormValid"
             class="relative w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-70 overflow-hidden group"
           >
-            <span :class="{ 'opacity-0': isLoading }">
+            <span :class="{ 'opacity-0': userStore.isLoading }">
               Sign in
             </span>
             
             <!-- Loading spinner -->
             <div
-              v-if="isLoading"
+              v-if="userStore.isLoading"
               class="absolute inset-0 flex items-center justify-center"
             >
               <svg 
@@ -231,24 +231,21 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import api from '@/services/axios'
 import { 
   Code2, Globe, Database, Server, Hash, Eye,  EyeOff,
   Terminal, Cpu, Binary, GitBranch, Braces, Cloud, Box,
   Wrench, Workflow, Shield, Zap, Layers, Sparkles
 } from 'lucide-vue-next'
 
-const router = useRouter()
+import { useUserStore } from '@/stores/userStore'
+
+const userStore = useUserStore()
 
 // Form state
 const showPassword = ref(false)
 const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
-
-// Loading state
-const isLoading = ref(false)
 
 // Validation state
 const touched = ref({
@@ -293,11 +290,10 @@ const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-// Form submit handler - VERSÃO LIMPA
+// Form submit handler
 const handleSubmit = async (e: Event) => {
   e.preventDefault()
   
-  // Mark all fields as touched
   touched.value = {
     email: true,
     password: true
@@ -305,54 +301,12 @@ const handleSubmit = async (e: Event) => {
   
   if (!isFormValid.value) return
 
-  isLoading.value = true
   authError.value = ''
 
-  try {
-    const response = await api.post('/login', {
-      email: email.value,
-      password: password.value
-    })
-
-    const { user, token } = response.data
-
-    // Verificar se os dados existem
-    if (!user || !token) {
-      throw new Error('Resposta inválida do servidor')
-    }
-
-    // Guardar dados
-    localStorage.setItem('auth_token', token)
-    localStorage.setItem('user', JSON.stringify(user))
-
-    if (rememberMe.value) {
-      localStorage.setItem('rememberMe', 'true')
-    }
-
-    // REDIRECIONAMENTO - user normal (role_id = 2)
-    if (user.role_id === 2) {
-      window.location.href = '/user'
-    }
-    // Admin (role_id = 1)
-    else if (user.role_id === 1) {
-      window.location.href = '/admin'
-    }
-    else {
-      authError.value = 'Acesso não autorizado para este tipo de usuário'
-    }
-
-  } catch (error: any) {
-    console.error('Erro no login:', error)
-    
-    if (error.response) {
-      authError.value = error.response.data?.error || 'Erro no servidor'
-    } else if (error.request) {
-      authError.value = 'Servidor não respondeu'
-    } else {
-      authError.value = error.message || 'Email ou password inválidos'
-    }
-  } finally {
-    isLoading.value = false
+  const result = await userStore.login(email.value, password.value, rememberMe.value)
+  
+  if (!result.success) {
+    authError.value = result.error || 'Erro no login'
   }
 }
 
@@ -371,7 +325,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
 
-// Background icons array
+// Background icons array (igual ao anterior)
 const backgroundIcons = [
   { icon: Code2, rotation: -12, delay: 0, top: '2%', left: '3%', size: 24, duration: 28 },
   { icon: Database, rotation: 8, delay: 0.5, top: '7%', left: '12%', size: 26, duration: 32 },

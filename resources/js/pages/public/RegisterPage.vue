@@ -6,7 +6,7 @@
       class="relative hidden flex-1 items-center justify-center overflow-hidden bg-card p-8 lg:flex lg:p-12"
       :class="['bg-grid-white-large']"
     >
-      <!-- Aura no centro -->
+      <!-- Aura no centro (mesmo código) -->
       <div class="absolute inset-0 flex items-center justify-center">
         <div class="absolute h-[600px] w-[600px] rounded-full bg-primary/5 blur-3xl"></div>
         <div class="absolute h-[400px] w-[400px] rounded-full bg-primary/10 blur-2xl"></div>
@@ -106,7 +106,7 @@
                   : 'border-border focus:border-primary focus:ring-primary/20'
               ]"
               placeholder="johndoe"
-              :disabled="isLoading"
+              :disabled="userStore.isLoading"
               @blur="touched.username = true"
               @input="clearRegisterError"
             />
@@ -134,7 +134,7 @@
                   : 'border-border focus:border-primary focus:ring-primary/20'
               ]"
               placeholder="you@example.com"
-              :disabled="isLoading"
+              :disabled="userStore.isLoading"
               @blur="touched.email = true"
               @input="clearRegisterError"
             />
@@ -163,7 +163,7 @@
                     : 'border-border focus:border-primary focus:ring-primary/20'
                 ]"
                 placeholder="••••••••"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
                 @blur="touched.password = true"
                 @input="clearRegisterError"
               />
@@ -171,7 +171,7 @@
                 type="button"
                 @click="togglePasswordVisibility"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/60 transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-md p-1"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
               >
                 <component :is="showPassword ? EyeOff : Eye" :size="18" />
               </button>
@@ -201,7 +201,7 @@
                     : 'border-border focus:border-primary focus:ring-primary/20'
                 ]"
                 placeholder="••••••••"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
                 @blur="touched.confirmPassword = true"
                 @input="clearRegisterError"
               />
@@ -209,7 +209,7 @@
                 type="button"
                 @click="toggleConfirmPasswordVisibility"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/60 transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-md p-1"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
               >
                 <component :is="showConfirmPassword ? EyeOff : Eye" :size="18" />
               </button>
@@ -231,7 +231,7 @@
                     ? 'border-red-500/50 ring-red-500/20' 
                     : 'border-border'
                 ]"
-                :disabled="isLoading"
+                :disabled="userStore.isLoading"
                 @blur="touched.acceptTerms = true"
                 @change="clearRegisterError"
               />
@@ -250,16 +250,16 @@
           <!-- Sign up button -->
           <button
             type="submit"
-            :disabled="isLoading || !isFormValid"
+            :disabled="userStore.isLoading || !isFormValid"
             class="relative w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-70 overflow-hidden group"
           >
-            <span :class="{ 'opacity-0': isLoading }">
+            <span :class="{ 'opacity-0': userStore.isLoading }">
               Sign up
             </span>
             
             <!-- Loading spinner -->
             <div
-              v-if="isLoading"
+              v-if="userStore.isLoading"
               class="absolute inset-0 flex items-center justify-center"
             >
               <svg 
@@ -303,15 +303,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import api from '@/services/axios'
 import { 
   Code2, Globe, Database, Server, Hash, Eye,  EyeOff,
   Terminal, Cpu, Binary, GitBranch, Braces, Cloud, Box,
   Wrench, Workflow, Shield, Zap, Layers, Sparkles
 } from 'lucide-vue-next'
 
-const router = useRouter()
+import { useUserStore } from '@/stores/userStore'
+
+const userStore = useUserStore()
 
 // Form state
 const showPassword = ref(false)
@@ -321,9 +321,6 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const acceptTerms = ref(false)
-
-// Loading state
-const isLoading = ref(false)
 
 // Register error state
 const registerError = ref('')
@@ -443,33 +440,17 @@ const handleSubmit = async (e: Event) => {
 
   if (!isFormValid.value) return
 
-  isLoading.value = true
   registerError.value = ''
 
-  try {
-    const response = await api.post('/register', {
-      name: username.value,
-      email: email.value,
-      password: password.value,
-      password_confirmation: confirmPassword.value
-    })
+  const result = await userStore.register({
+    name: username.value,
+    email: email.value,
+    password: password.value,
+    password_confirmation: confirmPassword.value
+  })
 
-    const { user, token } = response.data
-
-    // Guardar token
-    localStorage.setItem('auth_token', token)
-    localStorage.setItem('user', JSON.stringify(user))
-
-    // Redirecionar para login
-    router.push('/login')
-
-  } catch (error: any) {
-    registerError.value =
-      error.response?.data?.message ||
-      'Erro ao criar conta. Tente novamente.'
-    console.error(error)
-  } finally {
-    isLoading.value = false
+  if (!result.success) {
+    registerError.value = result.error || 'Erro ao criar conta'
   }
 }
 
@@ -483,7 +464,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
 
-// Background icons array
+// Background icons array (igual ao anterior)
 const backgroundIcons = [
   { icon: Code2, rotation: -12, delay: 0, top: '2%', left: '3%', size: 24, duration: 28 },
   { icon: Database, rotation: 8, delay: 0.5, top: '7%', left: '12%', size: 26, duration: 32 },

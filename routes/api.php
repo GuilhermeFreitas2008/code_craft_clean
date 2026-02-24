@@ -14,6 +14,8 @@ use App\Http\Controllers\DifficultyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 // Rotas protegidas por autenticação
 Route::middleware('auth:sanctum')->group(function () {
@@ -87,4 +89,38 @@ Route::post('/login', function (Request $request) {
 Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
     $request->user()->currentAccessToken()->delete();
     return response()->json(['message' => 'Logged out']);
+});
+
+// REGISTRO
+Route::post('/register', function (Request $request) {
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255|unique:users,username',
+        'email' => 'required|string|email|max:255|unique:users,email',
+        'password' => 'required|string|min:8|confirmed',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    $user = User::create([
+        'username' => $request->name,
+        'email' => $request->email,
+        'password_hash' => Hash::make($request->password),
+        'role_id' => 2, // role_id = 2 para users normais
+        'slug' => Str::slug($request->name) . '-' . uniqid(),
+    ]);
+
+    $token = $user->createToken('api_token')->plainTextToken;
+
+    return response()->json([
+        'token' => $token,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->username,
+            'email' => $user->email,
+            'role' => $user->role->name ?? 'user',
+            'role_id' => $user->role_id,
+        ],
+    ], 201);
 });
