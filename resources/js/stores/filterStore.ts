@@ -1,31 +1,78 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import api from '@/services/axios'
 
 export const useFilterStore = defineStore('filter', () => {
   // Estado dos filtros
   const selectedCategories = ref<string[]>([])
   const selectedDifficulties = ref<string[]>([])
 
-  // Opções disponíveis
-  const availableCategories = [
-    'Back end', 'Front end', 'DevOps', 'Mobile', 'UI/UX Design', 'Data Science'
-  ]
-  const availableDifficulties = ['beginner', 'intermediate', 'advanced']
+  // Opções disponíveis (vindas da BD)
+  const availableCategories = ref<string[]>([])
+  const availableDifficulties = ref<string[]>([])
+  
+  // Loading state
+  const isLoading = ref(false)
 
-  // Actions
+  // Buscar categorias da API
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories')
+      // Guarda as categorias como vêm da BD (com maiúsculas)
+      availableCategories.value = response.data.map((cat: any) => cat.name)
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error)
+      availableCategories.value = ['Back end', 'Front end', 'DevOps', 'Mobile', 'UI/UX Design', 'Data Science']
+    }
+  }
+
+  // Buscar dificuldades da API
+  const fetchDifficulties = async () => {
+    try {
+      const response = await api.get('/difficulties')
+      // Guarda as dificuldades como vêm da BD (com maiúsculas)
+      availableDifficulties.value = response.data.map((diff: any) => diff.name)
+    } catch (error) {
+      console.error('Erro ao carregar dificuldades:', error)
+      availableDifficulties.value = ['Beginner', 'Intermediate', 'Advanced']
+    }
+  }
+
+  // Carregar tudo
+  const fetchFilters = async () => {
+    isLoading.value = true
+    await Promise.all([fetchCategories(), fetchDifficulties()])
+    isLoading.value = false
+  }
+
+  // Actions - AGORA CASE INSENSITIVE
   const toggleCategory = (category: string) => {
-    if (selectedCategories.value.includes(category)) {
-      selectedCategories.value = selectedCategories.value.filter(c => c !== category)
+    // Encontrar a categoria original na lista availableCategories (case insensitive)
+    const originalCategory = availableCategories.value.find(
+      cat => cat.toLowerCase() === category.toLowerCase()
+    ) || category
+    
+    if (selectedCategories.value.some(c => c.toLowerCase() === originalCategory.toLowerCase())) {
+      selectedCategories.value = selectedCategories.value.filter(
+        c => c.toLowerCase() !== originalCategory.toLowerCase()
+      )
     } else {
-      selectedCategories.value.push(category)
+      selectedCategories.value.push(originalCategory)
     }
   }
 
   const toggleDifficulty = (difficulty: string) => {
-    if (selectedDifficulties.value.includes(difficulty)) {
-      selectedDifficulties.value = selectedDifficulties.value.filter(d => d !== difficulty)
+    // Encontrar a dificuldade original na lista availableDifficulties (case insensitive)
+    const originalDifficulty = availableDifficulties.value.find(
+      diff => diff.toLowerCase() === difficulty.toLowerCase()
+    ) || difficulty
+    
+    if (selectedDifficulties.value.some(d => d.toLowerCase() === originalDifficulty.toLowerCase())) {
+      selectedDifficulties.value = selectedDifficulties.value.filter(
+        d => d.toLowerCase() !== originalDifficulty.toLowerCase()
+      )
     } else {
-      selectedDifficulties.value.push(difficulty)
+      selectedDifficulties.value.push(originalDifficulty)
     }
   }
 
@@ -34,7 +81,7 @@ export const useFilterStore = defineStore('filter', () => {
     selectedDifficulties.value = []
   }
 
-  // Getters (strings para exibir)
+  // Getters (strings para exibir) - CASE INSENSITIVE
   const selectedCategoriesDisplay = (): string => {
     if (selectedCategories.value.length === 0) return ''
     if (selectedCategories.value.length === 1) return selectedCategories.value[0]
@@ -52,6 +99,8 @@ export const useFilterStore = defineStore('filter', () => {
     selectedDifficulties,
     availableCategories,
     availableDifficulties,
+    isLoading,
+    fetchFilters,
     toggleCategory,
     toggleDifficulty,
     clearFilters,

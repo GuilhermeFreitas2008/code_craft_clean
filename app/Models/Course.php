@@ -56,4 +56,9 @@ class Course extends Model
     {
         return $this->belongsTo(Difficulty::class);
     }
+
+    public function topics() 
+    {
+        return $this->belongsToMany(Topic::class);
+    }
 }

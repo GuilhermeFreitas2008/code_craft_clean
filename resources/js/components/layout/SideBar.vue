@@ -2,7 +2,7 @@
   <!-- Desktop Sidebar -->
   <aside 
     v-if="!isMobile"
-    class="fixed left-0 top-16 z-30 h-[calc(100vh-4rem)] w-64 flex-col border-r border-border bg-card p-6 lg:flex transition-all duration-300 ease-out"
+    class="fixed left-0 top-16 pt-9 z-30 h-[calc(100vh-4rem)] w-64 flex-col border-r border-border bg-card p-6 lg:flex transition-all duration-300 ease-out"
     :class="sidebarVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'"
   >
     <nav class="flex flex-col space-y-2">

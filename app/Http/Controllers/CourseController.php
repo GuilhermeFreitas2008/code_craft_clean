@@ -17,10 +17,10 @@ class CourseController extends Controller
         $user = $request->user();
 
         if ($user->role->name === 'admin') {
-            $courses = Course::with(['category', 'difficulty', 'modules.lessons']) // 👈 CORRIGIDO
+            $courses = Course::with(['category', 'difficulty', 'modules.lessons', 'topics'])
                 ->get();
         } else {
-            $courses = Course::with(['category', 'difficulty', 'modules.lessons']) // 👈 CORRIGIDO
+            $courses = Course::with(['category', 'difficulty', 'modules.lessons', 'topics'])
                 ->where('is_public', true)
                 ->where('is_draft', false)
                 ->get();
@@ -37,7 +37,7 @@ class CourseController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-        $course = Course::with(['category', 'difficulty', 'modules.lessons']) // 👈 CORRIGIDO
+        $course = Course::with(['category', 'difficulty', 'modules.lessons', 'topics'])
             ->findOrFail($id);
 
         if ($user->role->name === 'admin') {
@@ -65,8 +65,10 @@ class CourseController extends Controller
             'title' => 'required|string|unique:courses',
             'description' => 'required|string',
             'slug' => 'required|string|unique:courses',
-            'category_id' => 'required|exists:categories,id', // 👈 ADICIONA SE PRECISARES
-            'difficulty_id' => 'required|exists:difficulties,id', // 👈 ADICIONA SE PRECISARES
+            'category_id' => 'required|exists:categories,id',
+            'difficulty_id' => 'required|exists:difficulties,id', 
+            'topics' => 'array',
+            'topics.*' => 'exists:topics,id',
             'is_public' => 'boolean',
             'is_draft' => 'boolean',
         ]);
@@ -76,7 +78,11 @@ class CourseController extends Controller
 
         $course = Course::create($data);
 
-        return response()->json($course, 201);
+        if ($request->has('topics')) {
+            $course->topics()->sync($request->topics);
+        }
+
+        return response()->json($course->load('topics'), 201);
     }
 
     /**
@@ -97,13 +103,21 @@ class CourseController extends Controller
             'slug' => 'string|unique:courses,slug,' . $id,
             'category_id' => 'exists:categories,id',
             'difficulty_id' => 'exists:difficulties,id',
+            'topics' => 'array',              
+            'topics.*' => 'exists:topics,id', 
             'is_public' => 'boolean',
             'is_draft' => 'boolean',
         ]);
 
         $course->update($data);
 
-        return response()->json($course);
+       
+        if ($request->has('topics')) {
+            $course->topics()->sync($request->topics);
+        }
+
+        // Devolver o curso com os tópicos carregados para o Postman mostrar tudo certinho
+        return response()->json($course->load('topics'));
     }
 
     /**

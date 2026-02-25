@@ -62,12 +62,12 @@
           <div 
             v-if="userMenuOpen"
             ref="userMenuPopup"
-            class="absolute right-0 top-12 z-50 w-64 rounded-lg border border-border bg-card py-3 shadow-xl origin-top-right"
+            class="absolute right-0 top-12 z-50 w-70 rounded-lg border border-border bg-card py-3 shadow-xl origin-top-right"
           >
             <!-- Perfil do Utilizador -->
-            <div class="px-4 py-3 border-b border-white/5">
+            <div class="px-1 py-3 border-b border-white/5">
               <div class="flex items-center space-x-3">
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary">
                   <span class="text-lg font-semibold">{{ userStore.user?.name?.charAt(0) || 'U' }}</span>
                 </div>
                 <div class="flex flex-col">
@@ -101,7 +101,7 @@
               <button
                 @click="handleLogout"
                 :disabled="userStore.isLoading"
-                class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-white/5 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex w-full items-center space-x-3 px-5 py-2 text-sm text-red-400 transition-colors hover:bg-white/5 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <LogOut v-if="!userStore.isLoading" :size="18" />
                 <svg 

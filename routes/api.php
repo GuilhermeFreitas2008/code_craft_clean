@@ -11,6 +11,7 @@ use App\Http\Controllers\UserCourseProgressController;
 use App\Http\Controllers\UserProgressController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DifficultyController;
+use App\Http\Controllers\TopicController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -29,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('lessons', LessonController::class)->except(['index', 'show']);
         Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
         Route::apiResource('difficulties', DifficultyController::class)->except(['index', 'show']);
+        Route::apiResource('topics', TopicController::class)->except(['index', 'show']);
 
         // Admin pode VER progresso dos alunos
         Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'show']);
@@ -41,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('lessons', LessonController::class)->only(['index', 'show']);
     Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
     Route::apiResource('difficulties', DifficultyController::class)->only(['index', 'show']);
+    Route::apiResource('topics', TopicController::class)->only(['index', 'show']);
 
     //não autenticado pois está a ser verificado via policy (Como está a usar policy, não precisa de role:)
     Route::apiResource('enrollments', EnrollmentController::class)->only(['index', 'destroy']);
@@ -91,7 +94,7 @@ Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
     return response()->json(['message' => 'Logged out']);
 });
 
-// REGISTRO
+// REGISTO
 Route::post('/register', function (Request $request) {
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255|unique:users,username',

@@ -63,22 +63,22 @@
                           <input
                             type="checkbox"
                             :value="cat"
-                            :checked="filterStore.selectedCategories.includes(cat)"
+                            :checked="filterStore.selectedCategories.some(c => c.toLowerCase() === cat.toLowerCase())"
                             @change="filterStore.toggleCategory(cat)"
                             class="checkbox-hidden"
                           />
                           <div 
                             class="checkbox-custom"
-                            :class="{ 'checkbox-checked': filterStore.selectedCategories.includes(cat) }"
+                            :class="{ 'checkbox-checked': filterStore.selectedCategories.some(c => c.toLowerCase() === cat.toLowerCase()) }"
                           >
                             <Check 
-                              v-if="filterStore.selectedCategories.includes(cat)"
+                              v-if="filterStore.selectedCategories.some(c => c.toLowerCase() === cat.toLowerCase())"
                               :size="14" 
                               class="text-white"
                             />
                           </div>
                         </div>
-                        <span class="text-sm" :class="filterStore.selectedCategories.includes(cat) ? 'text-primary' : 'text-foreground/80'">
+                        <span class="text-sm" :class="filterStore.selectedCategories.some(c => c.toLowerCase() === cat.toLowerCase()) ? 'text-primary' : 'text-foreground/80'">
                           {{ cat }}
                         </span>
                       </label>
@@ -116,22 +116,22 @@
                           <input
                             type="checkbox"
                             :value="diff"
-                            :checked="filterStore.selectedDifficulties.includes(diff)"
+                            :checked="filterStore.selectedDifficulties.some(d => d.toLowerCase() === diff.toLowerCase())"
                             @change="filterStore.toggleDifficulty(diff)"
                             class="checkbox-hidden"
                           />
                           <div 
                             class="checkbox-custom"
-                            :class="{ 'checkbox-checked': filterStore.selectedDifficulties.includes(diff) }"
+                            :class="{ 'checkbox-checked': filterStore.selectedDifficulties.some(d => d.toLowerCase() === diff.toLowerCase()) }"
                           >
                             <Check 
-                              v-if="filterStore.selectedDifficulties.includes(diff)"
+                              v-if="filterStore.selectedDifficulties.some(d => d.toLowerCase() === diff.toLowerCase())"
                               :size="14" 
                               class="text-white"
                             />
                           </div>
                         </div>
-                        <span class="text-sm capitalize" :class="filterStore.selectedDifficulties.includes(diff) ? 'text-primary' : 'text-foreground/80'">
+                        <span class="text-sm capitalize" :class="filterStore.selectedDifficulties.some(d => d.toLowerCase() === diff.toLowerCase()) ? 'text-primary' : 'text-foreground/80'">
                           {{ diff }}
                         </span>
                       </label>
@@ -302,7 +302,7 @@ const isLoading = ref(false)
 // Mobile detection
 const isMobile = ref(window.innerWidth < 1024)
 
-// Dropdown states (continuam locais porque são UI temporária)
+// Dropdown states
 const categoryDropdownOpen = ref(false)
 const difficultyDropdownOpen = ref(false)
 
@@ -337,17 +337,23 @@ const getTotalLessons = (course: Course): number => {
   }, 0)
 }
 
-// Filtered Courses
+// Filtered Courses - CASE INSENSITIVE
 const filteredCourses = computed(() => {
   return courses.value.filter(course => {
     const courseCategory = getCategoryName(course.category)
     const courseDifficulty = getDifficultyName(course.difficulty)
     
+    // Verificar se a categoria do curso corresponde a alguma das selecionadas (case insensitive)
     const matchesCategory = filterStore.selectedCategories.length === 0 || 
-      filterStore.selectedCategories.includes(courseCategory)
+      filterStore.selectedCategories.some(
+        cat => cat.toLowerCase() === courseCategory.toLowerCase()
+      )
     
+    // Verificar se a dificuldade do curso corresponde a alguma das selecionadas (case insensitive)
     const matchesDifficulty = filterStore.selectedDifficulties.length === 0 || 
-      filterStore.selectedDifficulties.includes(courseDifficulty)
+      filterStore.selectedDifficulties.some(
+        diff => diff.toLowerCase() === courseDifficulty.toLowerCase()
+      )
     
     return matchesCategory && matchesDifficulty
   })
@@ -425,6 +431,9 @@ const handleResize = () => {
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
+
+  // Carregar filtros da BD
+  await filterStore.fetchFilters()
 
   // Carregar cursos da API
   try {
