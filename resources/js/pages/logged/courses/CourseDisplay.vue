@@ -3,39 +3,60 @@
   <div class="flex min-h-screen flex-col bg-background">
     <!-- Navbar -->
     <NavBar 
-      :sidebar-visible="sidebarVisible"
-      user-name="João Dias"
-      user-initials="JD"
-      user-email="joao.dias@codecraft.com"
-      @toggle-mobile-menu="mobileMenuOpen = !mobileMenuOpen"
-      @toggle-sidebar="toggleSidebar"
+      :sidebar-visible="uiStore.sidebarVisible"
+      :user-name="userStore.user?.name"
+      :user-email="userStore.user?.email"
+      :user-initials="userStore.user?.name?.charAt(0)"
+      @toggle-mobile-menu="uiStore.toggleMobileMenu()"
+      @toggle-sidebar="uiStore.toggleSidebar()"
     />
 
     <div class="flex flex-1">
       <!-- Sidebar -->
       <SideBar 
-        :is-open="mobileMenuOpen"
+        :is-open="uiStore.mobileMenuOpen"
         :is-mobile="isMobile"
-        :sidebar-visible="sidebarVisible"
-        :menu-items="menuItems"
-        @close="mobileMenuOpen = false"
+        :sidebar-visible="uiStore.sidebarVisible"
+        :menu-items="uiStore.menuItems"
+        @close="uiStore.closeMobileMenu()"
         @menu-click="handleMenuClick"
       />
 
       <!-- Main Content -->
       <div 
         class="flex-1 transition-all duration-300 ease-out"
-        :class="sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
+        :class="uiStore.sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
-          <!-- Back Button -->
-          <button 
-            @click="goBack" 
-            class="mb-6 flex items-center space-x-2 text-foreground/60 transition-colors hover:text-primary"
-          >
-            <ChevronLeft :size="20" />
-            <span>Back to series</span>
-          </button>
+          <!-- Back Button with Course Info -->
+          <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <button 
+              @click="goBack" 
+              class="flex items-center space-x-2 text-foreground/60 transition-colors hover:text-primary"
+            >
+              <ChevronLeft :size="20" />
+              <span>Back to series</span>
+            </button>
+
+            <!-- Course Difficulty and Category with Simple Hover -->
+            <div class="flex items-center gap-3 text-sm">
+              <!-- Difficulty Badge com hover simples -->
+              <div 
+                class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
+              >
+                <component :is="getDifficultyIcon(course.difficulty)" :size="16" />
+                <span class="capitalize">{{ course.difficulty }}</span>
+              </div>
+              
+              <!-- Category Badge com hover simples -->
+              <div 
+                class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
+              >
+                <Tag :size="16" />
+                <span>{{ course.category }}</span>
+              </div>
+            </div>
+          </div>
 
           <!-- Course Content -->
           <div class="mx-auto max-w-7xl">
@@ -69,7 +90,6 @@
                   <div class="mt-6 flex flex-wrap gap-4">
                     <button class="inline-flex items-center space-x-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20">
                       <Play :size="18" />
-                      <!-- Texto dinâmico: Start Course se progresso 0%, Continue Course se > 0% -->
                       <span>{{ course.progressPercentage === 0 ? 'Start Course' : 'Continue Course' }}</span>
                     </button>
                     
@@ -82,18 +102,13 @@
                       class="watchlist-btn relative inline-flex items-center overflow-hidden rounded-lg border px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 w-[200px]"
                       :class="[buttonClasses]"
                     >
-                      <!-- Icon with animation -->
                       <component 
                         :is="watchlistIcon"
                         :size="18" 
                         class="transition-transform duration-200 flex-shrink-0 mr-2"
                         :class="{ 'scale-110': isAnimating }"
                       />
-                      
-                      <!-- Dynamic text -->
                       <span class="flex-1 text-left">{{ watchlistButtonText }}</span>
-                      
-                      <!-- Ripple effect -->
                       <span 
                         v-if="showRipple"
                         class="ripple absolute rounded-full bg-white/30"
@@ -108,44 +123,90 @@
                   </div>
                 </div>
 
-                <!-- Lessons List -->
+                <!-- Course Content by Modules -->
                 <div class="rounded-xl border border-white/5 bg-card p-6">
                   <h2 class="mb-4 text-xl font-semibold text-foreground">Course Content</h2>
-                  <div class="space-y-2">
+                  
+                  <!-- Modules Accordion -->
+                  <div class="space-y-3">
                     <div
-                      v-for="(lesson, index) in course.lessons"
-                      :key="index"
-                      class="group flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-white/5"
+                      v-for="(module, moduleIndex) in course.modules"
+                      :key="moduleIndex"
+                      class="overflow-hidden rounded-lg border border-white/5"
                     >
-                      <div class="flex items-center space-x-3">
-                        <div class="flex h-6 w-6 items-center justify-center">
-                          <CheckCircle 
-                            v-if="lesson.completed"
-                            :size="20" 
-                            class="text-primary"
-                          />
-                          <Circle 
-                            v-else
-                            :size="20" 
-                            class="text-foreground/20"
-                          />
+                      <!-- Module Header (clicável) -->
+                      <button
+                        @click="toggleModule(moduleIndex)"
+                        class="flex w-full items-center justify-between bg-card px-4 py-3 text-left transition-colors hover:bg-white/5"
+                      >
+                        <div class="flex items-center space-x-2">
+                          <span class="text-sm font-medium text-foreground">{{ module.title }}</span>
+                          <span class="text-xs text-foreground/40">({{ module.lessons?.length || 0 }} lessons)</span>
                         </div>
-                        <span 
-                          class="text-sm transition-colors"
-                          :class="lesson.completed ? 'text-foreground/60' : 'text-foreground'"
+                        
+                        <!-- Seta animada -->
+                        <ChevronDown 
+                          :size="18" 
+                          class="text-foreground/60 transition-transform duration-300"
+                          :class="{ 'rotate-180': openModules.includes(moduleIndex) }"
+                        />
+                      </button>
+
+                      <!-- Module Lessons (com animação de altura) -->
+                      <Transition
+                        @before-enter="beforeEnter"
+                        @enter="enter"
+                        @before-leave="beforeLeave"
+                        @leave="leave"
+                      >
+                        <div 
+                          v-if="openModules.includes(moduleIndex)"
+                          class="overflow-hidden"
                         >
-                          {{ lesson.title }}
-                        </span>
-                      </div>
+                          <div class="space-y-1 p-2">
+                            <div
+                              v-for="(lesson, lessonIndex) in module.lessons"
+                              :key="lessonIndex"
+                              class="group flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-white/5"
+                            >
+                              <div class="flex items-center space-x-3">
+                                <div class="flex h-6 w-6 items-center justify-center">
+                                  <CheckCircle 
+                                    v-if="lesson.completed"
+                                    :size="18" 
+                                    class="text-primary"
+                                  />
+                                  <Circle 
+                                    v-else
+                                    :size="18" 
+                                    class="text-foreground/20"
+                                  />
+                                </div>
+                                <span 
+                                  class="text-sm transition-colors"
+                                  :class="lesson.completed ? 'text-foreground/60' : 'text-foreground'"
+                                >
+                                  {{ lesson.title }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Transition>
                     </div>
+                  </div>
+
+                  <!-- Total lessons count -->
+                  <div class="mt-4 text-xs text-foreground/40">
+                    Total: {{ totalLessons }} lessons
                   </div>
                 </div>
               </div>
 
               <!-- Sidebar -->
-              <div class="space-y-6">
+              <div class="space-y-5">
                 <!-- Tags -->
-                <div class="rounded-xl border border-white/5 bg-card p-6">
+                <div class="rounded-xl border border-white/5 bg-card p-4">
                   <h3 class="mb-4 text-lg font-semibold text-foreground">Topics</h3>
                   <div class="flex flex-wrap gap-2">
                     <span
@@ -159,7 +220,7 @@
                 </div>
 
                 <!-- Last Update -->
-                <div class="rounded-xl border border-white/5 bg-card p-6">
+                <div class="rounded-xl border border-white/5 bg-card p-5">
                   <h3 class="mb-4 text-lg font-semibold text-foreground">Information</h3>
                   <div class="space-y-3">
                     <div class="flex items-center justify-between">
@@ -168,7 +229,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                       <span class="text-sm text-foreground/60">Total lessons</span>
-                      <span class="text-sm font-medium text-foreground">{{ course.lessons.length }} lessons</span>
+                      <span class="text-sm font-medium text-foreground">{{ totalLessons }} lessons</span>
                     </div>
                   </div>
                 </div>
@@ -190,11 +251,23 @@ import {
   Bookmark, 
   CheckCircle, 
   Circle,
-  ChevronLeft 
+  ChevronLeft,
+  ChevronDown,
+  Tag,
+  Award,
+  TrendingUp,
+  Sparkles
 } from 'lucide-vue-next'
+
+import { useUserStore } from '@/stores/userStore'
+import { useUiStore } from '@/stores/uiStore'
 
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
+
+// Stores
+const userStore = useUserStore()
+const uiStore = useUiStore()
 
 // ================================================
 // TYPES
@@ -204,21 +277,82 @@ interface Lesson {
   completed: boolean
 }
 
+interface Module {
+  title: string
+  lessons: Lesson[]
+}
+
 interface Course {
   title: string
   description: string
   progressPercentage: number
   tags: string[]
   lastUpdate: string
-  lessons: Lesson[]
+  modules: Module[]
+  difficulty: string
+  category: string
 }
 
 // ================================================
 // PROPS
 // ================================================
-defineProps<{
+const props = defineProps<{
   course: Course
 }>()
+
+// ================================================
+// ACCORDION STATE
+// ================================================
+const openModules = ref<number[]>([])
+
+const toggleModule = (moduleIndex: number) => {
+  if (openModules.value.includes(moduleIndex)) {
+    openModules.value = openModules.value.filter(i => i !== moduleIndex)
+  } else {
+    openModules.value.push(moduleIndex)
+  }
+}
+
+// ================================================
+// ANIMAÇÕES DO ACCORDION
+// ================================================
+const beforeEnter = (el: Element) => {
+  const element = el as HTMLElement
+  element.style.height = '0'
+  element.style.opacity = '0'
+}
+
+const enter = (el: Element) => {
+  const element = el as HTMLElement
+  element.style.height = element.scrollHeight + 'px'
+  element.style.opacity = '1'
+  
+  setTimeout(() => {
+    element.style.height = ''
+    element.style.opacity = ''
+  }, 300)
+}
+
+const beforeLeave = (el: Element) => {
+  const element = el as HTMLElement
+  element.style.height = element.scrollHeight + 'px'
+  element.style.opacity = '1'
+}
+
+const leave = (el: Element) => {
+  const element = el as HTMLElement
+  element.style.height = '0'
+  element.style.opacity = '0'
+}
+
+// ================================================
+// COMPUTED
+// ================================================
+const totalLessons = computed(() => {
+  return props.course.modules.reduce((total, module) => {
+    return total + (module.lessons?.length || 0)
+  }, 0)
+})
 
 // ================================================
 // ROUTER
@@ -230,38 +364,30 @@ const goBack = () => {
 }
 
 // ================================================
-// SIDEBAR STATE
+// MOBILE DETECTION
 // ================================================
-const menuItems = ref([
-  { name: 'All Series', icon: 'LayoutGrid', active: false },
-  { name: 'Continue', icon: 'PlayCircle', active: false },
-  { name: 'Watchlist', icon: 'Bookmark', active: false },
-  { name: 'Completed', icon: 'CheckCircle', active: false }
-])
-
-// Mobile detection
 const isMobile = ref(window.innerWidth < 1024)
-const mobileMenuOpen = ref(false)
 
-// Sidebar visibility state
-const sidebarVisible = ref(true)
-
-// Menu Functions
+// ================================================
+// MENU FUNCTIONS
+// ================================================
 const handleMenuClick = (menuName: string) => {
-  // Atualiza o estado ativo
-  menuItems.value.forEach(item => {
-    item.active = item.name === menuName
-  })
-  
-  // Navega conforme o menu clicado
+  uiStore.setActiveMenu(menuName)
   if (menuName === 'All Series') {
     router.push('/user')
   }
 }
 
-// Sidebar Toggle
-const toggleSidebar = () => {
-  sidebarVisible.value = !sidebarVisible.value
+// ================================================
+// DIFFICULTY ICON HELPER
+// ================================================
+const getDifficultyIcon = (difficulty: string) => {
+  switch(difficulty?.toLowerCase()) {
+    case 'beginner': return Award
+    case 'intermediate': return TrendingUp
+    case 'advanced': return Sparkles
+    default: return Award
+  }
 }
 
 // ================================================
@@ -282,7 +408,7 @@ let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 let leaveTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ================================================
-// COMPUTED PROPERTIES
+// COMPUTED PROPERTIES (WATCHLIST)
 // ================================================
 
 // Dynamic icon
@@ -391,7 +517,7 @@ const toggleWatchlist = (event: MouseEvent) => {
 // ================================================
 const handleResize = () => {
   isMobile.value = window.innerWidth < 1024
-  if (!isMobile.value) mobileMenuOpen.value = false
+  if (!isMobile.value) uiStore.closeMobileMenu()
 }
 
 // ================================================
@@ -492,5 +618,24 @@ button, .group {
 .watchlist-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* ================================================
+   ACCORDION ANIMATIONS
+   ================================================ */
+.v-enter-active,
+.v-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+  height: 0;
+}
+
+/* Rotação suave da seta */
+.rotate-180 {
+  transform: rotate(180deg);
 }
 </style>

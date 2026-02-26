@@ -13,39 +13,64 @@ export const useFilterStore = defineStore('filter', () => {
   
   // Loading state
   const isLoading = ref(false)
+  
+  // Cache timestamp
+  const lastFetched = ref<number | null>(null)
+  const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
 
-  // Buscar categorias da API
-  const fetchCategories = async () => {
+  // Buscar categorias da API (com cache)
+  const fetchCategories = async (force = false) => {
+    // Se já tem dados e não passou 5 minutos, não busca
+    if (!force && 
+        availableCategories.value.length > 0 && 
+        lastFetched.value && 
+        Date.now() - lastFetched.value < CACHE_DURATION) {
+      return
+    }
+    
     try {
       const response = await api.get('/categories')
       // Guarda as categorias como vêm da BD (com maiúsculas)
       availableCategories.value = response.data.map((cat: any) => cat.name)
+      lastFetched.value = Date.now()
     } catch (error) {
       console.error('Erro ao carregar categorias:', error)
       availableCategories.value = ['Back end', 'Front end', 'DevOps', 'Mobile', 'UI/UX Design', 'Data Science']
     }
   }
 
-  // Buscar dificuldades da API
-  const fetchDifficulties = async () => {
+  // Buscar dificuldades da API (com cache)
+  const fetchDifficulties = async (force = false) => {
+    // Se já tem dados e não passou 5 minutos, não busca
+    if (!force && 
+        availableDifficulties.value.length > 0 && 
+        lastFetched.value && 
+        Date.now() - lastFetched.value < CACHE_DURATION) {
+      return
+    }
+    
     try {
       const response = await api.get('/difficulties')
       // Guarda as dificuldades como vêm da BD (com maiúsculas)
       availableDifficulties.value = response.data.map((diff: any) => diff.name)
+      lastFetched.value = Date.now()
     } catch (error) {
       console.error('Erro ao carregar dificuldades:', error)
       availableDifficulties.value = ['Beginner', 'Intermediate', 'Advanced']
     }
   }
 
-  // Carregar tudo
-  const fetchFilters = async () => {
+  // Carregar tudo (agora com cache)
+  const fetchFilters = async (force = false) => {
     isLoading.value = true
-    await Promise.all([fetchCategories(), fetchDifficulties()])
+    await Promise.all([
+      fetchCategories(force), 
+      fetchDifficulties(force)
+    ])
     isLoading.value = false
   }
 
-  // Actions - AGORA CASE INSENSITIVE
+  // Actions - CASE INSENSITIVE
   const toggleCategory = (category: string) => {
     // Encontrar a categoria original na lista availableCategories (case insensitive)
     const originalCategory = availableCategories.value.find(
@@ -81,7 +106,7 @@ export const useFilterStore = defineStore('filter', () => {
     selectedDifficulties.value = []
   }
 
-  // Getters (strings para exibir) - CASE INSENSITIVE
+  // Getters (strings para exibir)
   const selectedCategoriesDisplay = (): string => {
     if (selectedCategories.value.length === 0) return ''
     if (selectedCategories.value.length === 1) return selectedCategories.value[0]

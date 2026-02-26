@@ -27,14 +27,14 @@
         :class="uiStore.sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
-          <!-- Header with Title and Filters -->
+          <!-- Header with Title and Filters (mantido igual) -->
           <div class="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <h1 class="text-3xl font-bold tracking-tight text-foreground animate-fade-in-up lg:text-4xl">
               All Series
             </h1>
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:space-x-4">
-              <!-- Categories Dropdown -->
+              <!-- Categories Dropdown (mantido igual) -->
               <div class="relative">
                 <button
                   @click.stop="toggleCategoryDropdown"
@@ -87,7 +87,7 @@
                 </div>
               </div>
 
-              <!-- Difficulties Dropdown -->
+              <!-- Difficulties Dropdown (mantido igual) -->
               <div class="relative">
                 <button
                   @click.stop="toggleDifficultyDropdown"
@@ -142,31 +142,34 @@
             </div>
           </div>
 
-          <!-- Loading State -->
-          <div v-if="isLoading" class="flex justify-center items-center py-20">
-            <svg 
-              class="h-8 w-8 animate-spin text-primary" 
-              xmlns="http://www.w3.org/2000/svg" 
-              fill="none" 
-              viewBox="0 0 24 24"
+          <!-- SKELETON LOADER - Substitui o spinner -->
+          <div v-if="isLoading" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div
+              v-for="n in 8"
+              :key="n"
+              class="animate-pulse rounded-xl border border-white/5 bg-card p-6"
             >
-              <circle 
-                class="opacity-25" 
-                cx="12" 
-                cy="12" 
-                r="10" 
-                stroke="currentColor" 
-                stroke-width="4"
-              />
-              <path 
-                class="opacity-75" 
-                fill="currentColor" 
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+              <!-- Icon skeleton -->
+              <div class="mb-4 flex justify-start">
+                <div class="h-16 w-16 rounded-2xl bg-white/5"></div>
+              </div>
+              
+              <!-- Title skeleton -->
+              <div class="mb-2 h-6 w-3/4 rounded bg-white/5"></div>
+              
+              <!-- Separator -->
+              <div class="my-4 border-t border-white/5"></div>
+              
+              <!-- Metadata skeletons -->
+              <div class="flex flex-col gap-2">
+                <div class="h-4 w-20 rounded bg-white/5"></div>
+                <div class="h-4 w-24 rounded bg-white/5"></div>
+                <div class="h-4 w-16 rounded bg-white/5"></div>
+              </div>
+            </div>
           </div>
 
-          <!-- Courses Grid -->
+          <!-- Courses Grid (mantido igual) -->
           <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div
               v-for="course in filteredCourses"
@@ -298,6 +301,7 @@ interface Course {
 
 // Loading state
 const isLoading = ref(false)
+const initialLoadComplete = ref(false)
 
 // Mobile detection
 const isMobile = ref(window.innerWidth < 1024)
@@ -308,6 +312,11 @@ const difficultyDropdownOpen = ref(false)
 
 // Courses Data
 const courses = ref<Course[]>([])
+
+// Cache key
+const CACHE_KEY = 'cached_courses'
+const CACHE_TIMESTAMP_KEY = 'cached_courses_timestamp'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
 
 // FUNÇÕES AUXILIARES PARA EXTRAIR NOMES
 const getCategoryName = (category: Category | string | null | undefined): string => {
@@ -337,19 +346,46 @@ const getTotalLessons = (course: Course): number => {
   }, 0)
 }
 
+// Função para carregar do cache
+const loadFromCache = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY)
+    
+    if (cached && timestamp) {
+      const age = Date.now() - parseInt(timestamp)
+      if (age < CACHE_DURATION) {
+        courses.value = JSON.parse(cached)
+        return true
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao ler cache:', error)
+  }
+  return false
+}
+
+// Função para guardar no cache
+const saveToCache = (data: Course[]) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+    localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString())
+  } catch (error) {
+    console.error('Erro ao guardar cache:', error)
+  }
+}
+
 // Filtered Courses - CASE INSENSITIVE
 const filteredCourses = computed(() => {
   return courses.value.filter(course => {
     const courseCategory = getCategoryName(course.category)
     const courseDifficulty = getDifficultyName(course.difficulty)
     
-    // Verificar se a categoria do curso corresponde a alguma das selecionadas (case insensitive)
     const matchesCategory = filterStore.selectedCategories.length === 0 || 
       filterStore.selectedCategories.some(
         cat => cat.toLowerCase() === courseCategory.toLowerCase()
       )
     
-    // Verificar se a dificuldade do curso corresponde a alguma das selecionadas (case insensitive)
     const matchesDifficulty = filterStore.selectedDifficulties.length === 0 || 
       filterStore.selectedDifficulties.some(
         diff => diff.toLowerCase() === courseDifficulty.toLowerCase()
@@ -432,19 +468,30 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
 
-  // Carregar filtros da BD
-  await filterStore.fetchFilters()
-
-  // Carregar cursos da API
+  // PRIMEIRO: Mostrar dados em cache (se existirem)
+  const hasCache = loadFromCache()
+  
+  // SEGUNDO: Buscar filtros e cursos em PARALELO
   try {
-    isLoading.value = true
-    const response = await api.get('/courses')
-    courses.value = response.data
+    isLoading.value = !hasCache // Só mostra loading se não tiver cache
+    
+    // Promise.all para buscar em paralelo
+    const [filtersResult, coursesResult] = await Promise.all([
+      filterStore.fetchFilters(),
+      api.get('/courses')
+    ])
+    
+    // Atualizar cursos
+    courses.value = coursesResult.data
+    
+    // Guardar no cache
+    saveToCache(coursesResult.data)
     
   } catch (error) {
-    console.error('❌ Erro ao carregar cursos:', error)
+    console.error('❌ Erro ao carregar dados:', error)
   } finally {
     isLoading.value = false
+    initialLoadComplete.value = true
   }
 })
 
@@ -478,7 +525,7 @@ onUnmounted(() => {
 
 /* Rotação suave */
 .rotate-180 {
-  transform: rotate(180deg);
+  transform: rotate(0deg);
 }
 
 /* Focus styles */
@@ -553,5 +600,19 @@ onUnmounted(() => {
 
 .max-h-60::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* Animação de pulso para o skeleton */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>

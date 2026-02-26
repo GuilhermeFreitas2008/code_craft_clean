@@ -7,25 +7,51 @@
 import CourseDisplay from '@/pages/logged/courses/CourseDisplay.vue'
 
 // ================================================
-// MOCK DATA FOR DEMONSTRATION - PROGRESS 0%
+// MOCK DATA FOR DEMONSTRATION - WITH MODULES
 // ================================================
 const mockCourse = {
   title: 'Web Development with Laravel and Vue.js',
   description: 'Learn to build complete web applications using Laravel on the backend and Vue.js on the frontend. Master the main technologies in the market.',
-  progressPercentage: 0, // 👈 ALTERADO PARA 0%
+  progressPercentage: 0,
   tags: ['Laravel', 'PHP', 'API', 'Vue 3', 'Tailwind CSS'],
   lastUpdate: 'February 2025',
-  lessons: [
-    { title: 'Introduction to Laravel', completed: false }, // 👈 TODOS COMEÇAM FALSE
-    { title: 'Environment Setup', completed: false },
-    { title: 'Routes and Controllers', completed: false },
-    { title: 'Blade Templates', completed: false },
-    { title: 'Eloquent ORM - Part 1', completed: false },
-    { title: 'Eloquent ORM - Part 2', completed: false },
-    { title: 'Authentication with Laravel', completed: false },
-    { title: 'Introduction to Vue.js', completed: false },
-    { title: 'Vue Components', completed: false },
-    { title: 'API Communication', completed: false }
+  difficulty: 'intermediate',
+  category: 'Full Stack',
+  modules: [
+    {
+      title: 'Introduction to Laravel',
+      lessons: [
+        { title: 'What is Laravel?', completed: false },
+        { title: 'Installing Laravel', completed: false },
+        { title: 'Project Structure', completed: false }
+      ]
+    },
+    {
+      title: 'Routing & Controllers',
+      lessons: [
+        { title: 'Basic Routing', completed: false },
+        { title: 'Route Parameters', completed: false },
+        { title: 'Creating Controllers', completed: false },
+        { title: 'Resource Controllers', completed: false }
+      ]
+    },
+    {
+      title: 'Blade Templating',
+      lessons: [
+        { title: 'Blade Syntax', completed: false },
+        { title: 'Layouts & Components', completed: false },
+        { title: 'Forms & CSRF', completed: false }
+      ]
+    },
+    {
+      title: 'Database & Eloquent',
+      lessons: [
+        { title: 'Migrations', completed: false },
+        { title: 'Models & Relationships', completed: false },
+        { title: 'Query Builder', completed: false },
+        { title: 'Eloquent ORM', completed: false }
+      ]
+    }
   ]
 }
 </script>

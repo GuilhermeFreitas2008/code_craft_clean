@@ -83,7 +83,7 @@ Route::post('/login', function (Request $request) {
             'name' => $user->username,
             'email' => $user->email,
             'role' => $user->role->name,
-            'role_id' => $user->role_id, // 👈 ADICIONADO!
+            'role_id' => $user->role_id,
         ],
     ]);
 });
