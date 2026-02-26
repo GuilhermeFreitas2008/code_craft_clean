@@ -1,3 +1,4 @@
+<!-- UserPage.vue -->
 <template>
   <div class="flex min-h-screen flex-col bg-background">
     <!-- Navbar -->
@@ -27,14 +28,14 @@
         :class="uiStore.sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
-          <!-- Header with Title and Filters (mantido igual) -->
+          <!-- Header with Title and Filters -->
           <div class="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <h1 class="text-3xl font-bold tracking-tight text-foreground animate-fade-in-up lg:text-4xl">
               All Series
             </h1>
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:space-x-4">
-              <!-- Categories Dropdown (mantido igual) -->
+              <!-- Categories Dropdown -->
               <div class="relative">
                 <button
                   @click.stop="toggleCategoryDropdown"
@@ -87,7 +88,7 @@
                 </div>
               </div>
 
-              <!-- Difficulties Dropdown (mantido igual) -->
+              <!-- Difficulties Dropdown -->
               <div class="relative">
                 <button
                   @click.stop="toggleDifficultyDropdown"
@@ -142,25 +143,18 @@
             </div>
           </div>
 
-          <!-- SKELETON LOADER - Substitui o spinner -->
+          <!-- Skeleton Loader -->
           <div v-if="isLoading" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div
               v-for="n in 8"
               :key="n"
               class="animate-pulse rounded-xl border border-white/5 bg-card p-6"
             >
-              <!-- Icon skeleton -->
               <div class="mb-4 flex justify-start">
                 <div class="h-16 w-16 rounded-2xl bg-white/5"></div>
               </div>
-              
-              <!-- Title skeleton -->
               <div class="mb-2 h-6 w-3/4 rounded bg-white/5"></div>
-              
-              <!-- Separator -->
               <div class="my-4 border-t border-white/5"></div>
-              
-              <!-- Metadata skeletons -->
               <div class="flex flex-col gap-2">
                 <div class="h-4 w-20 rounded bg-white/5"></div>
                 <div class="h-4 w-24 rounded bg-white/5"></div>
@@ -169,54 +163,57 @@
             </div>
           </div>
 
-          <!-- Courses Grid (mantido igual) -->
+          <!-- Courses Grid - COM ROUTER-LINK -->
           <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <div
+            <router-link
               v-for="course in filteredCourses"
               :key="course.id"
-              class="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+              :to="`/course/${course.id}`"
+              class="block"
             >
-              <!-- Technology Icon -->
-              <div class="mb-4 flex justify-start">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <component :is="getCourseIcon(getCategoryName(course.category))" :size="32" />
+              <div class="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <!-- Technology Icon -->
+                <div class="mb-4 flex justify-start">
+                  <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <component :is="getCourseIcon(getCategoryName(course.category))" :size="32" />
+                  </div>
                 </div>
+
+                <!-- Title -->
+                <div class="mb-2">
+                  <h3 class="text-left text-lg font-semibold text-foreground">
+                    {{ course.title }}
+                  </h3>
+                </div>
+
+                <!-- Separator -->
+                <div class="my-4 border-t border-white/5"></div>
+
+                <!-- Metadata -->
+                <div class="flex flex-col items-start gap-2 text-xs">
+                  <!-- Lessons -->
+                  <div class="flex items-center space-x-1 text-foreground/60">
+                    <Film :size="14" />
+                    <span>{{ getTotalLessons(course) }} {{ getTotalLessons(course) === 1 ? 'lesson' : 'lessons' }}</span>
+                  </div>
+                  
+                  <!-- Difficulty -->
+                  <div class="flex items-center space-x-1 text-foreground/60">
+                    <component :is="getDifficultyIcon(getDifficultyName(course.difficulty))" :size="14" />
+                    <span class="capitalize">{{ getDifficultyName(course.difficulty) }}</span>
+                  </div>
+                  
+                  <!-- Category -->
+                  <div class="flex items-center space-x-1 text-foreground/60">
+                    <Tag :size="14" />
+                    <span>{{ getCategoryName(course.category) }}</span>
+                  </div>
+                </div>
+
+                <!-- Hover Effect -->
+                <div class="absolute inset-0 rounded-xl bg-gradient-to-t from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               </div>
-
-              <!-- Title -->
-              <div class="mb-2">
-                <h3 class="text-left text-lg font-semibold text-foreground">
-                  {{ course.title }}
-                </h3>
-              </div>
-
-              <!-- Separator -->
-              <div class="my-4 border-t border-white/5"></div>
-
-              <!-- Metadata -->
-              <div class="flex flex-col items-start gap-2 text-xs">
-                <!-- Lessons -->
-                <div class="flex items-center space-x-1 text-foreground/60">
-                  <Film :size="14" />
-                  <span>{{ getTotalLessons(course) }} {{ getTotalLessons(course) === 1 ? 'lesson' : 'lessons' }}</span>
-                </div>
-                
-                <!-- Difficulty -->
-                <div class="flex items-center space-x-1 text-foreground/60">
-                  <component :is="getDifficultyIcon(getDifficultyName(course.difficulty))" :size="14" />
-                  <span class="capitalize">{{ getDifficultyName(course.difficulty) }}</span>
-                </div>
-                
-                <!-- Category -->
-                <div class="flex items-center space-x-1 text-foreground/60">
-                  <Tag :size="14" />
-                  <span>{{ getCategoryName(course.category) }}</span>
-                </div>
-              </div>
-
-              <!-- Hover Effect -->
-              <div class="absolute inset-0 rounded-xl bg-gradient-to-t from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-            </div>
+            </router-link>
           </div>
 
           <div v-if="!isLoading && filteredCourses.length === 0" class="mt-12 text-center">
@@ -525,7 +522,7 @@ onUnmounted(() => {
 
 /* Rotação suave */
 .rotate-180 {
-  transform: rotate(0deg);
+  transform: rotate(180deg);
 }
 
 /* Focus styles */

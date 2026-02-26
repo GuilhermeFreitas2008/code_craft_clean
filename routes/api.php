@@ -54,6 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
         [UserProgressController::class, 'store']
     );
 
+    Route::get('/user-progress', [UserProgressController::class, 'index']);
+    Route::get('/user-progress/{lesson}', [UserProgressController::class, 'show']);
+
     // Rotas de progresso e inscrições
     Route::middleware('role:user')->group(function () {
         Route::apiResource('enrollments', EnrollmentController::class)->only(['store']);

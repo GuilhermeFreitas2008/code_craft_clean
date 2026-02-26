@@ -28,38 +28,134 @@
         :class="uiStore.sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
-          <!-- Back Button with Course Info -->
-          <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <button 
-              @click="goBack" 
-              class="flex items-center space-x-2 text-foreground/60 transition-colors hover:text-primary"
-            >
-              <ChevronLeft :size="20" />
-              <span>Back to series</span>
-            </button>
+          <!-- Skeleton Loader -->
+          <div v-if="loading" class="mx-auto max-w-7xl">
+            <!-- Back Button Skeleton -->
+            <div class="mb-6">
+              <div class="h-6 w-24 animate-pulse rounded bg-white/5"></div>
+            </div>
 
-            <!-- Course Difficulty and Category with Simple Hover -->
-            <div class="flex items-center gap-3 text-sm">
-              <!-- Difficulty Badge com hover simples -->
-              <div 
-                class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
-              >
-                <component :is="getDifficultyIcon(course.difficulty)" :size="16" />
-                <span class="capitalize">{{ course.difficulty }}</span>
+            <!-- Badges Skeleton -->
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div></div>
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-20 animate-pulse rounded-xl bg-white/5"></div>
+                <div class="h-8 w-24 animate-pulse rounded-xl bg-white/5"></div>
               </div>
-              
-              <!-- Category Badge com hover simples -->
-              <div 
-                class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
-              >
-                <Tag :size="16" />
-                <span>{{ course.category }}</span>
+            </div>
+
+            <!-- Grid Skeletons -->
+            <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <!-- Main Column Skeletons -->
+              <div class="lg:col-span-2 space-y-6">
+                <!-- Course Header Skeleton -->
+                <div class="rounded-xl border border-white/5 bg-card p-6">
+                  <div class="h-8 w-3/4 animate-pulse rounded bg-white/5 mb-4"></div>
+                  <div class="h-4 w-full animate-pulse rounded bg-white/5 mb-2"></div>
+                  <div class="h-4 w-5/6 animate-pulse rounded bg-white/5 mb-6"></div>
+                  
+                  <!-- Progress Bar Skeleton -->
+                  <div class="mt-6">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="h-4 w-24 animate-pulse rounded bg-white/5"></div>
+                      <div class="h-4 w-8 animate-pulse rounded bg-white/5"></div>
+                    </div>
+                    <div class="h-2 w-full animate-pulse rounded-full bg-white/5"></div>
+                  </div>
+
+                  <!-- Action Buttons Skeleton -->
+                  <div class="mt-6 flex flex-wrap gap-4">
+                    <div class="h-10 w-32 animate-pulse rounded-lg bg-white/5"></div>
+                    <div class="h-10 w-40 animate-pulse rounded-lg bg-white/5"></div>
+                  </div>
+                </div>
+
+                <!-- Course Content Skeleton -->
+                <div class="rounded-xl border border-white/5 bg-card p-6">
+                  <div class="h-6 w-40 animate-pulse rounded bg-white/5 mb-4"></div>
+                  
+                  <!-- Module Skeletons -->
+                  <div class="space-y-3">
+                    <div
+                      v-for="n in 3"
+                      :key="n"
+                      class="animate-pulse rounded-lg border border-white/5 bg-card p-4"
+                    >
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                          <div class="h-5 w-32 rounded bg-white/5"></div>
+                          <div class="h-4 w-12 rounded bg-white/5"></div>
+                        </div>
+                        <div class="h-5 w-5 rounded bg-white/5"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sidebar Skeletons -->
+              <div class="space-y-5">
+                <div class="rounded-xl border border-white/5 bg-card p-4">
+                  <div class="h-6 w-20 animate-pulse rounded bg-white/5 mb-4"></div>
+                  <div class="flex flex-wrap gap-2">
+                    <div
+                      v-for="n in 4"
+                      :key="n"
+                      class="h-8 w-16 animate-pulse rounded-full bg-white/5"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-white/5 bg-card p-5">
+                  <div class="h-6 w-24 animate-pulse rounded bg-white/5 mb-4"></div>
+                  <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div class="h-4 w-20 animate-pulse rounded bg-white/5"></div>
+                      <div class="h-4 w-24 animate-pulse rounded bg-white/5"></div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <div class="h-4 w-20 animate-pulse rounded bg-white/5"></div>
+                      <div class="h-4 w-16 animate-pulse rounded bg-white/5"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Course Content -->
-          <div class="mx-auto max-w-7xl">
+          <!-- Conteúdo Real -->
+          <div v-else-if="course" class="mx-auto max-w-7xl">
+            <!-- Back Button with Course Info -->
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+              <button 
+                @click="goBack" 
+                class="flex items-center space-x-2 text-foreground/60 transition-colors hover:text-primary"
+              >
+                <ChevronLeft :size="20" />
+                <span>Back to series</span>
+              </button>
+
+              <!-- Course Difficulty and Category with Simple Hover -->
+              <div class="flex items-center gap-3 text-sm">
+                <!-- Difficulty Badge com hover simples -->
+                <div 
+                  class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
+                >
+                  <component :is="getDifficultyIcon(course.difficulty)" :size="16" />
+                  <span class="capitalize">{{ course.difficulty }}</span>
+                </div>
+                
+                <!-- Category Badge com hover simples -->
+                <div 
+                  class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
+                >
+                  <Tag :size="16" />
+                  <span>{{ course.category }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Course Content -->
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <!-- Main Column (Course Content) -->
               <div class="lg:col-span-2 space-y-6">
@@ -76,7 +172,7 @@
                   <div class="mt-6">
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-foreground/60">Course progress</span>
-                      <span class="font-medium text-primary">{{ course.progressPercentage }}%</span>
+                      <span class="font-medium text-primary">{{ Math.round(course.progressPercentage) }}%</span>
                     </div>
                     <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/5">
                       <div 
@@ -297,7 +393,8 @@ interface Course {
 // PROPS
 // ================================================
 const props = defineProps<{
-  course: Course
+  course?: Course
+  loading: boolean
 }>()
 
 // ================================================
@@ -349,6 +446,7 @@ const leave = (el: Element) => {
 // COMPUTED
 // ================================================
 const totalLessons = computed(() => {
+  if (!props.course) return 0
   return props.course.modules.reduce((total, module) => {
     return total + (module.lessons?.length || 0)
   }, 0)
@@ -637,5 +735,21 @@ button, .group {
 /* Rotação suave da seta */
 .rotate-180 {
   transform: rotate(180deg);
+}
+
+/* ================================================
+   SKELETON ANIMATIONS
+   ================================================ */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>
