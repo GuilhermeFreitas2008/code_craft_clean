@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Course extends Model
 {
@@ -21,7 +20,7 @@ class Course extends Model
         'difficulty_id'
     ];
 
-    public function modules(): HasMany
+    public function modules()
     {
         return $this->hasMany(Module::class)->orderBy('position');
     }
@@ -32,12 +31,12 @@ class Course extends Model
         return $this->hasManyThrough(Lesson::class, Module::class);
     }
 
-    public function enrollments(): HasMany
+    public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
     }
 
-    public function userProgress(): HasMany
+    public function userProgress()
     {
         return $this->hasMany(UserCourseProgress::class);
     }
@@ -57,8 +56,13 @@ class Course extends Model
         return $this->belongsTo(Difficulty::class);
     }
 
-    public function topics() 
+    public function topics()
     {
         return $this->belongsToMany(Topic::class);
     }
+
+    public function watchlistedBy()
+{
+    return $this->belongsToMany(User::class, 'watchlist');
+}
 }

@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -44,7 +42,7 @@ class User extends Authenticatable
     /**
      * Um utilizador pertence a um role
      */
-    public function role(): BelongsTo
+    public function role()
     {
         return $this->belongsTo(Role::class);
     }
@@ -52,7 +50,7 @@ class User extends Authenticatable
     /**
      * Um utilizador pode estar inscrito em vários cursos
      */
-    public function enrollments(): HasMany
+    public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
     }
@@ -60,7 +58,7 @@ class User extends Authenticatable
     /**
      * Um utilizador pode ter progresso em cursos
      */
-    public function courseProgress(): HasMany
+    public function courseProgress()
     {
         return $this->hasMany(UserCourseProgress::class);
     }
@@ -68,8 +66,14 @@ class User extends Authenticatable
     /**
      * Um utilizador pode ter progresso em várias lições
      */
-    public function lessonProgress(): HasMany
+    public function lessonProgress()
     {
         return $this->hasMany(UserProgress::class);
+    }
+
+    public function watchlist() 
+    {
+        return $this->belongsToMany(Course::class, 'watchlist')
+                    ->withTimestamps();
     }
 }

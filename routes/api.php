@@ -12,6 +12,7 @@ use App\Http\Controllers\UserProgressController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DifficultyController;
 use App\Http\Controllers\TopicController;
+use App\Http\Controllers\WatchlistController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -53,9 +54,16 @@ Route::middleware('auth:sanctum')->group(function () {
         '/lessons/{lesson}/complete',
         [UserProgressController::class, 'store']
     );
-
+    
+    // Rota para obter progresso do usuário
     Route::get('/user-progress', [UserProgressController::class, 'index']);
     Route::get('/user-progress/{lesson}', [UserProgressController::class, 'show']);
+
+    // Rotas de watchlist
+    Route::get('/watchlist', [WatchlistController::class, 'index']);
+    Route::post('/watchlist/{course}', [WatchlistController::class, 'store']);
+    Route::delete('/watchlist/{course}', [WatchlistController::class, 'destroy']);
+    Route::get('/watchlist/check/{course}', [WatchlistController::class, 'check']); // opcional
 
     // Rotas de progresso e inscrições
     Route::middleware('role:user')->group(function () {

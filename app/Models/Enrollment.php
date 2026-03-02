@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Enrollment extends Model
 {
@@ -12,7 +11,7 @@ class Enrollment extends Model
     /**
      * Inscrição pertence a um utilizador
      */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
@@ -20,7 +19,7 @@ class Enrollment extends Model
     /**
      * Inscrição pertence a um curso
      */
-    public function course(): BelongsTo
+    public function course()
     {
         return $this->belongsTo(Course::class);
     }

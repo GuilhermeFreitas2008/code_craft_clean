@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/axios'
 import router from '@/router'
+import { useWatchlistStore } from './watchlistStore'
+import { useProgressStore } from './progressStore' // 👈 NOVO IMPORT
 
 export const useUserStore = defineStore('user', () => {
   // Estado
@@ -39,6 +41,12 @@ export const useUserStore = defineStore('user', () => {
       }
 
       if (userData.role_id === 2) {
+        const watchlistStore = useWatchlistStore()
+        const progressStore = useProgressStore() // 👈 ADICIONADO
+        await Promise.all([
+          watchlistStore.fetchWatchlist(),
+          progressStore.fetchProgressCourses()
+        ])
         router.push('/user')
       } else if (userData.role_id === 1) {
         router.push('/admin')
@@ -53,7 +61,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // Register - AGORA COM REDIRECIONAMENTO AUTOMÁTICO
+  // Register
   const register = async (userData: {
     name: string
     email: string
@@ -71,9 +79,14 @@ export const useUserStore = defineStore('user', () => {
 
       localStorage.setItem('auth_token', authToken)
       localStorage.setItem('user', JSON.stringify(newUser))
-      
-      // 👇 REDIRECIONAMENTO AUTOMÁTICO
+
       if (newUser.role_id === 2) {
+        const watchlistStore = useWatchlistStore()
+        const progressStore = useProgressStore() // 👈 ADICIONADO
+        await Promise.all([
+          watchlistStore.fetchWatchlist(),
+          progressStore.fetchProgressCourses()
+        ])
         router.push('/user')
       } else if (newUser.role_id === 1) {
         router.push('/admin')

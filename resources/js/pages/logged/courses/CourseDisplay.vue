@@ -30,12 +30,10 @@
         <main class="p-4 lg:p-8">
           <!-- Skeleton Loader -->
           <div v-if="loading" class="mx-auto max-w-7xl">
-            <!-- Back Button Skeleton -->
             <div class="mb-6">
               <div class="h-6 w-24 animate-pulse rounded bg-white/5"></div>
             </div>
 
-            <!-- Badges Skeleton -->
             <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div></div>
               <div class="flex items-center gap-3">
@@ -44,17 +42,13 @@
               </div>
             </div>
 
-            <!-- Grid Skeletons -->
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              <!-- Main Column Skeletons -->
               <div class="lg:col-span-2 space-y-6">
-                <!-- Course Header Skeleton -->
                 <div class="rounded-xl border border-white/5 bg-card p-6">
                   <div class="h-8 w-3/4 animate-pulse rounded bg-white/5 mb-4"></div>
                   <div class="h-4 w-full animate-pulse rounded bg-white/5 mb-2"></div>
                   <div class="h-4 w-5/6 animate-pulse rounded bg-white/5 mb-6"></div>
                   
-                  <!-- Progress Bar Skeleton -->
                   <div class="mt-6">
                     <div class="flex items-center justify-between mb-2">
                       <div class="h-4 w-24 animate-pulse rounded bg-white/5"></div>
@@ -63,18 +57,15 @@
                     <div class="h-2 w-full animate-pulse rounded-full bg-white/5"></div>
                   </div>
 
-                  <!-- Action Buttons Skeleton -->
                   <div class="mt-6 flex flex-wrap gap-4">
                     <div class="h-10 w-32 animate-pulse rounded-lg bg-white/5"></div>
                     <div class="h-10 w-40 animate-pulse rounded-lg bg-white/5"></div>
                   </div>
                 </div>
 
-                <!-- Course Content Skeleton -->
                 <div class="rounded-xl border border-white/5 bg-card p-6">
                   <div class="h-6 w-40 animate-pulse rounded bg-white/5 mb-4"></div>
                   
-                  <!-- Module Skeletons -->
                   <div class="space-y-3">
                     <div
                       v-for="n in 3"
@@ -93,7 +84,6 @@
                 </div>
               </div>
 
-              <!-- Sidebar Skeletons -->
               <div class="space-y-5">
                 <div class="rounded-xl border border-white/5 bg-card p-4">
                   <div class="h-6 w-20 animate-pulse rounded bg-white/5 mb-4"></div>
@@ -125,7 +115,6 @@
 
           <!-- Conteúdo Real -->
           <div v-else-if="course" class="mx-auto max-w-7xl">
-            <!-- Back Button with Course Info -->
             <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
               <button 
                 @click="goBack" 
@@ -135,9 +124,7 @@
                 <span>Back to series</span>
               </button>
 
-              <!-- Course Difficulty and Category with Simple Hover -->
               <div class="flex items-center gap-3 text-sm">
-                <!-- Difficulty Badge com hover simples -->
                 <div 
                   class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
                 >
@@ -145,7 +132,6 @@
                   <span class="capitalize">{{ course.difficulty }}</span>
                 </div>
                 
-                <!-- Category Badge com hover simples -->
                 <div 
                   class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
                 >
@@ -155,11 +141,8 @@
               </div>
             </div>
 
-            <!-- Course Content -->
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              <!-- Main Column (Course Content) -->
               <div class="lg:col-span-2 space-y-6">
-                <!-- Course Header -->
                 <div class="rounded-xl border border-white/5 bg-card p-6">
                   <h1 class="text-3xl font-bold text-foreground lg:text-4xl">
                     {{ course.title }}
@@ -168,7 +151,6 @@
                     {{ course.description }}
                   </p>
 
-                  <!-- Progress Bar -->
                   <div class="mt-6">
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-foreground/60">Course progress</span>
@@ -182,20 +164,18 @@
                     </div>
                   </div>
 
-                  <!-- Action Buttons -->
                   <div class="mt-6 flex flex-wrap gap-4">
                     <button class="inline-flex items-center space-x-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20">
                       <Play :size="18" />
                       <span>{{ course.progressPercentage === 0 ? 'Start Course' : 'Continue Course' }}</span>
                     </button>
                     
-                    <!-- Watchlist Button -->
                     <button 
                       @click="toggleWatchlist"
                       @mouseenter="handleMouseEnter"
                       @mouseleave="handleMouseLeave"
                       :disabled="isTransitioning"
-                      class="watchlist-btn relative inline-flex items-center overflow-hidden rounded-lg border px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 w-[200px]"
+                      class="watchlist-btn relative inline-flex items-center overflow-hidden rounded-lg border px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 w-[180px]"
                       :class="[buttonClasses]"
                     >
                       <component 
@@ -219,18 +199,15 @@
                   </div>
                 </div>
 
-                <!-- Course Content by Modules -->
                 <div class="rounded-xl border border-white/5 bg-card p-6">
                   <h2 class="mb-4 text-xl font-semibold text-foreground">Course Content</h2>
                   
-                  <!-- Modules Accordion -->
                   <div class="space-y-3">
                     <div
                       v-for="(module, moduleIndex) in course.modules"
                       :key="moduleIndex"
                       class="overflow-hidden rounded-lg border border-white/5"
                     >
-                      <!-- Module Header (clicável) -->
                       <button
                         @click="toggleModule(moduleIndex)"
                         class="flex w-full items-center justify-between bg-card px-4 py-3 text-left transition-colors hover:bg-white/5"
@@ -240,7 +217,6 @@
                           <span class="text-xs text-foreground/40">({{ module.lessons?.length || 0 }} lessons)</span>
                         </div>
                         
-                        <!-- Seta animada -->
                         <ChevronDown 
                           :size="18" 
                           class="text-foreground/60 transition-transform duration-300"
@@ -248,7 +224,6 @@
                         />
                       </button>
 
-                      <!-- Module Lessons (com animação de altura) -->
                       <Transition
                         @before-enter="beforeEnter"
                         @enter="enter"
@@ -292,16 +267,13 @@
                     </div>
                   </div>
 
-                  <!-- Total lessons count -->
                   <div class="mt-4 text-xs text-foreground/40">
                     Total: {{ totalLessons }} lessons
                   </div>
                 </div>
               </div>
 
-              <!-- Sidebar -->
               <div class="space-y-5">
-                <!-- Tags -->
                 <div class="rounded-xl border border-white/5 bg-card p-4">
                   <h3 class="mb-4 text-lg font-semibold text-foreground">Topics</h3>
                   <div class="flex flex-wrap gap-2">
@@ -315,7 +287,6 @@
                   </div>
                 </div>
 
-                <!-- Last Update -->
                 <div class="rounded-xl border border-white/5 bg-card p-5">
                   <h3 class="mb-4 text-lg font-semibold text-foreground">Information</h3>
                   <div class="space-y-3">
@@ -339,7 +310,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   Play, 
@@ -357,6 +328,7 @@ import {
 
 import { useUserStore } from '@/stores/userStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useWatchlistStore } from '@/stores/watchlistStore'
 
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
@@ -364,6 +336,7 @@ import SideBar from '@/components/layout/SideBar.vue'
 // Stores
 const userStore = useUserStore()
 const uiStore = useUiStore()
+const watchlistStore = useWatchlistStore()
 
 // ================================================
 // TYPES
@@ -379,6 +352,7 @@ interface Module {
 }
 
 interface Course {
+  id: number
   title: string
   description: string
   progressPercentage: number
@@ -489,7 +463,7 @@ const getDifficultyIcon = (difficulty: string) => {
 }
 
 // ================================================
-// WATCHLIST TOGGLE STATE
+// WATCHLIST STATE
 // ================================================
 const isInWatchlist = ref(false)
 const isHovering = ref(false)
@@ -501,20 +475,16 @@ const rippleY = ref(0)
 const rippleSize = ref(0)
 const watchlistButton = ref<HTMLElement | null>(null)
 
-// Timeouts
 let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 let leaveTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ================================================
 // COMPUTED PROPERTIES (WATCHLIST)
 // ================================================
-
-// Dynamic icon
 const watchlistIcon = computed(() => {
   return isInWatchlist.value ? Bookmark : BookmarkPlus
 })
 
-// Dynamic text
 const watchlistButtonText = computed(() => {
   if (isInWatchlist.value) {
     return isHovering.value ? 'Remove' : 'Added ✓'
@@ -522,7 +492,6 @@ const watchlistButtonText = computed(() => {
   return 'Add to Watchlist'
 })
 
-// Dynamic classes
 const buttonClasses = computed(() => {
   if (isInWatchlist.value) {
     if (isHovering.value) {
@@ -541,77 +510,90 @@ const buttonClasses = computed(() => {
 const handleMouseEnter = () => {
   if (!isInWatchlist.value) return
   
-  if (leaveTimeout) {
-    clearTimeout(leaveTimeout)
-    leaveTimeout = null
-  }
+  if (leaveTimeout) clearTimeout(leaveTimeout)
   
   hoverTimeout = setTimeout(() => {
     isHovering.value = true
-    hoverTimeout = null
   }, 300)
 }
 
 const handleMouseLeave = () => {
   if (!isInWatchlist.value) return
   
-  if (hoverTimeout) {
-    clearTimeout(hoverTimeout)
-    hoverTimeout = null
-  }
+  if (hoverTimeout) clearTimeout(hoverTimeout)
   
   leaveTimeout = setTimeout(() => {
     isHovering.value = false
-    leaveTimeout = null
   }, 200)
 }
 
 // ================================================
+// FUNÇÃO PARA VERIFICAR WATCHLIST
+// ================================================
+const checkWatchlistStatus = () => {
+  if (!props.course || !userStore.isAuthenticated()) {
+    isInWatchlist.value = false
+    return
+  }
+  
+  isInWatchlist.value = watchlistStore.isInWatchlist(props.course.id)
+}
+
+// ================================================
+// WATCHER
+// ================================================
+watch(
+  () => watchlistStore.items,
+  () => {
+    if (props.course) checkWatchlistStatus()
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.course,
+  () => {
+    if (props.course) checkWatchlistStatus()
+  },
+  { immediate: true }
+)
+
+// ================================================
 // TOGGLE WATCHLIST
 // ================================================
-const toggleWatchlist = (event: MouseEvent) => {
+const toggleWatchlist = async (event: MouseEvent) => {
   event.preventDefault()
   
-  if (isTransitioning.value) return
+  if (isTransitioning.value || !props.course || !userStore.isAuthenticated()) return
   
   isTransitioning.value = true
   
-  // Icon animation
   isAnimating.value = true
-  setTimeout(() => {
-    isAnimating.value = false
-  }, 200)
+  setTimeout(() => isAnimating.value = false, 200)
   
-  // Ripple effect
   if (watchlistButton.value) {
     const rect = watchlistButton.value.getBoundingClientRect()
     rippleX.value = event.clientX - rect.left
     rippleY.value = event.clientY - rect.top
     rippleSize.value = Math.max(rect.width, rect.height) * 2
-    
     showRipple.value = true
-    
-    setTimeout(() => {
-      showRipple.value = false
-    }, 600)
+    setTimeout(() => showRipple.value = false, 600)
   }
   
-  // Toggle state
-  setTimeout(() => {
-    isInWatchlist.value = !isInWatchlist.value
-    
-    if (isInWatchlist.value === false) {
-      isHovering.value = false
-    }
-    
-    setTimeout(() => {
-      isTransitioning.value = false
-    }, 300)
-  }, 150)
+  const previousState = isInWatchlist.value
+  isInWatchlist.value = !isInWatchlist.value
+  
+  try {
+    await watchlistStore.toggleWatchlist(props.course.id)
+  } catch (error) {
+    isInWatchlist.value = previousState
+  } finally {
+    setTimeout(() => isTransitioning.value = false, 300)
+  }
 }
 
 // ================================================
-// WINDOW RESIZE HANDLER
+// WINDOW RESIZE
 // ================================================
 const handleResize = () => {
   isMobile.value = window.innerWidth < 1024
@@ -623,21 +605,17 @@ const handleResize = () => {
 // ================================================
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  checkWatchlistStatus()
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  
-  // Clean up timeouts
   if (hoverTimeout) clearTimeout(hoverTimeout)
   if (leaveTimeout) clearTimeout(leaveTimeout)
 })
 </script>
 
 <style scoped>
-/* ================================================
-   BASE STYLES
-   ================================================ */
 button, .group {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -655,14 +633,11 @@ button, .group {
   outline-offset: 2px;
 }
 
-/* ================================================
-   WATCHLIST BUTTON
-   ================================================ */
 .watchlist-btn {
   position: relative;
   overflow: hidden;
   transition: all 0.2s ease;
-  width: 200px;
+  width: 180px;
   justify-content: flex-start !important;
   padding-left: 16px !important;
   text-align: left;
@@ -672,20 +647,17 @@ button, .group {
   transform: scale(0.98);
 }
 
-/* Icon positioning */
 .watchlist-btn svg {
   margin-right: 8px !important;
   flex-shrink: 0;
 }
 
-/* Text positioning */
 .watchlist-btn span {
   flex: 1;
   text-align: left !important;
   white-space: nowrap;
 }
 
-/* Ripple effect */
 .ripple {
   position: absolute;
   border-radius: 50%;
@@ -707,20 +679,15 @@ button, .group {
   }
 }
 
-/* Icon animation */
 .scale-110 {
   transform: scale(1.1);
 }
 
-/* Disabled state */
 .watchlist-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-/* ================================================
-   ACCORDION ANIMATIONS
-   ================================================ */
 .v-enter-active,
 .v-leave-active {
   transition: all 0.3s ease-out;
@@ -732,21 +699,13 @@ button, .group {
   height: 0;
 }
 
-/* Rotação suave da seta */
 .rotate-180 {
   transform: rotate(180deg);
 }
 
-/* ================================================
-   SKELETON ANIMATIONS
-   ================================================ */
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .animate-pulse {

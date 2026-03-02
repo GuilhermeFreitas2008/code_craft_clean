@@ -8,7 +8,8 @@ class Topic extends Model
 {
     protected $fillable = ['name', 'slug'];
 
-    public function courses() {
+    public function courses()
+ {
         return $this->belongsToMany(Course::class);
     }
 }

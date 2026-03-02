@@ -31,7 +31,7 @@
           <!-- Header with Title and Filters -->
           <div class="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <h1 class="text-3xl font-bold tracking-tight text-foreground animate-fade-in-up lg:text-4xl">
-              All Series
+              {{ pageTitle }}
             </h1>
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:space-x-4">
@@ -163,7 +163,7 @@
             </div>
           </div>
 
-          <!-- Courses Grid - COM ROUTER-LINK -->
+          <!-- Courses Grid -->
           <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <router-link
               v-for="course in filteredCourses"
@@ -258,6 +258,8 @@ import {
 import { useUserStore } from '@/stores/userStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useFilterStore } from '@/stores/filterStore'
+import { useWatchlistStore } from '@/stores/watchlistStore'
+import { useProgressStore } from '@/stores/progressStore' // 👈 NOVO IMPORT
 
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
@@ -266,6 +268,8 @@ import SideBar from '@/components/layout/SideBar.vue'
 const userStore = useUserStore()
 const uiStore = useUiStore()
 const filterStore = useFilterStore()
+const watchlistStore = useWatchlistStore()
+const progressStore = useProgressStore() // 👈 NOVA STORE
 
 const router = useRouter()
 
@@ -314,6 +318,22 @@ const courses = ref<Course[]>([])
 const CACHE_KEY = 'cached_courses'
 const CACHE_TIMESTAMP_KEY = 'cached_courses_timestamp'
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
+
+// ================================================
+// TÍTULO DINÂMICO CONFORME MENU ATIVO
+// ================================================
+const pageTitle = computed(() => {
+  switch (uiStore.activeMenuItem) {
+    case 'Watchlist':
+      return 'My Watchlist'
+    case 'Continue':
+      return 'Continue Learning'
+    case 'Completed':
+      return 'Completed Courses'
+    default:
+      return 'All Series'
+  }
+})
 
 // FUNÇÕES AUXILIARES PARA EXTRAIR NOMES
 const getCategoryName = (category: Category | string | null | undefined): string => {
@@ -372,24 +392,46 @@ const saveToCache = (data: Course[]) => {
   }
 }
 
-// Filtered Courses - CASE INSENSITIVE
+// ================================================
+// FILTERED COURSES - COM FILTRO POR MENU
+// ================================================
 const filteredCourses = computed(() => {
-  return courses.value.filter(course => {
-    const courseCategory = getCategoryName(course.category)
-    const courseDifficulty = getDifficultyName(course.difficulty)
-    
-    const matchesCategory = filterStore.selectedCategories.length === 0 || 
-      filterStore.selectedCategories.some(
+  let filtered = courses.value
+
+  // 1. Filtrar por categoria
+  if (filterStore.selectedCategories.length > 0) {
+    filtered = filtered.filter(course => {
+      const courseCategory = getCategoryName(course.category)
+      return filterStore.selectedCategories.some(
         cat => cat.toLowerCase() === courseCategory.toLowerCase()
       )
-    
-    const matchesDifficulty = filterStore.selectedDifficulties.length === 0 || 
-      filterStore.selectedDifficulties.some(
+    })
+  }
+
+  // 2. Filtrar por dificuldade
+  if (filterStore.selectedDifficulties.length > 0) {
+    filtered = filtered.filter(course => {
+      const courseDifficulty = getDifficultyName(course.difficulty)
+      return filterStore.selectedDifficulties.some(
         diff => diff.toLowerCase() === courseDifficulty.toLowerCase()
       )
-    
-    return matchesCategory && matchesDifficulty
-  })
+    })
+  }
+
+  // 3. Filtrar por menu ativo
+  switch (uiStore.activeMenuItem) {
+    case 'Watchlist':
+      filtered = filtered.filter(course => watchlistStore.isInWatchlist(course.id))
+      break
+    case 'Continue':
+      filtered = filtered.filter(course => progressStore.hasProgress(course.id))
+      break
+    case 'Completed':
+      filtered = filtered.filter(course => progressStore.isCompleted(course.id))
+      break
+  }
+
+  return filtered
 })
 
 // Dropdown Functions
@@ -411,9 +453,7 @@ const closeAllDropdowns = () => {
 // Menu Functions
 const handleMenuClick = (menuName: string) => {
   uiStore.setActiveMenu(menuName)
-  if (menuName === 'All Series') {
-    // Já estamos na página
-  }
+  // Não redireciona, apenas atualiza o filtro
 }
 
 // Difficulty Helper
@@ -465,24 +505,27 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
 
-  // PRIMEIRO: Mostrar dados em cache (se existirem)
   const hasCache = loadFromCache()
   
-  // SEGUNDO: Buscar filtros e cursos em PARALELO
   try {
-    isLoading.value = !hasCache // Só mostra loading se não tiver cache
+    isLoading.value = !hasCache
     
-    // Promise.all para buscar em paralelo
+    // Buscar filtros e cursos em paralelo
     const [filtersResult, coursesResult] = await Promise.all([
       filterStore.fetchFilters(),
       api.get('/courses')
     ])
     
-    // Atualizar cursos
     courses.value = coursesResult.data
-    
-    // Guardar no cache
     saveToCache(coursesResult.data)
+    
+    // Se estiver autenticado, carregar watchlist e progresso
+    if (userStore.isAuthenticated()) {
+      await Promise.all([
+        watchlistStore.fetchWatchlist(),
+        progressStore.fetchProgressCourses()
+      ])
+    }
     
   } catch (error) {
     console.error('❌ Erro ao carregar dados:', error)

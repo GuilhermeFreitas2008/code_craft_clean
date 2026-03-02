@@ -11,25 +11,40 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/axios'
 import { useUserStore } from '@/stores/userStore'
+import { useWatchlistStore } from '@/stores/watchlistStore'
 import CourseDisplay from './CourseDisplay.vue'
-import type { ApiCourse, UserProgress, UserCourseProgress, CourseDisplayProps } from '@/types/course.types'
+import type { ApiCourse, UserProgress, UserCourseProgress } from '@/types/course.types'
 
-// ================================================
-// PROPS & ROUTER
-// ================================================
+interface Lesson {
+  title: string
+  completed: boolean
+}
+
+interface Module {
+  title: string
+  lessons: Lesson[]
+}
+
+interface Course {
+  id: number
+  title: string
+  description: string
+  progressPercentage: number
+  tags: string[]
+  lastUpdate: string
+  modules: Module[]
+  difficulty: string
+  category: string
+}
+
 const route = useRoute()
 const courseId = Number(route.params.id)
 const userStore = useUserStore()
+const watchlistStore = useWatchlistStore()
 
-// ================================================
-// STATE
-// ================================================
-const courseData = ref<CourseDisplayProps>()  // 👈 mudado de null para undefined
+const courseData = ref<Course>()
 const loading = ref(true)
 
-// ================================================
-// FUNÇÃO PARA FORMATAR DATA
-// ================================================
 const formatLastUpdate = (dateString: string): string => {
   const date = new Date(dateString)
   return date.toLocaleDateString('en-US', { 
@@ -38,40 +53,35 @@ const formatLastUpdate = (dateString: string): string => {
   })
 }
 
-// ================================================
-// FUNÇÃO PRINCIPAL
-// ================================================
 const fetchCourseData = async () => {
   loading.value = true
   
   try {
-    // 1️⃣ Buscar dados do curso
+    if (userStore.isAuthenticated() && watchlistStore.items.length === 0) {
+      await watchlistStore.fetchWatchlist()
+    }
+    
     const courseResponse = await api.get(`/courses/${courseId}`)
     const apiCourse: ApiCourse = courseResponse.data
     
-    // Arrays para progresso
     let completedLessonIds: number[] = []
     let progressPercent = 0
     let hasEnrollment = false
 
-    // 2️⃣ Verificar progresso (só se estiver logado)
     if (userStore.isAuthenticated()) {
       try {
-        // Verificar enrollment
         const enrollmentResponse = await api.get('/enrollments', {
           params: { course_id: courseId }
         })
         hasEnrollment = enrollmentResponse.data.length > 0
         
         if (hasEnrollment) {
-          // Buscar progresso total
           const progressResponse = await api.get('/user-course-progress', {
             params: { course_id: courseId }
           })
           const courseProgress: UserCourseProgress = progressResponse.data[0]
           progressPercent = courseProgress?.progress_percent || 0
           
-          // Buscar lições completadas
           const lessonsProgressResponse = await api.get('/user-progress', {
             params: { course_id: courseId }
           })
@@ -82,7 +92,6 @@ const fetchCourseData = async () => {
       }
     }
 
-    // 3️⃣ Mapear módulos com progresso
     const modulesWithProgress = apiCourse.modules.map(module => ({
       title: module.title,
       lessons: module.lessons.map(lesson => ({
@@ -91,8 +100,8 @@ const fetchCourseData = async () => {
       }))
     }))
 
-    // 4️⃣ Construir objeto final
     courseData.value = {
+      id: apiCourse.id,
       title: apiCourse.title,
       description: apiCourse.description,
       progressPercentage: progressPercent,

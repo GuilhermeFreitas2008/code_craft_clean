@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lesson extends Model
 {
@@ -13,7 +11,7 @@ class Lesson extends Model
     /**
      * Uma lição pertence a um módulo
      */
-    public function module(): BelongsTo
+    public function module()
     {
         return $this->belongsTo(Module::class);
     }
@@ -21,7 +19,7 @@ class Lesson extends Model
     /**
      * Progresso dos utilizadores nesta lição
      */
-    public function progress(): HasMany
+    public function progress()
     {
         return $this->hasMany(UserProgress::class);
     }
