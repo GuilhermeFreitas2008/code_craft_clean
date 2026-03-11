@@ -151,6 +151,70 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
+    // Editar comentário
+    // ================================================
+    const editComment = async (commentId: number, content: string) => {
+        try {
+            const response = await api.put(`/comments/${commentId}`, { content })
+            
+            // Função recursiva para encontrar e atualizar o comentário
+            const updateCommentContent = (comments: Comment[]): boolean => {
+                for (const comment of comments) {
+                    if (comment.id === commentId) {
+                        comment.content = content
+                        return true
+                    }
+                    if (comment.replies && comment.replies.length > 0) {
+                        if (updateCommentContent(comment.replies)) return true
+                    }
+                }
+                return false
+            }
+            
+            updateCommentContent(currentLessonComments.value)
+            
+            return { success: true, comment: response.data }
+        } catch (err: any) {
+            return { 
+                success: false, 
+                error: err.response?.data?.error || 'Erro ao editar comentário'
+            }
+        }
+    }
+
+    // ================================================
+    // Apagar comentário
+    // ================================================
+    const deleteComment = async (commentId: number) => {
+        try {
+            await api.delete(`/comments/${commentId}`)
+            
+            // Função recursiva para encontrar e remover o comentário
+            const removeComment = (comments: Comment[]): boolean => {
+                for (let i = 0; i < comments.length; i++) {
+                    if (comments[i].id === commentId) {
+                        comments.splice(i, 1)
+                        return true
+                    }
+                    if (comments[i].replies && comments[i].replies!.length > 0) {
+                        if (removeComment(comments[i].replies!)) return true
+                    }
+                }
+                return false
+            }
+            
+            removeComment(currentLessonComments.value)
+            
+            return { success: true }
+        } catch (err: any) {
+            return { 
+                success: false, 
+                error: err.response?.data?.error || 'Erro ao apagar comentário'
+            }
+        }
+    }
+
+    // ================================================
     // Dar like em comentário
     // ================================================
     const likeComment = async (commentId: number) => {
@@ -240,6 +304,8 @@ export const useCourseStore = defineStore('course', () => {
         fetchLessonResources,
         fetchLessonComments,
         createComment,
+        editComment,      
+        deleteComment,    
         likeComment,
         markLessonComplete,
         selectLesson,

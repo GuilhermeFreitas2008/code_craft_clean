@@ -37,9 +37,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin pode GERIR recursos das lições
         Route::apiResource('resources', ResourceController::class)->except(['index', 'show']);
 
-        Route::put('/comments/{comment}', [CommentController::class, 'update']);
-        Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
-
         // Admin pode VER progresso dos alunos
         Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'show']);
     });
@@ -80,6 +77,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lessons/{lesson}/comments', [CommentController::class, 'index']);
     Route::post('/lessons/{lesson}/comments', [CommentController::class, 'store']);
     Route::post('/comments/{comment}/like', [CommentController::class, 'like']);
+    Route::put('/comments/{comment}', [CommentController::class, 'update']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
     // Rotas de progresso e inscrições
     Route::middleware('role:user')->group(function () {

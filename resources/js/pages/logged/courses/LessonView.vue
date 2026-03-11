@@ -32,7 +32,7 @@
           <LessonDisplay
             :lesson="courseStore.currentLesson"
             :resources="courseStore.currentLessonResources"
-            :comments="courseStore.currentLessonComments"
+            :comments="mappedComments"
             :loading="courseStore.isLoading"
             :error="courseStore.error"
             :active-section="activeSection"
@@ -54,6 +54,8 @@
             @reply-to="setReplyTo"
             @cancel-reply="cancelReply"
             @clear-comment="clearComment"
+            @delete-comment="handleDeleteComment"
+            @edit-comment="handleEditComment"
           />
         </main>
       </div>
@@ -69,6 +71,7 @@ import LessonSidebar from '@/components/lessons/LessonSidebar.vue'
 import LessonDisplay from './LessonDisplay.vue'
 import { useUserStore } from '@/stores/userStore'
 import { useCourseStore } from '@/stores/courseStore'
+import type { Comment, CommentWithLikeStatus } from '@/types/lesson.types'
 
 const props = defineProps<{
   id: string
@@ -93,13 +96,42 @@ const showSuccessMessage = ref(false)
 const showCompletionModal = ref(false)
 const newComment = ref('')
 const commentSubmitting = ref(false)
-const replyToComment = ref<any | null>(null)
+const replyToComment = ref<CommentWithLikeStatus | null>(null)
 
 // ================================================
 // COMPUTED
 // ================================================
 const userInitials = computed(() => {
   return userStore.user?.name?.charAt(0) || 'U'
+})
+
+// Mapear os comentários da API para o formato esperado
+const mappedComments = computed<CommentWithLikeStatus[]>(() => {
+  const rawComments = courseStore.currentLessonComments || []
+  
+  const mapComment = (comment: any): CommentWithLikeStatus => {
+    const userId = comment.user_id || comment.user?.id
+    const userName = comment.user?.username || comment.userName || 'Unknown'
+    const userInitials = comment.user?.username?.charAt(0).toUpperCase() || 
+                        comment.userInitials || 
+                        userName.charAt(0).toUpperCase()
+    
+    const mappedReplies = comment.replies?.map((reply: any) => mapComment(reply))
+
+    return {
+      id: comment.id,
+      userId: userId,
+      userName: userName,
+      userInitials: userInitials,
+      content: comment.content,
+      createdAt: comment.created_at || comment.createdAt,
+      likes: comment.likes || 0,
+      isLikedByCurrentUser: false,
+      replies: mappedReplies
+    }
+  }
+
+  return rawComments.map(mapComment)
 })
 
 // ================================================
@@ -129,10 +161,10 @@ const toggleSection = (section: 'resources' | 'comments') => {
 // ================================================
 // COMMENTS
 // ================================================
-const setReplyTo = (comment: any) => {
+const setReplyTo = (comment: CommentWithLikeStatus) => {
   replyToComment.value = comment
   activeSection.value = 'comments'
-  newComment.value = `@${comment?.userName || 'user'} `
+  newComment.value = `@${comment.userName} `
 }
 
 const cancelReply = () => {
@@ -150,10 +182,13 @@ const submitComment = async (content: string) => {
   
   commentSubmitting.value = true
   
+  // Garantir que parentId é number | null (nunca undefined)
+  const parentId = replyToComment.value?.id ?? null
+  
   const result = await courseStore.createComment(
     courseStore.currentLessonId,
     content,
-    replyToComment.value?.id
+    parentId
   )
   
   if (result?.success) {
@@ -165,9 +200,37 @@ const submitComment = async (content: string) => {
   commentSubmitting.value = false
 }
 
-const likeComment = async (commentId: number) => {
+// Aceitar number | undefined e validar
+const likeComment = async (commentId: number | undefined) => {
+  if (!commentId) return
   await courseStore.likeComment(commentId)
   if (courseStore.currentLessonId) {
+    await courseStore.fetchLessonComments(courseStore.currentLessonId)
+  }
+}
+
+// ================================================
+// EDIT COMMENT
+// ================================================
+const handleEditComment = async (commentId: number, content: string) => {
+  if (!commentId || !content?.trim() || !courseStore.currentLessonId) return
+  
+  const result = await courseStore.editComment(commentId, content)
+  
+  if (result?.success) {
+    await courseStore.fetchLessonComments(courseStore.currentLessonId)
+  }
+}
+
+// ================================================
+// DELETE COMMENT
+// ================================================
+const handleDeleteComment = async (commentId: number) => {
+  if (!commentId || !courseStore.currentLessonId) return
+  
+  const result = await courseStore.deleteComment(commentId)
+  
+  if (result?.success) {
     await courseStore.fetchLessonComments(courseStore.currentLessonId)
   }
 }
@@ -258,19 +321,14 @@ const closeMobileMenu = () => {
 const handleLessonSelect = async (lessonId: number) => {
   console.log('🎯 handleLessonSelect:', lessonId)
   
-  // Fechar secção
   activeSection.value = null
-  
-  // Selecionar nova lição
   courseStore.selectLesson(lessonId)
   
-  // FORÇAR recarga de dados
   await Promise.all([
     courseStore.fetchLessonResources(lessonId),
     courseStore.fetchLessonComments(lessonId)
   ])
   
-  // Atualizar URL
   router.push(`/course/${courseId}/lesson/${lessonId}`)
   
   if (isMobile.value) {

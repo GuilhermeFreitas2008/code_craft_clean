@@ -1,7 +1,7 @@
 <!-- pages/logged/courses/LessonDisplay.vue -->
 <template>
   <div class="mx-auto max-w-4xl">
-    <!-- DEBUG PANEL (opcional, podes remover depois) -->
+    <!-- DEBUG PANEL (opcional) -->
     <div class="fixed top-20 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs">
       <p>activeSection: {{ activeSection || 'null' }}</p>
       <p>comments: {{ comments?.length || 0 }}</p>
@@ -87,7 +87,7 @@
               <Paperclip :size="18" />
               <span class="text-sm font-medium">Resources</span>
               <span v-if="resources?.length" class="ml-1 text-xs bg-primary/20 text-primary px-1.5 rounded-full">
-                {{ resources.length }}
+                {{ formatCount(resources.length) }}
               </span>
             </button>
 
@@ -103,7 +103,7 @@
               <MessageCircle :size="18" />
               <span class="text-sm font-medium">Comments</span>
               <span v-if="comments?.length" class="ml-1 text-xs bg-primary/20 text-primary px-1.5 rounded-full">
-                {{ comments.length }}
+                {{ formatCount(comments.length) }}
               </span>
             </button>
           </div>
@@ -152,7 +152,9 @@
           <div v-if="activeSection" :key="lesson?.id" class="mt-6">
             <!-- SECÇÃO: Recursos -->
             <div v-if="activeSection === 'resources'" class="bg-white/5 rounded-xl p-6">
-              <h3 class="text-lg font-semibold text-foreground mb-4">Lesson Resources</h3>
+              <h3 class="text-lg font-semibold text-foreground mb-4">
+                Lesson Resources <span class="text-sm text-foreground/40 ml-2">({{ resources?.length || 0 }})</span>
+              </h3>
               
               <div v-if="resources?.length" class="space-y-2">
                 <div
@@ -179,18 +181,20 @@
               <p v-else class="text-center text-foreground/40 py-8">No resources available for this lesson yet.</p>
             </div>
 
-            <!-- SECÇÃO: Comentários - VERSÃO CORRIGIDA -->
+            <!-- SECÇÃO: Comentários - COM EDIÇÃO/APAGAR -->
             <div v-if="activeSection === 'comments'" class="bg-white/5 rounded-xl p-6">
-              <h3 class="text-lg font-semibold text-foreground mb-4">Comments ({{ comments?.length || 0 }})</h3>
+              <h3 class="text-lg font-semibold text-foreground mb-4">
+                Comments <span class="text-sm text-foreground/40 ml-2">({{ comments?.length || 0 }})</span>
+              </h3>
               
               <!-- Formulário de Novo Comentário -->
               <div class="flex gap-3 mb-6">
                 <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                  <span class="text-xs font-medium text-primary">{{ userInitials || 'U' }}</span>
+                  <span class="text-xs font-medium text-primary">{{ userInitials }}</span>
                 </div>
                 <div class="flex-1">
                   <div v-if="replyingTo" class="mb-2 text-xs text-primary bg-primary/10 px-2 py-1 rounded-lg inline-flex items-center gap-1">
-                    <span>Replying to {{ replyingTo?.userName || 'user' }}</span>
+                    <span>Replying to {{ replyingTo?.userId === currentUserId ? 'yourself' : replyingTo?.userName }}</span>
                     <button @click="$emit('cancel-reply')" class="hover:text-primary/80">✕</button>
                   </div>
                   <textarea
@@ -221,59 +225,156 @@
                 </div>
               </div>
 
-              <!-- Lista de Comentários - COM VERIFICAÇÕES -->
+              <!-- Lista de Comentários - COM "YOU" E AÇÕES -->
               <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
                 <div
                   v-for="comment in comments || []"
-                  :key="comment?.id || Math.random()"
-                  class="flex gap-3"
+                  :key="comment?.id"
+                  class="flex gap-3 group"
                 >
                   <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span class="text-xs font-medium text-primary">{{ comment?.userInitials || '?' }}</span>
+                    <span class="text-xs font-medium text-primary">{{ comment?.userInitials }}</span>
                   </div>
                   
                   <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="font-medium text-foreground text-sm">{{ comment?.userName || 'Anonymous' }}</span>
-                      <span class="text-xs text-foreground/40">{{ formatDate(comment?.createdAt) }}</span>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span v-if="currentUserId && comment?.userId === currentUserId" class="font-medium text-foreground text-sm">You</span>
+                        <span v-else class="font-medium text-foreground text-sm">{{ comment?.userName }}</span>
+                        <span class="text-xs text-foreground/40">{{ formatDate(comment?.createdAt) }}</span>
+                      </div>
+                      
+                      <!-- Botões de ação (só aparecem para o próprio user) -->
+                      <div v-if="currentUserId && comment?.userId === currentUserId" class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          @click="startEditing(comment)"
+                          class="p-1 text-foreground/40 hover:text-primary transition-colors"
+                          title="Edit"
+                        >
+                          <PenSquare :size="14" />
+                        </button>
+                        <button 
+                          @click="openDeleteModal(comment?.id)"
+                          class="p-1 text-foreground/40 hover:text-red-500 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 :size="14" />
+                        </button>
+                      </div>
                     </div>
-                    <p class="text-sm text-foreground/80">{{ comment?.content || '' }}</p>
+                    
+                    <!-- Modo de edição -->
+                    <div v-if="editingCommentId === comment?.id" class="mt-2">
+                      <textarea
+                        v-model="editingContent"
+                        rows="2"
+                        class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none transition-colors text-foreground text-sm resize-none mb-2"
+                      ></textarea>
+                      <div class="flex justify-end gap-2">
+                        <button 
+                          @click="cancelEditing"
+                          class="px-2 py-1 text-xs text-foreground/60 hover:text-foreground transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          @click="saveEdit(comment?.id)"
+                          class="px-2 py-1 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+                          :disabled="!editingContent?.trim()"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- Modo de visualização -->
+                    <p v-else class="text-sm text-foreground/80">{{ comment?.content }}</p>
                     
                     <div class="flex items-center gap-3 mt-2">
+                      <!-- Usar handleLikeComment em vez de emit direto -->
                       <button 
-                        @click="$emit('like-comment', comment?.id)"
+                        @click="handleLikeComment(comment?.id)"
                         class="text-xs text-foreground/40 hover:text-primary transition-colors flex items-center gap-1"
                       >
                         <Heart :size="12" />
                         {{ comment?.likes || 0 }}
                       </button>
+                      <!-- Usar handleReplyTo em vez de emit direto -->
                       <button 
-                        @click="$emit('reply-to', comment)"
+                        @click="handleReplyTo(comment)"
                         class="text-xs text-foreground/40 hover:text-primary transition-colors"
                       >
                         Reply
                       </button>
                     </div>
 
-                    <!-- Respostas - com verificações -->
+                    <!-- Respostas - COM "YOU" E AÇÕES -->
                     <div v-if="comment?.replies?.length" class="ml-6 mt-3 space-y-3">
                       <div
                         v-for="reply in comment.replies"
-                        :key="reply?.id || Math.random()"
-                        class="flex gap-2"
+                        :key="reply?.id"
+                        class="flex gap-2 group/reply"
                       >
                         <div class="w-6 h-6 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
-                          <span class="text-xs font-medium text-primary">{{ reply?.userInitials || '?' }}</span>
+                          <span class="text-xs font-medium text-primary">{{ reply?.userInitials }}</span>
                         </div>
                         <div class="flex-1">
-                          <div class="flex items-center gap-2 mb-1">
-                            <span class="font-medium text-foreground text-xs">{{ reply?.userName || 'Anonymous' }}</span>
-                            <span class="text-xs text-foreground/40">{{ formatDate(reply?.createdAt) }}</span>
+                          <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 mb-1">
+                              <span v-if="currentUserId && reply?.userId === currentUserId" class="font-medium text-foreground text-xs">You</span>
+                              <span v-else class="font-medium text-foreground text-xs">{{ reply?.userName }}</span>
+                              <span class="text-xs text-foreground/40">{{ formatDate(reply?.createdAt) }}</span>
+                            </div>
+                            
+                            <!-- Botões de ação para respostas -->
+                            <div v-if="currentUserId && reply?.userId === currentUserId" class="flex items-center gap-1 opacity-0 group-hover/reply:opacity-100 transition-opacity">
+                              <button 
+                                @click="startEditing(reply)"
+                                class="p-1 text-foreground/40 hover:text-primary transition-colors"
+                                title="Edit"
+                              >
+                                <PenSquare :size="12" />
+                              </button>
+                              <button 
+                                @click="openDeleteModal(reply?.id)"
+                                class="p-1 text-foreground/40 hover:text-red-500 transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 :size="12" />
+                              </button>
+                            </div>
                           </div>
-                          <p class="text-xs text-foreground/80">{{ reply?.content || '' }}</p>
+                          
+                          <!-- Modo de edição para respostas -->
+                          <div v-if="editingCommentId === reply?.id" class="mt-1">
+                            <textarea
+                              v-model="editingContent"
+                              rows="2"
+                              class="w-full px-2 py-1 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none transition-colors text-foreground text-xs resize-none mb-1"
+                            ></textarea>
+                            <div class="flex justify-end gap-2">
+                              <button 
+                                @click="cancelEditing"
+                                class="px-2 py-0.5 text-xs text-foreground/60 hover:text-foreground transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button 
+                                @click="saveEdit(reply?.id)"
+                                class="px-2 py-0.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+                                :disabled="!editingContent?.trim()"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <!-- Modo de visualização -->
+                          <p v-else class="text-xs text-foreground/80">{{ reply?.content }}</p>
+                          
                           <div class="flex items-center gap-3 mt-1">
                             <button 
-                              @click="$emit('like-comment', reply?.id)"
+                              @click="handleLikeComment(reply?.id)"
                               class="text-xs text-foreground/40 hover:text-primary transition-colors flex items-center gap-1"
                             >
                               <Heart :size="10" />
@@ -296,6 +397,49 @@
         </Transition>
       </div>
     </div>
+
+    <!-- Modal de Confirmação de Delete (direto aqui no componente) -->
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeDeleteModal"></div>
+        
+        <!-- Modal -->
+        <div class="relative bg-background border border-white/10 rounded-xl max-w-md w-full p-6 shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+              <AlertCircle class="w-5 h-5 text-red-500" />
+            </div>
+            <h3 class="text-lg font-semibold text-foreground">Delete Comment</h3>
+          </div>
+          
+          <p class="text-foreground/80 mb-6">Are you sure you want to delete this comment? This action cannot be undone.</p>
+          
+          <div class="flex justify-end gap-3">
+            <button
+              @click="closeDeleteModal"
+              class="px-4 py-2 rounded-lg text-foreground/60 hover:text-foreground hover:bg-white/5 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              @click="confirmDelete"
+              class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+            >
+              <Trash2 :size="16" />
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -310,10 +454,14 @@ import {
   Download,
   MessageCircle,
   Heart,
-  AlertCircle
+  AlertCircle,
+  PenSquare,
+  Trash2
 } from 'lucide-vue-next'
 import VideoPlayer from '@/components/lessons/VideoPlayer.vue'
 import LessonContent from '@/components/lessons/LessonContent.vue'
+import { useUserStore } from '@/stores/userStore'
+import { ref } from 'vue'
 
 const props = defineProps<{
   lesson: any
@@ -329,7 +477,7 @@ const props = defineProps<{
   newComment: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'retry'): void
   (e: 'video-play'): void
   (e: 'video-pause'): void
@@ -341,9 +489,87 @@ defineEmits<{
   (e: 'submit-comment', content: string): void
   (e: 'like-comment', commentId: number): void
   (e: 'reply-to', comment: any): void
+  (e: 'delete-comment', commentId: number): void
+  (e: 'edit-comment', commentId: number, content: string): void
   (e: 'cancel-reply'): void
   (e: 'clear-comment'): void
 }>()
+
+const userStore = useUserStore()
+const currentUserId = userStore.user?.id
+
+// Estado para edição
+const editingCommentId = ref<number | null>(null)
+const editingContent = ref('')
+
+// Estado para o modal de delete
+const showDeleteModal = ref(false)
+const commentToDelete = ref<number | null>(null)
+
+// ================================================
+// FUNÇÕES DO MODAL DE DELETE
+// ================================================
+const openDeleteModal = (commentId: number | null | undefined) => {
+  if (!commentId) return
+  commentToDelete.value = commentId
+  showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  commentToDelete.value = null
+}
+
+const confirmDelete = () => {
+  if (commentToDelete.value) {
+    emit('delete-comment', commentToDelete.value)
+  }
+  closeDeleteModal()
+}
+
+// ================================================
+// FUNÇÕES AUXILIARES (validam antes de emitir)
+// ================================================
+const handleLikeComment = (commentId: number | null | undefined) => {
+  if (!commentId) return
+  emit('like-comment', commentId)
+}
+
+const handleReplyTo = (comment: any) => {
+  if (!comment?.id) return
+  emit('reply-to', comment)
+}
+
+// ================================================
+// FUNÇÕES DE EDIÇÃO
+// ================================================
+const startEditing = (comment: any) => {
+  if (!comment?.id) return
+  editingCommentId.value = comment.id
+  editingContent.value = comment.content || ''
+}
+
+const cancelEditing = () => {
+  editingCommentId.value = null
+  editingContent.value = ''
+}
+
+const saveEdit = (commentId: number | null | undefined) => {
+  if (!commentId) return
+  if (!editingContent.value?.trim()) return
+  
+  emit('edit-comment', commentId, editingContent.value)
+  editingCommentId.value = null
+  editingContent.value = ''
+}
+
+// ================================================
+// FORMAT COUNT
+// ================================================
+const formatCount = (count: number): string => {
+  if (count > 99) return '+99'
+  return count.toString()
+}
 
 // ================================================
 // GET RESOURCE ICON
@@ -360,7 +586,7 @@ const getResourceIcon = (type: string) => {
 }
 
 // ================================================
-// FORMAT DATE - CORRIGIDO COM VERIFICAÇÃO
+// FORMAT DATE
 // ================================================
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return 'recently'
