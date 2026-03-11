@@ -13,6 +13,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DifficultyController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\WatchlistController;
+use App\Http\Controllers\ResourceController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -32,6 +34,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
         Route::apiResource('difficulties', DifficultyController::class)->except(['index', 'show']);
         Route::apiResource('topics', TopicController::class)->except(['index', 'show']);
+        // Admin pode GERIR recursos das lições
+        Route::apiResource('resources', ResourceController::class)->except(['index', 'show']);
+
+        Route::put('/comments/{comment}', [CommentController::class, 'update']);
+        Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
         // Admin pode VER progresso dos alunos
         Route::apiResource('user-course-progress', UserCourseProgressController::class)->only(['index', 'show']);
@@ -64,6 +71,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/watchlist/{course}', [WatchlistController::class, 'store']);
     Route::delete('/watchlist/{course}', [WatchlistController::class, 'destroy']);
     Route::get('/watchlist/check/{course}', [WatchlistController::class, 'check']); // opcional
+
+     // Resources (listar e ver - apenas para inscritos)
+    Route::get('/lessons/{lesson}/resources', [ResourceController::class, 'index']);
+    Route::get('/resources/{resource}', [ResourceController::class, 'show']);
+
+    // Comments (listar, criar, like)
+    Route::get('/lessons/{lesson}/comments', [CommentController::class, 'index']);
+    Route::post('/lessons/{lesson}/comments', [CommentController::class, 'store']);
+    Route::post('/comments/{comment}/like', [CommentController::class, 'like']);
 
     // Rotas de progresso e inscrições
     Route::middleware('role:user')->group(function () {

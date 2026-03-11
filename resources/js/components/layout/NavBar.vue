@@ -1,3 +1,4 @@
+<!-- NavBar.vue -->
 <template>
   <header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
     <div class="flex h-16 items-center justify-between pl-5 pr-8">
@@ -5,12 +6,12 @@
       <div class="flex items-center space-x-2 lg:space-x-3">
         <!-- Botão Toggle Sidebar -->
         <button 
-          @click="uiStore.toggleSidebar()"
+          @click="$emit('toggle-sidebar')"
           class="hidden rounded-lg pr-2 text-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground lg:block"
-          :title="uiStore.sidebarVisible ? 'Fechar menu' : 'Abrir menu'"
+          :title="sidebarVisible ? 'Fechar menu' : 'Abrir menu'"
         >
           <component 
-            :is="uiStore.sidebarVisible ? PanelLeftClose : PanelRightClose" 
+            :is="sidebarVisible ? PanelLeftClose : PanelRightClose" 
             :size="29" 
           />
         </button>
@@ -20,7 +21,7 @@
 
         <!-- Mobile Menu Toggle -->
         <button 
-          @click="uiStore.toggleMobileMenu()"
+          @click="$emit('toggle-mobile-menu')"
           class="rounded-lg p-2 text-foreground/60 hover:bg-white/5 hover:text-foreground lg:hidden"
         >
           <Menu :size="24" />
@@ -143,6 +144,17 @@ import { useUiStore } from '@/stores/uiStore'
 
 const userStore = useUserStore()
 const uiStore = useUiStore()
+
+// Props
+defineProps<{
+  sidebarVisible: boolean
+}>()
+
+// Emits
+defineEmits<{
+  (e: 'toggle-mobile-menu'): void
+  (e: 'toggle-sidebar'): void
+}>()
 
 // User menu state
 const userMenuOpen = ref(false)

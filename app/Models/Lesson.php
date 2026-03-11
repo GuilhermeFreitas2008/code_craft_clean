@@ -23,4 +23,15 @@ class Lesson extends Model
     {
         return $this->hasMany(UserProgress::class);
     }
+
+    public function resources()
+    {
+        return $this->belongsToMany(Resource::class, 'lesson_resource')
+                    ->withTimestamps();
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }

@@ -13,9 +13,13 @@
         "vite": "^7.0.4"
     },
     "dependencies": {
+        "@types/highlight.js": "^9.12.4",
+        "@types/markdown-it": "^14.1.2",
         "axios": "^1.13.4",
+        "highlight.js": "^11.11.1",
         "laravel-vite-plugin": "^2.0.0",
         "lucide-vue-next": "^0.563.0",
+        "markdown-it": "^14.1.1",
         "pinia": "^3.0.4",
         "pinia-plugin-persistedstate": "^4.7.1",
         "tailwindcss": "^4.1.1",

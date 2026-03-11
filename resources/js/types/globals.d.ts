@@ -10,3 +10,8 @@ declare module '*.vue' {
 interface ImportMetaEnv {
     readonly VITE_APP_NAME?: string;
 }
+
+interface Window {
+  YT: any
+  onYouTubeIframeAPIReady: () => void
+}

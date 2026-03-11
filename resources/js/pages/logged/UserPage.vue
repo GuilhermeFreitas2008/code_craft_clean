@@ -53,7 +53,7 @@
                   v-if="categoryDropdownOpen"
                   class="absolute right-0 top-8 z-50 min-w-[220px] rounded-lg border border-border bg-card py-2 shadow-lg animate-fade-in"
                 >
-                  <div class="max-h-60 overflow-y-auto">
+                  <div class="max-h-60 overflow-y-auto dropdown-scrollbar">
                     <div
                       v-for="cat in filterStore.availableCategories"
                       :key="cat"
@@ -106,7 +106,7 @@
                   v-if="difficultyDropdownOpen"
                   class="absolute right-0 top-8 z-50 min-w-[220px] rounded-lg border border-border bg-card py-2 shadow-lg animate-fade-in"
                 >
-                  <div class="max-h-60 overflow-y-auto">
+                  <div class="max-h-60 overflow-y-auto dropdown-scrollbar">
                     <div
                       v-for="diff in filterStore.availableDifficulties"
                       :key="diff"
@@ -259,7 +259,7 @@ import { useUserStore } from '@/stores/userStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useFilterStore } from '@/stores/filterStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
-import { useProgressStore } from '@/stores/progressStore' // 👈 NOVO IMPORT
+import { useProgressStore } from '@/stores/progressStore'
 
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
@@ -269,7 +269,7 @@ const userStore = useUserStore()
 const uiStore = useUiStore()
 const filterStore = useFilterStore()
 const watchlistStore = useWatchlistStore()
-const progressStore = useProgressStore() // 👈 NOVA STORE
+const progressStore = useProgressStore()
 
 const router = useRouter()
 
@@ -542,7 +542,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Smooth transitions - versão mais clean */
+/* Transições específicas da página */
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -563,18 +563,13 @@ onUnmounted(() => {
   transform: translateY(-2px);
 }
 
-/* Rotação suave */
-.rotate-180 {
-  transform: rotate(180deg);
-}
-
 /* Focus styles */
 *:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/* Checkbox personalizado */
+/* Checkbox personalizado (específico desta página) */
 .checkbox-hidden {
   position: absolute;
   width: 0;
@@ -607,7 +602,7 @@ onUnmounted(() => {
   background-color: var(--color-primary);
 }
 
-/* Animação de fade-in para o dropdown */
+/* Animação de fade-in para o dropdown (específica) */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -621,38 +616,5 @@ onUnmounted(() => {
 
 .animate-fade-in {
   animation: fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Scrollbar personalizada */
-.max-h-60::-webkit-scrollbar {
-  width: 6px;
-}
-
-.max-h-60::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.max-h-60::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
-  transition: background 200ms;
-}
-
-.max-h-60::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-/* Animação de pulso para o skeleton */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>

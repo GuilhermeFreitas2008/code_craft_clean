@@ -4,6 +4,7 @@ import LoginPage from '@/pages/public/LoginPage.vue';
 import RegisterPage from '@/pages/public/RegisterPage.vue';
 import UserPage from '@/pages/logged/UserPage.vue';
 import CourseView from '@/pages/logged/courses/CourseView.vue';
+import LessonView from '@/pages/logged/courses/LessonView.vue';
 
 
 const router = createRouter({
@@ -18,6 +19,8 @@ const router = createRouter({
         {path: '/user', name: 'user', component: UserPage},
 
         {path: '/course/:id', name: 'course', component: CourseView, props: true},
+
+        { path: '/course/:id/lesson/:lessonId', name: 'lesson', component: LessonView, props: true },
     ],
 });
 

@@ -76,4 +76,14 @@ class User extends Authenticatable
         return $this->belongsToMany(Course::class, 'watchlist')
                     ->withTimestamps();
     }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function commentLikes()
+    {
+        return $this->hasMany(CommentLike::class);
+    }
 }

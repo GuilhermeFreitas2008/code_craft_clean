@@ -28,275 +28,307 @@
         :class="uiStore.sidebarVisible ? 'lg:ml-64' : 'lg:ml-0'"
       >
         <main class="p-4 lg:p-8">
-          <!-- Skeleton Loader -->
-          <div v-if="loading" class="mx-auto max-w-7xl">
-            <div class="mb-6">
-              <div class="h-6 w-24 animate-pulse rounded bg-white/5"></div>
+          <div class="mx-auto max-w-7xl">
+            <!-- DEBUG: Mostrar estado atual (visível apenas em desenvolvimento) -->
+            <div v-if="false" class="bg-yellow-500/10 text-yellow-500 p-2 mb-4 rounded">
+              loading: {{ loading }}, hasCourse: {{ !!course }}, courseId: {{ course?.id }}
             </div>
 
-            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div></div>
-              <div class="flex items-center gap-3">
-                <div class="h-8 w-20 animate-pulse rounded-xl bg-white/5"></div>
-                <div class="h-8 w-24 animate-pulse rounded-xl bg-white/5"></div>
+            <!-- Skeleton Loader -->
+            <div v-if="loading" class="mx-auto max-w-7xl">
+              <div class="mb-6">
+                <div class="h-6 w-24 animate-pulse rounded bg-white/5"></div>
               </div>
-            </div>
 
-            <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              <div class="lg:col-span-2 space-y-6">
-                <div class="rounded-xl border border-white/5 bg-card p-6">
-                  <div class="h-8 w-3/4 animate-pulse rounded bg-white/5 mb-4"></div>
-                  <div class="h-4 w-full animate-pulse rounded bg-white/5 mb-2"></div>
-                  <div class="h-4 w-5/6 animate-pulse rounded bg-white/5 mb-6"></div>
-                  
-                  <div class="mt-6">
-                    <div class="flex items-center justify-between mb-2">
-                      <div class="h-4 w-24 animate-pulse rounded bg-white/5"></div>
-                      <div class="h-4 w-8 animate-pulse rounded bg-white/5"></div>
+              <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div></div>
+                <div class="flex items-center gap-3">
+                  <div class="h-8 w-20 animate-pulse rounded-xl bg-white/5"></div>
+                  <div class="h-8 w-24 animate-pulse rounded-xl bg-white/5"></div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div class="lg:col-span-2 space-y-6">
+                  <div class="rounded-xl border border-white/5 bg-card p-6">
+                    <div class="h-8 w-3/4 animate-pulse rounded bg-white/5 mb-4"></div>
+                    <div class="h-4 w-full animate-pulse rounded bg-white/5 mb-2"></div>
+                    <div class="h-4 w-5/6 animate-pulse rounded bg-white/5 mb-6"></div>
+                    
+                    <div class="mt-6">
+                      <div class="flex items-center justify-between mb-2">
+                        <div class="h-4 w-24 animate-pulse rounded bg-white/5"></div>
+                        <div class="h-4 w-8 animate-pulse rounded bg-white/5"></div>
+                      </div>
+                      <div class="h-2 w-full animate-pulse rounded-full bg-white/5"></div>
                     </div>
-                    <div class="h-2 w-full animate-pulse rounded-full bg-white/5"></div>
+
+                    <div class="mt-6 flex flex-wrap gap-4">
+                      <div class="h-10 w-32 animate-pulse rounded-lg bg-white/5"></div>
+                      <div class="h-10 w-40 animate-pulse rounded-lg bg-white/5"></div>
+                    </div>
                   </div>
 
-                  <div class="mt-6 flex flex-wrap gap-4">
-                    <div class="h-10 w-32 animate-pulse rounded-lg bg-white/5"></div>
-                    <div class="h-10 w-40 animate-pulse rounded-lg bg-white/5"></div>
+                  <div class="rounded-xl border border-white/5 bg-card p-6">
+                    <div class="h-6 w-40 animate-pulse rounded bg-white/5 mb-4"></div>
+                    
+                    <div class="space-y-3">
+                      <div
+                        v-for="n in 3"
+                        :key="n"
+                        class="animate-pulse rounded-lg border border-white/5 bg-card p-4"
+                      >
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center space-x-2">
+                            <div class="h-5 w-32 rounded bg-white/5"></div>
+                            <div class="h-4 w-12 rounded bg-white/5"></div>
+                          </div>
+                          <div class="h-5 w-5 rounded bg-white/5"></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="rounded-xl border border-white/5 bg-card p-6">
-                  <div class="h-6 w-40 animate-pulse rounded bg-white/5 mb-4"></div>
-                  
-                  <div class="space-y-3">
-                    <div
-                      v-for="n in 3"
-                      :key="n"
-                      class="animate-pulse rounded-lg border border-white/5 bg-card p-4"
-                    >
+                <div class="space-y-5">
+                  <div class="rounded-xl border border-white/5 bg-card p-4">
+                    <div class="h-6 w-20 animate-pulse rounded bg-white/5 mb-4"></div>
+                    <div class="flex flex-wrap gap-2">
+                      <div
+                        v-for="n in 4"
+                        :key="n"
+                        class="h-8 w-16 animate-pulse rounded-full bg-white/5"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="rounded-xl border border-white/5 bg-card p-5">
+                    <div class="h-6 w-24 animate-pulse rounded bg-white/5 mb-4"></div>
+                    <div class="space-y-3">
                       <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                          <div class="h-5 w-32 rounded bg-white/5"></div>
-                          <div class="h-4 w-12 rounded bg-white/5"></div>
-                        </div>
-                        <div class="h-5 w-5 rounded bg-white/5"></div>
+                        <div class="h-4 w-20 animate-pulse rounded bg-white/5"></div>
+                        <div class="h-4 w-24 animate-pulse rounded bg-white/5"></div>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <div class="h-4 w-20 animate-pulse rounded bg-white/5"></div>
+                        <div class="h-4 w-16 animate-pulse rounded bg-white/5"></div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <div class="space-y-5">
-                <div class="rounded-xl border border-white/5 bg-card p-4">
-                  <div class="h-6 w-20 animate-pulse rounded bg-white/5 mb-4"></div>
-                  <div class="flex flex-wrap gap-2">
-                    <div
-                      v-for="n in 4"
-                      :key="n"
-                      class="h-8 w-16 animate-pulse rounded-full bg-white/5"
-                    ></div>
-                  </div>
-                </div>
-
-                <div class="rounded-xl border border-white/5 bg-card p-5">
-                  <div class="h-6 w-24 animate-pulse rounded bg-white/5 mb-4"></div>
-                  <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                      <div class="h-4 w-20 animate-pulse rounded bg-white/5"></div>
-                      <div class="h-4 w-24 animate-pulse rounded bg-white/5"></div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                      <div class="h-4 w-20 animate-pulse rounded bg-white/5"></div>
-                      <div class="h-4 w-16 animate-pulse rounded bg-white/5"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
-          </div>
 
-          <!-- Conteúdo Real -->
-          <div v-else-if="course" class="mx-auto max-w-7xl">
-            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <!-- Sem dados -->
+            <div v-else-if="!course" class="text-center py-12">
+              <AlertCircle :size="48" class="text-foreground/40 mx-auto mb-4" />
+              <h3 class="text-lg font-semibold text-foreground mb-2">Course not found</h3>
+              <p class="text-foreground/60">The course you're looking for doesn't exist or you don't have access.</p>
               <button 
                 @click="goBack" 
-                class="flex items-center space-x-2 text-foreground/60 transition-colors hover:text-primary"
+                class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
               >
-                <ChevronLeft :size="20" />
-                <span>Back to series</span>
+                Go Back
               </button>
-
-              <div class="flex items-center gap-3 text-sm">
-                <div 
-                  class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
-                >
-                  <component :is="getDifficultyIcon(course.difficulty)" :size="16" />
-                  <span class="capitalize">{{ course.difficulty }}</span>
-                </div>
-                
-                <div 
-                  class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
-                >
-                  <Tag :size="16" />
-                  <span>{{ course.category }}</span>
-                </div>
-              </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              <div class="lg:col-span-2 space-y-6">
-                <div class="rounded-xl border border-white/5 bg-card p-6">
-                  <h1 class="text-3xl font-bold text-foreground lg:text-4xl">
-                    {{ course.title }}
-                  </h1>
-                  <p class="mt-2 text-foreground/60">
-                    {{ course.description }}
-                  </p>
+            <!-- Conteúdo Real -->
+            <div v-else-if="course" class="mx-auto max-w-7xl">
+              <!-- Back Button and Badges -->
+              <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <button 
+                  @click="goBack" 
+                  class="flex items-center space-x-2 text-foreground/60 transition-colors hover:text-primary"
+                >
+                  <ChevronLeft :size="20" />
+                  <span>Back to series</span>
+                </button>
 
-                  <div class="mt-6">
-                    <div class="flex items-center justify-between text-sm">
-                      <span class="text-foreground/60">Course progress</span>
-                      <span class="font-medium text-primary">{{ Math.round(course.progressPercentage) }}%</span>
-                    </div>
-                    <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/5">
-                      <div 
-                        class="h-full rounded-full bg-primary transition-all duration-300"
-                        :style="{ width: `${course.progressPercentage}%` }"
-                      ></div>
-                    </div>
+                <div class="flex items-center gap-3 text-sm">
+                  <div 
+                    class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
+                  >
+                    <component :is="getDifficultyIcon(course.difficulty)" :size="16" />
+                    <span class="capitalize">{{ course.difficulty }}</span>
                   </div>
-
-                  <div class="mt-6 flex flex-wrap gap-4">
-                    <button class="inline-flex items-center space-x-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20">
-                      <Play :size="18" />
-                      <span>{{ course.progressPercentage === 0 ? 'Start Course' : 'Continue Course' }}</span>
-                    </button>
-                    
-                    <button 
-                      @click="toggleWatchlist"
-                      @mouseenter="handleMouseEnter"
-                      @mouseleave="handleMouseLeave"
-                      :disabled="isTransitioning"
-                      class="watchlist-btn relative inline-flex items-center overflow-hidden rounded-lg border px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 w-[180px]"
-                      :class="[buttonClasses]"
-                    >
-                      <component 
-                        :is="watchlistIcon"
-                        :size="18" 
-                        class="transition-transform duration-200 flex-shrink-0 mr-2"
-                        :class="{ 'scale-110': isAnimating }"
-                      />
-                      <span class="flex-1 text-left">{{ watchlistButtonText }}</span>
-                      <span 
-                        v-if="showRipple"
-                        class="ripple absolute rounded-full bg-white/30"
-                        :style="{
-                          top: rippleY + 'px',
-                          left: rippleX + 'px',
-                          width: rippleSize + 'px',
-                          height: rippleSize + 'px'
-                        }"
-                      ></span>
-                    </button>
+                  
+                  <div 
+                    class="flex items-center space-x-1 rounded-xl bg-primary/10 px-3 py-1.5 text-primary transition-colors hover:bg-primary/20"
+                  >
+                    <Tag :size="16" />
+                    <span>{{ course.category }}</span>
                   </div>
                 </div>
+              </div>
 
-                <div class="rounded-xl border border-white/5 bg-card p-6">
-                  <h2 class="mb-4 text-xl font-semibold text-foreground">Course Content</h2>
-                  
-                  <div class="space-y-3">
-                    <div
-                      v-for="(module, moduleIndex) in course.modules"
-                      :key="moduleIndex"
-                      class="overflow-hidden rounded-lg border border-white/5"
-                    >
-                      <button
-                        @click="toggleModule(moduleIndex)"
-                        class="flex w-full items-center justify-between bg-card px-4 py-3 text-left transition-colors hover:bg-white/5"
-                      >
-                        <div class="flex items-center space-x-2">
-                          <span class="text-sm font-medium text-foreground">{{ module.title }}</span>
-                          <span class="text-xs text-foreground/40">({{ module.lessons?.length || 0 }} lessons)</span>
-                        </div>
-                        
-                        <ChevronDown 
-                          :size="18" 
-                          class="text-foreground/60 transition-transform duration-300"
-                          :class="{ 'rotate-180': openModules.includes(moduleIndex) }"
-                        />
-                      </button>
+              <!-- Course Main Content Grid -->
+              <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div class="lg:col-span-2 space-y-6">
+                  <!-- Course Info Card -->
+                  <div class="rounded-xl border border-white/5 bg-card p-6">
+                    <h1 class="text-3xl font-bold text-foreground lg:text-4xl">
+                      {{ course.title }}
+                    </h1>
+                    <p class="mt-2 text-foreground/60">
+                      {{ course.description }}
+                    </p>
 
-                      <Transition
-                        @before-enter="beforeEnter"
-                        @enter="enter"
-                        @before-leave="beforeLeave"
-                        @leave="leave"
-                      >
+                    <!-- Progress Bar -->
+                    <div class="mt-6">
+                      <div class="flex items-center justify-between text-sm">
+                        <span class="text-foreground/60">Course progress</span>
+                        <span class="font-medium text-primary">{{ Math.round(course.progressPercentage) }}%</span>
+                      </div>
+                      <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/5">
                         <div 
-                          v-if="openModules.includes(moduleIndex)"
-                          class="overflow-hidden"
+                          class="h-full rounded-full bg-primary transition-all duration-300"
+                          :style="{ width: `${course.progressPercentage}%` }"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-6 flex flex-wrap gap-4">
+                      <!-- Botão Start/Continue -->
+                      <button 
+                        @click="goToFirstLesson"
+                        class="inline-flex items-center space-x-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary/60"
+                      >
+                        <Play :size="18" />
+                        <span>{{ course.progressPercentage === 0 ? 'Start Course' : 'Continue Course' }}</span>
+                      </button>
+                      
+                      <button 
+                        @click="toggleWatchlist"
+                        @mouseenter="handleMouseEnter"
+                        @mouseleave="handleMouseLeave"
+                        :disabled="isTransitioning"
+                        ref="watchlistButton"
+                        class="watchlist-btn relative inline-flex items-center overflow-hidden rounded-lg border px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 w-[180px]"
+                        :class="[buttonClasses]"
+                      >
+                        <component 
+                          :is="watchlistIcon"
+                          :size="18" 
+                          class="transition-transform duration-200 flex-shrink-0 mr-2"
+                          :class="{ 'scale-110': isAnimating }"
+                        />
+                        <span class="flex-1 text-left">{{ watchlistButtonText }}</span>
+                        <span 
+                          v-if="showRipple"
+                          class="ripple absolute rounded-full bg-white/30"
+                          :style="{
+                            top: rippleY + 'px',
+                            left: rippleX + 'px',
+                            width: rippleSize + 'px',
+                            height: rippleSize + 'px'
+                          }"
+                        ></span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Course Modules -->
+                  <div class="rounded-xl border border-white/5 bg-card p-6">
+                    <h2 class="mb-4 text-xl font-semibold text-foreground">Course Content</h2>
+                    
+                    <div class="space-y-3">
+                      <div
+                        v-for="(module, moduleIndex) in course.modules"
+                        :key="moduleIndex"
+                        class="overflow-hidden rounded-lg border border-white/5"
+                      >
+                        <button
+                          @click="toggleModule(moduleIndex)"
+                          class="flex w-full items-center justify-between bg-card px-4 py-3 text-left transition-colors hover:bg-white/5"
                         >
-                          <div class="space-y-1 p-2">
-                            <div
-                              v-for="(lesson, lessonIndex) in module.lessons"
-                              :key="lessonIndex"
-                              class="group flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-white/5"
-                            >
-                              <div class="flex items-center space-x-3">
-                                <div class="flex h-6 w-6 items-center justify-center">
-                                  <CheckCircle 
-                                    v-if="lesson.completed"
-                                    :size="18" 
-                                    class="text-primary"
-                                  />
-                                  <Circle 
-                                    v-else
-                                    :size="18" 
-                                    class="text-foreground/20"
-                                  />
+                          <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-foreground">{{ module.title }}</span>
+                            <span class="text-xs text-foreground/40">({{ module.lessons?.length || 0 }} lessons)</span>
+                          </div>
+                          
+                          <ChevronDown 
+                            :size="18" 
+                            class="text-foreground/60 transition-transform duration-300"
+                            :class="{ 'rotate-180': openModules.includes(moduleIndex) }"
+                          />
+                        </button>
+
+                        <Transition
+                          @before-enter="beforeEnter"
+                          @enter="enter"
+                          @before-leave="beforeLeave"
+                          @leave="leave"
+                        >
+                          <div 
+                            v-if="openModules.includes(moduleIndex)"
+                            class="overflow-hidden"
+                          >
+                            <div class="space-y-1 p-2">
+                              <div
+                                v-for="(lesson, lessonIndex) in module.lessons"
+                                :key="lessonIndex"
+                                class="group flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-white/5"
+                              >
+                                <div class="flex items-center space-x-3">
+                                  <div class="flex h-6 w-6 items-center justify-center">
+                                    <CheckCircle 
+                                      v-if="lesson.completed"
+                                      :size="18" 
+                                      class="text-primary"
+                                    />
+                                    <Circle 
+                                      v-else
+                                      :size="18" 
+                                      class="text-foreground/20"
+                                    />
+                                  </div>
+                                  <span 
+                                    class="text-sm transition-colors"
+                                    :class="lesson.completed ? 'text-foreground/60' : 'text-foreground'"
+                                  >
+                                    {{ lesson.title }}
+                                  </span>
                                 </div>
-                                <span 
-                                  class="text-sm transition-colors"
-                                  :class="lesson.completed ? 'text-foreground/60' : 'text-foreground'"
-                                >
-                                  {{ lesson.title }}
-                                </span>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </Transition>
+                        </Transition>
+                      </div>
                     </div>
-                  </div>
 
-                  <div class="mt-4 text-xs text-foreground/40">
-                    Total: {{ totalLessons }} lessons
-                  </div>
-                </div>
-              </div>
-
-              <div class="space-y-5">
-                <div class="rounded-xl border border-white/5 bg-card p-4">
-                  <h3 class="mb-4 text-lg font-semibold text-foreground">Topics</h3>
-                  <div class="flex flex-wrap gap-2">
-                    <span
-                      v-for="(tag, index) in course.tags"
-                      :key="index"
-                      class="rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
-                    >
-                      {{ tag }}
-                    </span>
+                    <div class="mt-4 text-xs text-foreground/40">
+                      Total: {{ totalLessons }} lessons
+                    </div>
                   </div>
                 </div>
 
-                <div class="rounded-xl border border-white/5 bg-card p-5">
-                  <h3 class="mb-4 text-lg font-semibold text-foreground">Information</h3>
-                  <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm text-foreground/60">Last update</span>
-                      <span class="text-sm font-medium text-foreground">{{ course.lastUpdate }}</span>
+                <!-- Sidebar Info -->
+                <div class="space-y-5">
+                  <div class="rounded-xl border border-white/5 bg-card p-4">
+                    <h3 class="mb-4 text-lg font-semibold text-foreground">Topics</h3>
+                    <div class="flex flex-wrap gap-2">
+                      <span
+                        v-for="(tag, index) in course.tags"
+                        :key="index"
+                        class="rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+                      >
+                        {{ tag }}
+                      </span>
                     </div>
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm text-foreground/60">Total lessons</span>
-                      <span class="text-sm font-medium text-foreground">{{ totalLessons }} lessons</span>
+                  </div>
+
+                  <div class="rounded-xl border border-white/5 bg-card p-5">
+                    <h3 class="mb-4 text-lg font-semibold text-foreground">Information</h3>
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="text-sm text-foreground/60">Last update</span>
+                        <span class="text-sm font-medium text-foreground">{{ course.lastUpdate }}</span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-sm text-foreground/60">Total lessons</span>
+                        <span class="text-sm font-medium text-foreground">{{ totalLessons }} lessons</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -323,7 +355,8 @@ import {
   Tag,
   Award,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-vue-next'
 
 import { useUserStore } from '@/stores/userStore'
@@ -337,11 +370,13 @@ import SideBar from '@/components/layout/SideBar.vue'
 const userStore = useUserStore()
 const uiStore = useUiStore()
 const watchlistStore = useWatchlistStore()
+const router = useRouter()
 
 // ================================================
 // TYPES
 // ================================================
 interface Lesson {
+  id: number
   title: string
   completed: boolean
 }
@@ -370,6 +405,15 @@ const props = defineProps<{
   course?: Course
   loading: boolean
 }>()
+
+// Logs para debug
+watch(() => props.course, (newVal) => {
+  console.log('📦 CourseDisplay course prop mudou:', newVal)
+}, { immediate: true })
+
+watch(() => props.loading, (newVal) => {
+  console.log('⏳ CourseDisplay loading prop mudou:', newVal)
+}, { immediate: true })
 
 // ================================================
 // ACCORDION STATE
@@ -427,12 +471,23 @@ const totalLessons = computed(() => {
 })
 
 // ================================================
-// ROUTER
+// ROUTER FUNCTIONS
 // ================================================
-const router = useRouter()
-
 const goBack = () => {
   router.push('/user')
+}
+
+// ================================================
+// GO TO FIRST LESSON
+// ================================================
+const goToFirstLesson = () => {
+  if (!props.course) return
+  
+  const firstModule = props.course.modules[0]
+  if (firstModule && firstModule.lessons.length > 0) {
+    const firstLessonId = firstModule.lessons[0].id
+    router.push(`/course/${props.course.id}/lesson/${firstLessonId}`)
+  }
 }
 
 // ================================================
@@ -616,12 +671,43 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-button, .group {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+/* Animações específicas do accordion */
+.v-enter-active,
+.v-leave-active {
+  transition: all 0.3s ease-out;
 }
 
-.bg-primary {
-  transition: width 0.3s ease-out;
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+  height: 0;
+}
+
+/* Ripple animation */
+@keyframes ripple-animation {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%) scale(0);
+  animation: ripple-animation 0.6s ease-out;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Transições específicas */
+button, .group {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .group:hover .text-foreground {
@@ -658,27 +744,6 @@ button, .group {
   white-space: nowrap;
 }
 
-.ripple {
-  position: absolute;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%) scale(0);
-  animation: ripple-animation 0.6s ease-out;
-  pointer-events: none;
-  z-index: 10;
-}
-
-@keyframes ripple-animation {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
-}
-
 .scale-110 {
   transform: scale(1.1);
 }
@@ -686,29 +751,5 @@ button, .group {
 .watchlist-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-}
-
-.v-enter-active,
-.v-leave-active {
-  transition: all 0.3s ease-out;
-}
-
-.v-enter-from,
-.v-leave-to {
-  opacity: 0;
-  height: 0;
-}
-
-.rotate-180 {
-  transform: rotate(180deg);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>
