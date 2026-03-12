@@ -1,3 +1,5 @@
+// types/lesson.types.ts
+
 export interface Resource {
   id: number
   title: string
@@ -13,15 +15,18 @@ export interface Comment {
   userName: string
   userInitials: string
   content: string
-  createdAt: Date
+  createdAt: Date | string
   likes: number
-  replies?: Comment[]  // Comentários podem ter respostas
+  is_liked_by_user?: boolean           // <-- ADICIONADO
+  parent_id?: number | null            // <-- ADICIONADO (para saber se é resposta)
+  replies?: Comment[]                  // Comentários podem ter respostas
 }
 
 // Interface estendida para o Display (com propriedades UI)
-export interface CommentWithLikeStatus extends Omit<Comment, 'replies'> {
+export interface CommentWithLikeStatus extends Omit<Comment, 'replies' | 'is_liked_by_user' | 'parent_id'> {
   isLikedByCurrentUser: boolean
-  replies?: CommentWithLikeStatus[]  // Respostas também têm o status
+  replyToUserName?: string | null      // <-- ADICIONADO (para mostrar @ de quem responde)
+  replies?: CommentWithLikeStatus[]    // Respostas também têm o status
 }
 
 export interface Lesson {

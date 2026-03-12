@@ -1,13 +1,6 @@
 <!-- pages/logged/courses/LessonDisplay.vue -->
 <template>
   <div class="mx-auto max-w-4xl">
-    <!-- DEBUG PANEL (opcional) -->
-    <div class="fixed top-20 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs">
-      <p>activeSection: {{ activeSection || 'null' }}</p>
-      <p>comments: {{ comments?.length || 0 }}</p>
-      <p>lessonId: {{ lesson?.id }}</p>
-    </div>
-
     <!-- Skeleton Loader -->
     <div v-if="loading" class="space-y-6">
       <div class="h-10 w-3/4 animate-pulse rounded bg-white/5"></div>
@@ -181,7 +174,7 @@
               <p v-else class="text-center text-foreground/40 py-8">No resources available for this lesson yet.</p>
             </div>
 
-            <!-- SECÇÃO: Comentários -->
+            <!-- SECÇÃO: Comentários - ESTILO TIKTOK (COM SETA) -->
             <div v-if="activeSection === 'comments'" class="bg-white/5 rounded-xl p-6">
               <h3 class="text-lg font-semibold text-foreground mb-4">
                 Comments <span class="text-sm text-foreground/40 ml-2">({{ comments?.length || 0 }})</span>
@@ -193,16 +186,31 @@
                   <span class="text-xs font-medium text-primary">{{ userInitials }}</span>
                 </div>
                 <div class="flex-1">
-                  <div v-if="replyingTo" class="mb-2 text-xs text-primary bg-primary/10 px-2 py-1 rounded-lg inline-flex items-center gap-1">
-                    <span>Replying to {{ replyingTo?.userId === currentUserId ? 'yourself' : replyingTo?.userName }}</span>
-                    <button @click="$emit('cancel-reply')" class="hover:text-primary/80">✕</button>
+                  <!-- Badge de Reply (com deteção de self-reply) -->
+                  <div v-if="replyingTo" class="mb-2 flex items-center gap-2">
+                    <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-lg inline-flex items-center gap-1">
+                      <span>
+                        Replying to 
+                        <span v-if="replyingTo?.userId === currentUserId" class="font-semibold text-primary">
+                          yourself
+                        </span>
+                        <span v-else class="font-semibold text-primary">
+                          @{{ replyingTo?.userName }}
+                        </span>
+                      </span>
+                      <button @click="$emit('cancel-reply')" class="hover:text-primary/80 ml-1">✕</button>
+                    </span>
                   </div>
+                  
+                  <!-- Textarea livre (SEM @) -->
                   <textarea
                     :value="newComment || ''"
                     @input="$emit('update:new-comment', ($event.target as HTMLTextAreaElement).value)"
-                    rows="2"
+                    @keydown.enter.prevent="handleEnterKey"
+                    rows="3"
                     :placeholder="replyingTo ? 'Write your reply...' : 'Share your thoughts...'"
                     class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none transition-colors text-foreground placeholder:text-foreground/40 text-sm resize-none"
+                    ref="textareaRef"
                   ></textarea>
                   
                   <div class="flex justify-end gap-2 mt-2">
@@ -225,7 +233,7 @@
                 </div>
               </div>
 
-              <!-- Lista de Comentários -->
+              <!-- Lista de Comentários (ESTILO TIKTOK) -->
               <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
                 <div
                   v-for="comment in comments || []"
@@ -242,10 +250,26 @@
                     
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 mb-1">
+                        <!-- Nome + seta + @reply + data (ESTILO TIKTOK) -->
+                        <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                           <span v-if="currentUserId && comment?.userId === currentUserId" class="font-medium text-foreground text-sm">You</span>
                           <span v-else class="font-medium text-foreground text-sm">{{ comment?.userName }}</span>
-                          <span class="text-xs text-foreground/40 whitespace-nowrap">{{ formatDate(comment?.createdAt) }}</span>
+                          
+                          <!-- Seta estilo TikTok quando é uma resposta -->
+                          <span v-if="comment?.replyToUserName" class="text-xs text-foreground/40 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-0.5">
+                              <path d="M5 12h14"/>
+                              <path d="m12 5 7 7-7 7"/>
+                            </svg>
+                          </span>
+                          
+                          <!-- @username de quem está a responder (MAIS DESTACADO - cor primária com opacidade) -->
+                          <span v-if="comment?.replyToUserName" class="text-xs text-primary/80 font-medium">
+                            @{{ comment?.replyToUserName }}
+                          </span>
+                          
+                          <!-- Data (mais apagada) -->
+                          <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(comment?.createdAt) }}</span>
                         </div>
                         
                         <!-- Botões de ação com LOADING -->
@@ -269,11 +293,8 @@
                             title="Delete"
                             :disabled="isDeletingComment || isEditingComment"
                           >
-                            <!-- Spinner quando está a apagar este comentário -->
                             <span v-if="isDeletingComment && deletingCommentId === comment?.id" 
                                   class="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent"></span>
-                            
-                            <!-- Ícone normal quando não está a apagar -->
                             <Trash2 v-else :size="14" :class="{ 'opacity-50': isDeletingComment }" />
                           </button>
                         </div>
@@ -307,7 +328,7 @@
                       </div>
                       
                       <!-- Modo de visualização -->
-                      <p v-else class="text-sm text-foreground/80 break-words">{{ comment?.content }}</p>
+                      <p v-else class="text-sm text-foreground/80 break-words whitespace-pre-wrap">{{ comment?.content }}</p>
                       
                       <!-- Botão de Like com Animação -->
                       <div class="flex items-center gap-3 mt-3">
@@ -321,16 +342,12 @@
                           ]"
                           :disabled="likingCommentId === comment?.id"
                         >
-                          <!-- Container com dimensões fixas para animação suave -->
                           <div class="relative w-3 h-3">
-                            <!-- Coração de fundo (vazio) - sempre visível como base -->
                             <Heart 
                               :size="12" 
                               class="absolute inset-0 transition-all duration-300 text-current"
                               :class="comment?.isLikedByCurrentUser ? 'opacity-0' : 'opacity-100'"
                             />
-                            
-                            <!-- Coração preenchido (sobreposto) - animado -->
                             <Heart 
                               :size="12" 
                               class="absolute inset-0 transition-all duration-300 fill-current text-primary"
@@ -340,15 +357,11 @@
                                   : 'opacity-0 scale-90'
                               ]"
                             />
-                            
-                            <!-- Efeito de onda quando clica (like/unlike) -->
                             <span 
                               v-if="likingCommentId === comment?.id"
                               class="absolute inset-0 animate-ping rounded-full bg-primary/30"
                             ></span>
                           </div>
-                          
-                          <!-- Número com animação de cor e escala -->
                           <span 
                             class="text-xs transition-all duration-300"
                             :class="[
@@ -370,7 +383,7 @@
                         </button>
                       </div>
 
-                      <!-- Respostas -->
+                      <!-- Respostas (ESTILO TIKTOK) -->
                       <div v-if="comment?.replies?.length" class="ml-6 mt-4 space-y-3">
                         <div
                           v-for="reply in comment.replies"
@@ -385,10 +398,26 @@
                             </div>
                             <div class="flex-1 min-w-0">
                               <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2 mb-1">
+                                <!-- Nome + seta + @reply + data (ESTILO TIKTOK) -->
+                                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                                   <span v-if="currentUserId && reply?.userId === currentUserId" class="font-medium text-foreground text-xs">You</span>
                                   <span v-else class="font-medium text-foreground text-xs">{{ reply?.userName }}</span>
-                                  <span class="text-xs text-foreground/40 whitespace-nowrap">{{ formatDate(reply?.createdAt) }}</span>
+                                  
+                                  <!-- Seta estilo TikTok (sempre aparece para respostas) -->
+                                  <span class="text-xs text-foreground/40 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-0.5">
+                                      <path d="M5 12h14"/>
+                                      <path d="m12 5 7 7-7 7"/>
+                                    </svg>
+                                  </span>
+                                  
+                                  <!-- @username de quem está a responder (MAIS DESTACADO - cor primária com opacidade) -->
+                                  <span v-if="reply?.replyToUserName" class="text-xs text-primary/80 font-medium">
+                                    @{{ reply?.replyToUserName }}
+                                  </span>
+                                  
+                                  <!-- Data (mais apagada) -->
+                                  <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(reply?.createdAt) }}</span>
                                 </div>
                                 
                                 <!-- Botões de ação para respostas com LOADING -->
@@ -432,7 +461,7 @@
                                 </div>
                               </div>
                               
-                              <p v-else class="text-xs text-foreground/80 break-words">{{ reply?.content }}</p>
+                              <p v-else class="text-xs text-foreground/80 break-words whitespace-pre-wrap">{{ reply?.content }}</p>
                               
                               <!-- Botão de Like para respostas -->
                               <div class="flex items-center gap-3 mt-2">
@@ -478,10 +507,8 @@
       leave-to-class="opacity-0"
     >
       <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <!-- Overlay -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="!isDeletingComment && closeDeleteModal()"></div>
         
-        <!-- Modal -->
         <div class="relative bg-background border border-white/10 rounded-xl max-w-md w-full p-6 shadow-2xl">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
@@ -524,7 +551,7 @@ import {
 import VideoPlayer from '@/components/lessons/VideoPlayer.vue'
 import LessonContent from '@/components/lessons/LessonContent.vue'
 import { useUserStore } from '@/stores/userStore'
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 
 const props = defineProps<{
   lesson: any
@@ -573,6 +600,9 @@ const editingLocally = ref<{ id: number; content: string } | null>(null)
 const showDeleteModal = ref(false)
 const commentToDelete = ref<number | null>(null)
 
+// Referência para o textarea
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+
 // ================================================
 // WATCH PARA LIMPAR ESTADO LOCAL QUANDO A EDIÇÃO TERMINA
 // ================================================
@@ -583,18 +613,18 @@ watch(() => props.editingCommentId, (newId) => {
 })
 
 // ================================================
-// FUNÇÕES DO MODAL DE DELETE - CORRIGIDAS
+// FUNÇÕES DO MODAL DE DELETE
 // ================================================
 const openDeleteModal = (commentId: number | null | undefined) => {
   if (!commentId) return
-  if (props.isDeletingComment) return // Não abrir se já está a apagar
+  if (props.isDeletingComment) return
   
   commentToDelete.value = commentId
   showDeleteModal.value = true
 }
 
 const closeDeleteModal = () => {
-  if (props.isDeletingComment) return // Não fechar enquanto está a apagar
+  if (props.isDeletingComment) return
   showDeleteModal.value = false
   commentToDelete.value = null
 }
@@ -602,14 +632,12 @@ const closeDeleteModal = () => {
 const confirmDelete = () => {
   if (commentToDelete.value && !props.isDeletingComment) {
     emit('delete-comment', commentToDelete.value)
-    // NÃO fechar o modal aqui - vai fechar quando o comentário for removido
   }
 }
 
 // Observar quando o comentário é removido para fechar o modal
 watch(() => props.comments, () => {
   if (commentToDelete.value && !props.comments?.some((c: any) => c.id === commentToDelete.value)) {
-    // Comentário foi removido, fechar modal
     showDeleteModal.value = false
     commentToDelete.value = null
   }
@@ -626,6 +654,11 @@ const handleLikeComment = (commentId: number | null | undefined) => {
 const handleReplyTo = (comment: any) => {
   if (!comment?.id) return
   emit('reply-to', comment)
+  
+  // Apenas focar no textarea, sem meter @
+  nextTick(() => {
+    textareaRef.value?.focus()
+  })
 }
 
 // ================================================
@@ -646,6 +679,15 @@ const saveEdit = (commentId: number | null | undefined) => {
   if (!editingLocally.value?.content?.trim()) return
   if (props.isEditingComment) return
   emit('edit-comment', commentId, editingLocally.value.content)
+}
+
+// ================================================
+// FUNÇÃO PARA ENTER
+// ================================================
+const handleEnterKey = () => {
+  if (props.newComment?.trim() && !props.commentSubmitting) {
+    emit('submit-comment', props.newComment)
+  }
 }
 
 // ================================================
@@ -691,5 +733,16 @@ const formatDate = (date: Date | string | null | undefined) => {
 }
 .like-animation {
   animation: like-pop 0.3s ease-out;
+}
+
+/* Para o placeholder */
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Para manter o whitespace no texto */
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 </style>

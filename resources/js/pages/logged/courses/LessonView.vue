@@ -119,7 +119,7 @@ const userInitials = computed(() => {
   return userStore.user?.name?.charAt(0) || 'U'
 })
 
-// Mapear os comentários da API para o formato esperado
+// Mapear os comentários da API para o formato esperado (COM replyToUserName)
 const mappedComments = computed<CommentWithLikeStatus[]>(() => {
   const rawComments = courseStore.currentLessonComments || []
   
@@ -129,6 +129,25 @@ const mappedComments = computed<CommentWithLikeStatus[]>(() => {
     const userInitials = comment.userInitials || 
                         comment.user?.username?.charAt(0).toUpperCase() || 
                         userName.charAt(0).toUpperCase()
+    
+    // Descobrir se é uma resposta e para quem está a responder
+    let replyToUserName = null
+    if (comment.parent_id) {
+      // Procurar o comentário pai para saber o username
+      const findParent = (comments: any[], parentId: number): string | null => {
+        for (const c of comments) {
+          if (c.id === parentId) {
+            return c.userName || c.user?.username || 'Unknown'
+          }
+          if (c.replies?.length) {
+            const found = findParent(c.replies, parentId)
+            if (found) return found
+          }
+        }
+        return null
+      }
+      replyToUserName = findParent(rawComments, comment.parent_id)
+    }
     
     const mappedReplies = comment.replies?.map((reply: any) => mapComment(reply))
 
@@ -141,6 +160,7 @@ const mappedComments = computed<CommentWithLikeStatus[]>(() => {
       createdAt: comment.createdAt || comment.created_at,
       likes: comment.likes || 0,
       isLikedByCurrentUser: comment.is_liked_by_user || false,
+      replyToUserName: replyToUserName, // AGORA COM TIPO CORRETO
       replies: mappedReplies
     }
   }
@@ -173,7 +193,8 @@ const toggleSection = (section: 'resources' | 'comments') => {
 const setReplyTo = (comment: CommentWithLikeStatus) => {
   replyToComment.value = comment
   activeSection.value = 'comments'
-  newComment.value = `@${comment.userName} `
+  // Comentado para não colocar @ na textarea
+  // newComment.value = `@${comment.userName} `
 }
 
 const cancelReply = () => {
@@ -209,7 +230,7 @@ const submitComment = async (content: string) => {
 }
 
 // ================================================
-// LIKE COMMENT - VERSÃO PROFISSIONAL
+// LIKE COMMENT
 // ================================================
 const handleLikeComment = async (commentId: number) => {
   if (!commentId || !courseStore.currentLessonId) return
