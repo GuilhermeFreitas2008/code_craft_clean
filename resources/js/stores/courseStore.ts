@@ -5,6 +5,13 @@ import api from '@/services/axios'
 import type { Module, Lesson, Resource, Comment } from '@/types/lesson.types'
 import { useUserStore } from './userStore'
 
+export interface LikeCommentResponse {
+    success: boolean
+    likes?: number
+    liked?: boolean
+    error?: string
+}
+
 export const useCourseStore = defineStore('course', () => {
     const currentCourseId = ref<number | null>(null)
     const modules = ref<Module[]>([])
@@ -215,9 +222,9 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Dar like em comentário
+    // Dar like em comentário (AGORA COM liked NA RESPOSTA)
     // ================================================
-    const likeComment = async (commentId: number) => {
+    const likeComment = async (commentId: number): Promise<LikeCommentResponse> => {
         try {
             const response = await api.post(`/comments/${commentId}/like`)
             
@@ -236,7 +243,11 @@ export const useCourseStore = defineStore('course', () => {
             
             updateCommentLikes(currentLessonComments.value)
             
-            return { success: true, likes: response.data.likes }
+            return { 
+                success: true, 
+                likes: response.data.likes,
+                liked: response.data.liked 
+            }
         } catch (err: any) {
             return { 
                 success: false, 

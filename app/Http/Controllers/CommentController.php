@@ -16,33 +16,47 @@ class CommentController extends Controller
     {
         $user = $request->user();
 
-        if ($user->role->name === 'admin') {
-            return response()->json(
-                $lesson->comments()
-                    ->whereNull('parent_id') // Só comentários principais
-                    ->with(['user', 'replies']) // replies já tem limite no model
-                    ->orderBy('created_at', 'desc')
-                    ->get()
-            );
+        // Verificar permissão (admin ou inscrito)
+        if ($user->role->name !== 'admin') {
+            $isEnrolled = $lesson->module
+                ->course
+                ->enrollments()
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if (!$isEnrolled) {
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
         }
 
-        $isEnrolled = $lesson->module
-            ->course
-            ->enrollments()
-            ->where('user_id', $user->id)
-            ->exists();
+        // Buscar comentários com informações de likes
+        $comments = $lesson->comments()
+            ->whereNull('parent_id')
+            ->with([
+                'user', 
+                'replies.user',
+                'likedByUsers' => function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                }
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        if ($isEnrolled) {
-            return response()->json(
-                $lesson->comments()
-                    ->whereNull('parent_id') // Só comentários principais
-                    ->with(['user', 'replies']) // replies já tem limite no model
-                    ->orderBy('created_at', 'desc')
-                    ->get()
-            );
-        }
+        // Mapear para adicionar o campo is_liked_by_user
+        $comments->each(function ($comment) use ($user) {
+            $comment->is_liked_by_user = $comment->likedByUsers->isNotEmpty();
+            
+            if ($comment->replies) {
+                $comment->replies->each(function ($reply) {
+                    $reply->is_liked_by_user = $reply->likedByUsers->isNotEmpty();
+                });
+            }
+            
+            // Remover a relação carregada para não poluir o JSON
+            unset($comment->likedByUsers);
+        });
 
-        return response()->json(['error' => 'Forbidden'], 403);
+        return response()->json($comments);
     }
 
     /**
