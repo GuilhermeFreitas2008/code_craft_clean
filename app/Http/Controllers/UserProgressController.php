@@ -58,30 +58,47 @@ class UserProgressController extends Controller
     }
 
     /**
-     * Marcar lição como completa
+     * MARCAR/DESMARCAR lição como completa (COM BOOLEAN)
      * POST /api/lessons/{lesson}/complete
      */
     public function store(Request $request, Lesson $lesson)
     {
         $this->authorize('complete', [UserProgress::class, $lesson]);
 
-        $progress = UserProgress::updateOrCreate(
-            [
-                'user_id' => $request->user()->id,
+        $user = $request->user();
+        
+        // Verificar se já existe registo para esta lição
+        $progress = UserProgress::where('user_id', $user->id)
+            ->where('lesson_id', $lesson->id)
+            ->first();
+
+        if ($progress) {
+            // Se já existe, INVERTE o valor de completed
+            $progress->completed = !$progress->completed;
+            $progress->completed_at = $progress->completed ? now() : null;
+            $progress->save();
+            
+            $message = $progress->completed ? 'Lesson marked as completed' : 'Lesson unmarked';
+            $completed = $progress->completed;
+        } else {
+            // Se não existe, CRIA com completed = true
+            $progress = UserProgress::create([
+                'user_id' => $user->id,
                 'lesson_id' => $lesson->id,
-            ],
-            [
                 'completed' => true,
                 'completed_at' => now(),
-            ]
-        );
+            ]);
+            $message = 'Lesson marked as completed';
+            $completed = true;
+        }
 
         // Atualizar progresso do curso
         $course = $lesson->module->course;
-        CourseProgressService::update($request->user(), $course);
+        CourseProgressService::update($user, $course);
 
         return response()->json([
-            'message' => 'Lesson marked as completed',
+            'message' => $message,
+            'completed' => $completed,
             'lesson_progress' => $progress,
         ]);
     }

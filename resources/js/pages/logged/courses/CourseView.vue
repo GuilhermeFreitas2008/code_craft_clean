@@ -7,11 +7,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/axios'
 import { useUserStore } from '@/stores/userStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
+import { useCourseStore } from '@/stores/courseStore'
 import CourseDisplay from './CourseDisplay.vue'
 import type { ApiCourse, UserProgress, UserCourseProgress } from '@/types/course.types'
 
@@ -42,6 +43,7 @@ const route = useRoute()
 const courseId = Number(route.params.id)
 const userStore = useUserStore()
 const watchlistStore = useWatchlistStore()
+const courseStore = useCourseStore()
 
 const courseData = ref<Course>()
 const loading = ref(true)
@@ -63,13 +65,23 @@ const fetchCourseData = async () => {
   try {
     console.log('2️⃣ courseId:', courseId)
     
+    // 👉 HEADERS PARA EVITAR CACHE
+    const headers = {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+    
+    // 👉 TIMESTAMP PARA FORÇAR REQUISIÇÃO NOVA
+    const timestamp = Date.now()
+    
     if (userStore.isAuthenticated() && watchlistStore.items.length === 0) {
       console.log('3️⃣ fetching watchlist...')
       await watchlistStore.fetchWatchlist()
     }
     
     console.log('4️⃣ fetching course from API...')
-    const courseResponse = await api.get(`/courses/${courseId}`)
+    const courseResponse = await api.get(`/courses/${courseId}`, { headers })
     console.log('5️⃣ API response:', courseResponse.data)
     
     const apiCourse: ApiCourse = courseResponse.data
@@ -82,24 +94,37 @@ const fetchCourseData = async () => {
       console.log('6️⃣ user is authenticated, fetching progress...')
       try {
         const enrollmentResponse = await api.get('/enrollments', {
-          params: { course_id: courseId }
+          params: { course_id: courseId },
+          headers
         })
         hasEnrollment = enrollmentResponse.data.length > 0
         console.log('7️⃣ hasEnrollment:', hasEnrollment)
         
         if (hasEnrollment) {
+          // 👉 BUSCAR PROGRESSO DO CURSO COM TIMESTAMP
           const progressResponse = await api.get('/user-course-progress', {
-            params: { course_id: courseId }
+            params: { 
+              course_id: courseId,
+              _t: timestamp // 👈 TIMESTAMP PARA EVITAR CACHE
+            },
+            headers
           })
           const courseProgress: UserCourseProgress = progressResponse.data[0]
           progressPercent = courseProgress?.progress_percent || 0
           console.log('8️⃣ progressPercent:', progressPercent)
           
+          // 👉 BUSCAR LIÇÕES COMPLETAS COM TIMESTAMP
           const lessonsProgressResponse = await api.get('/user-progress', {
-            params: { course_id: courseId }
+            params: { 
+              course_id: courseId,
+              _t: timestamp // 👈 TIMESTAMP PARA EVITAR CACHE
+            },
+            headers
           })
-          completedLessonIds = lessonsProgressResponse.data.map((p: UserProgress) => p.lesson_id)
-          console.log('9️⃣ completedLessonIds:', completedLessonIds)
+          completedLessonIds = lessonsProgressResponse.data
+            .filter((p: UserProgress) => p.completed === true) // 👉 FILTRAR SÓ AS COMPLETAS
+            .map((p: UserProgress) => p.lesson_id)
+          console.log('9️⃣ completedLessonIds (só true):', completedLessonIds)
         }
       } catch (err) {
         console.warn('⚠️ Erro ao buscar progresso:', err)
@@ -113,6 +138,7 @@ const fetchCourseData = async () => {
         lessons: module.lessons.map(lesson => ({
           id: lesson.id,
           title: lesson.title,
+          // 👉 AGORA USA O completedLessonIds FILTRADO
           completed: hasEnrollment ? completedLessonIds.includes(lesson.id) : false
         }))
       }
@@ -141,6 +167,16 @@ const fetchCourseData = async () => {
     console.log('1️⃣1️⃣ loading:', loading.value)
   }
 }
+
+// ================================================
+// 👉 WATCH PARA ATUALIZAR QUANDO O STORE MUDAR
+// ================================================
+watch(() => courseStore.updateTrigger, () => {
+  console.log('🔄 updateTrigger mudou, atualizando curso...')
+  if (courseStore.currentCourseId === courseId) {
+    fetchCourseData()
+  }
+})
 
 onMounted(() => {
   fetchCourseData()

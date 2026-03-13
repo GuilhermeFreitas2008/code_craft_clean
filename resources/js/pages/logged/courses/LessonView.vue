@@ -30,6 +30,7 @@
       >
         <main class="p-4 lg:p-8">
           <LessonDisplay
+            :key="courseStore.updateTrigger"
             :lesson="courseStore.currentLesson"
             :resources="courseStore.currentLessonResources"
             :comments="mappedComments"
@@ -119,7 +120,7 @@ const userInitials = computed(() => {
   return userStore.user?.name?.charAt(0) || 'U'
 })
 
-// Mapear os comentários da API para o formato esperado (COM replyToUserName)
+// Mapear os comentários da API para o formato esperado
 const mappedComments = computed<CommentWithLikeStatus[]>(() => {
   const rawComments = courseStore.currentLessonComments || []
   
@@ -133,7 +134,6 @@ const mappedComments = computed<CommentWithLikeStatus[]>(() => {
     // Descobrir se é uma resposta e para quem está a responder
     let replyToUserName = null
     if (comment.parent_id) {
-      // Procurar o comentário pai para saber o username
       const findParent = (comments: any[], parentId: number): string | null => {
         for (const c of comments) {
           if (c.id === parentId) {
@@ -160,7 +160,7 @@ const mappedComments = computed<CommentWithLikeStatus[]>(() => {
       createdAt: comment.createdAt || comment.created_at,
       likes: comment.likes || 0,
       isLikedByCurrentUser: comment.is_liked_by_user || false,
-      replyToUserName: replyToUserName, // AGORA COM TIPO CORRETO
+      replyToUserName: replyToUserName,
       replies: mappedReplies
     }
   }
@@ -193,8 +193,6 @@ const toggleSection = (section: 'resources' | 'comments') => {
 const setReplyTo = (comment: CommentWithLikeStatus) => {
   replyToComment.value = comment
   activeSection.value = 'comments'
-  // Comentado para não colocar @ na textarea
-  // newComment.value = `@${comment.userName} `
 }
 
 const cancelReply = () => {
@@ -235,10 +233,8 @@ const submitComment = async (content: string) => {
 const handleLikeComment = async (commentId: number) => {
   if (!commentId || !courseStore.currentLessonId) return
   
-  // Ativar animação
   likingCommentId.value = commentId
   
-  // Encontrar o comentário nos dados REAIS
   const findComment = (comments: any[], id: number): any => {
     for (const comment of comments) {
       if (comment.id === id) return comment
@@ -257,11 +253,9 @@ const handleLikeComment = async (commentId: number) => {
     return
   }
   
-  // Guardar estado anterior para possível reversão
   const previousLikes = currentComment.likes
   const previousLikedState = currentComment.is_liked_by_user || false
   
-  // ATUALIZAÇÃO OTIMISTA DIRETA
   if (previousLikedState) {
     currentComment.likes = previousLikes - 1
     currentComment.is_liked_by_user = false
@@ -271,27 +265,22 @@ const handleLikeComment = async (commentId: number) => {
   }
   
   try {
-    // Chamar API
     const result: LikeCommentResponse = await courseStore.likeComment(commentId)
     
     if (!result?.success) {
-      // Reverter em caso de erro
       currentComment.likes = previousLikes
       currentComment.is_liked_by_user = previousLikedState
     } else {
-      // Atualizar com o valor EXATO da API
       currentComment.likes = result.likes
       if (result.liked !== undefined) {
         currentComment.is_liked_by_user = result.liked
       }
     }
   } catch (error) {
-    // Reverter em caso de erro inesperado
     currentComment.likes = previousLikes
     currentComment.is_liked_by_user = previousLikedState
     console.error('Erro ao dar like:', error)
   } finally {
-    // Remover animação
     setTimeout(() => {
       likingCommentId.value = null
     }, 300)
@@ -356,6 +345,7 @@ const toggleLessonComplete = async () => {
   if (!courseStore.currentLesson) return
   
   const wasCompleted = courseStore.currentLesson.completed
+  const currentCourseId = courseStore.currentCourseId
   
   if (wasCompleted && !canRemoveCompletion.value) {
     return
@@ -372,9 +362,10 @@ const toggleLessonComplete = async () => {
       }, 3000)
     } else {
       canRemoveCompletion.value = true
-      if (courseStore.currentCourseId) {
-        await courseStore.fetchCourse(courseStore.currentCourseId)
-      }
+    }
+    
+    if (currentCourseId) {
+      await courseStore.fetchCourse(currentCourseId)
     }
   }
 }
@@ -427,7 +418,7 @@ const handleLessonSelect = async (lessonId: number) => {
 }
 
 // ================================================
-// FETCH DATA
+// FETCH DATA - CORRIGIDO COM ANTI-CACHE
 // ================================================
 const fetchLessonData = async () => {
   if (courseId) {
@@ -439,6 +430,14 @@ const fetchLessonData = async () => {
       if (lessonId) {
         courseStore.selectLesson(lessonId)
         
+        // 👉 FORÇAR HEADERS ANTI-CACHE
+        const headers = {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+        
+        // 👉 USAR TIMESTAMP PARA EVITAR CACHE
         await Promise.all([
           courseStore.fetchLessonResources(lessonId),
           courseStore.fetchLessonComments(lessonId)

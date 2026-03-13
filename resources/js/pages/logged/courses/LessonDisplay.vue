@@ -174,7 +174,7 @@
               <p v-else class="text-center text-foreground/40 py-8">No resources available for this lesson yet.</p>
             </div>
 
-            <!-- SECÇÃO: Comentários - ESTILO TIKTOK (COM SETA) -->
+            <!-- SECÇÃO: Comentários - COM REPLIES SEM EFEITO ESCADA -->
             <div v-if="activeSection === 'comments'" class="bg-white/5 rounded-xl p-6">
               <h3 class="text-lg font-semibold text-foreground mb-4">
                 Comments <span class="text-sm text-foreground/40 ml-2">({{ comments?.length || 0 }})</span>
@@ -202,7 +202,7 @@
                     </span>
                   </div>
                   
-                  <!-- Textarea livre (SEM @) -->
+                  <!-- Textarea livre -->
                   <textarea
                     :value="newComment || ''"
                     @input="$emit('update:new-comment', ($event.target as HTMLTextAreaElement).value)"
@@ -233,7 +233,7 @@
                 </div>
               </div>
 
-              <!-- Lista de Comentários (ESTILO TIKTOK) -->
+              <!-- Lista de Comentários Principais -->
               <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
                 <div
                   v-for="comment in comments || []"
@@ -250,25 +250,12 @@
                     
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
-                        <!-- Nome + seta + @reply + data (ESTILO TIKTOK) -->
+                        <!-- Nome + data -->
                         <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                           <span v-if="currentUserId && comment?.userId === currentUserId" class="font-medium text-foreground text-sm">You</span>
                           <span v-else class="font-medium text-foreground text-sm">{{ comment?.userName }}</span>
                           
-                          <!-- Seta estilo TikTok quando é uma resposta -->
-                          <span v-if="comment?.replyToUserName" class="text-xs text-foreground/40 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-0.5">
-                              <path d="M5 12h14"/>
-                              <path d="m12 5 7 7-7 7"/>
-                            </svg>
-                          </span>
-                          
-                          <!-- @username de quem está a responder (MAIS DESTACADO - cor primária com opacidade) -->
-                          <span v-if="comment?.replyToUserName" class="text-xs text-primary/80 font-medium">
-                            @{{ comment?.replyToUserName }}
-                          </span>
-                          
-                          <!-- Data (mais apagada) -->
+                          <!-- Data -->
                           <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(comment?.createdAt) }}</span>
                         </div>
                         
@@ -383,104 +370,70 @@
                         </button>
                       </div>
 
-                      <!-- Respostas (ESTILO TIKTOK) -->
-                      <div v-if="comment?.replies?.length" class="ml-6 mt-4 space-y-3">
-                        <div
-                          v-for="reply in comment.replies"
-                          :key="reply?.id"
-                          class="group/reply relative rounded-lg transition-all duration-200 hover:bg-white/5 hover:shadow-lg hover:shadow-black/20 p-2"
-                        >
-                          <div class="absolute inset-0 rounded-lg border border-transparent group-hover/reply:border-primary/10 pointer-events-none"></div>
+                      <!-- Replies (SEM EFEITO ESCADA - mesma margem) -->
+                      <div v-if="comment?.replies?.length" class="mt-4 space-y-3">
+                        <!-- Controlo de visibilidade das replies -->
+                        <div v-if="commentRepliesVisibility[comment.id]?.expanded || false">
+                          <!-- Todas as replies visíveis -->
+                          <ReplyItem
+                            v-for="reply in comment.replies"
+                            :key="reply.id"
+                            :reply="reply"
+                            :current-user-id="currentUserId"
+                            :is-editing-comment="isEditingComment"
+                            :editing-comment-id="editingCommentId"
+                            :is-deleting-comment="isDeletingComment"
+                            :deleting-comment-id="deletingCommentId"
+                            :liking-comment-id="likingCommentId"
+                            :editing-locally="editingLocally"
+                            @reply-to="handleReplyTo"
+                            @like-comment="handleLikeComment"
+                            @start-editing="startEditing"
+                            @cancel-editing="cancelEditing"
+                            @save-edit="saveEdit"
+                            @open-delete-modal="openDeleteModal"
+                          />
                           
-                          <div class="flex gap-2">
-                            <div class="w-6 h-6 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
-                              <span class="text-xs font-medium text-primary">{{ reply?.userInitials }}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                              <div class="flex items-center justify-between">
-                                <!-- Nome + seta + @reply + data (ESTILO TIKTOK) -->
-                                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-                                  <span v-if="currentUserId && reply?.userId === currentUserId" class="font-medium text-foreground text-xs">You</span>
-                                  <span v-else class="font-medium text-foreground text-xs">{{ reply?.userName }}</span>
-                                  
-                                  <!-- Seta estilo TikTok (sempre aparece para respostas) -->
-                                  <span class="text-xs text-foreground/40 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-0.5">
-                                      <path d="M5 12h14"/>
-                                      <path d="m12 5 7 7-7 7"/>
-                                    </svg>
-                                  </span>
-                                  
-                                  <!-- @username de quem está a responder (MAIS DESTACADO - cor primária com opacidade) -->
-                                  <span v-if="reply?.replyToUserName" class="text-xs text-primary/80 font-medium">
-                                    @{{ reply?.replyToUserName }}
-                                  </span>
-                                  
-                                  <!-- Data (mais apagada) -->
-                                  <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(reply?.createdAt) }}</span>
-                                </div>
-                                
-                                <!-- Botões de ação para respostas com LOADING -->
-                                <div v-if="currentUserId && reply?.userId === currentUserId" 
-                                     class="flex items-center gap-1 opacity-0 group-hover/reply:opacity-100 transition-opacity duration-200 ml-2">
-                                  
-                                  <button 
-                                    @click="startEditing(reply)"
-                                    class="p-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                                    :disabled="isEditingComment || isDeletingComment"
-                                  >
-                                    <PenSquare :size="12" :class="{ 'opacity-50': isEditingComment }" />
-                                  </button>
-                                  
-                                  <button 
-                                    @click="openDeleteModal(reply?.id)"
-                                    class="p-1 rounded-md bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors relative min-w-[24px] flex items-center justify-center"
-                                    :disabled="isDeletingComment || isEditingComment"
-                                  >
-                                    <span v-if="isDeletingComment && deletingCommentId === reply?.id" 
-                                          class="h-3 w-3 animate-spin rounded-full border-2 border-red-500 border-t-transparent"></span>
-                                    <Trash2 v-else :size="12" :class="{ 'opacity-50': isDeletingComment }" />
-                                  </button>
-                                </div>
-                              </div>
-                              
-                              <!-- Modo de edição -->
-                              <div v-if="editingLocally && editingLocally.id === reply?.id" class="mt-1">
-                                <textarea
-                                  v-model="editingLocally.content"
-                                  rows="2"
-                                  class="w-full px-2 py-1 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none transition-colors text-foreground text-xs resize-none mb-1"
-                                  :disabled="isEditingComment"
-                                ></textarea>
-                                <div class="flex justify-end gap-2">
-                                  <button @click="cancelEditing" class="px-2 py-0.5 text-xs text-foreground/60 hover:text-foreground transition-colors" :disabled="isEditingComment">Cancel</button>
-                                  <button @click="saveEdit(reply?.id)" class="px-2 py-0.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center gap-1 min-w-[50px] justify-center" :disabled="!editingLocally.content?.trim() || isEditingComment">
-                                    <span v-if="isEditingComment && editingCommentId === reply?.id" class="h-2.5 w-2.5 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                                    <span v-else>Save</span>
-                                  </button>
-                                </div>
-                              </div>
-                              
-                              <p v-else class="text-xs text-foreground/80 break-words whitespace-pre-wrap">{{ reply?.content }}</p>
-                              
-                              <!-- Botão de Like para respostas -->
-                              <div class="flex items-center gap-3 mt-2">
-                                <button 
-                                  @click="handleLikeComment(reply?.id)"
-                                  class="relative group flex items-center gap-1 transition-all duration-200"
-                                  :class="[reply?.isLikedByCurrentUser ? 'text-primary' : 'text-foreground/40 hover:text-primary']"
-                                  :disabled="likingCommentId === reply?.id"
-                                >
-                                  <div class="relative w-2.5 h-2.5">
-                                    <Heart :size="10" class="absolute inset-0 transition-all duration-300 text-current" :class="reply?.isLikedByCurrentUser ? 'opacity-0' : 'opacity-100'" />
-                                    <Heart :size="10" class="absolute inset-0 transition-all duration-300 fill-current text-primary" :class="[reply?.isLikedByCurrentUser ? 'opacity-100 scale-110' : 'opacity-0 scale-90']" />
-                                    <span v-if="likingCommentId === reply?.id" class="absolute inset-0 animate-ping rounded-full bg-primary/30"></span>
-                                  </div>
-                                  <span class="text-xs transition-all duration-300" :class="[reply?.isLikedByCurrentUser ? 'text-primary font-medium' : 'text-foreground/40']" :key="reply?.likes">{{ reply?.likes || 0 }}</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                          <!-- Botão "Close all" -->
+                          <button 
+                            @click="toggleRepliesVisibility(comment.id, false)"
+                            class="text-xs text-foreground/40 hover:text-foreground/60 transition-colors flex items-center gap-1 mt-2"
+                          >
+                            <ChevronUp :size="14" />
+                            Close all
+                          </button>
+                        </div>
+                        
+                        <div v-else>
+                          <!-- Apenas as primeiras 3 replies -->
+                          <ReplyItem
+                            v-for="reply in comment.replies.slice(0, 3)"
+                            :key="reply.id"
+                            :reply="reply"
+                            :current-user-id="currentUserId"
+                            :is-editing-comment="isEditingComment"
+                            :editing-comment-id="editingCommentId"
+                            :is-deleting-comment="isDeletingComment"
+                            :deleting-comment-id="deletingCommentId"
+                            :liking-comment-id="likingCommentId"
+                            :editing-locally="editingLocally"
+                            @reply-to="handleReplyTo"
+                            @like-comment="handleLikeComment"
+                            @start-editing="startEditing"
+                            @cancel-editing="cancelEditing"
+                            @save-edit="saveEdit"
+                            @open-delete-modal="openDeleteModal"
+                          />
+                          
+                          <!-- Botão "View more" (se houver mais de 3) -->
+                          <button 
+                            v-if="comment.replies.length > 3"
+                            @click="toggleRepliesVisibility(comment.id, true)"
+                            class="text-xs text-primary/70 hover:text-primary transition-colors flex items-center gap-1 mt-2"
+                          >
+                            <ChevronDown :size="14" />
+                            View {{ comment.replies.length - 3 }} more {{ comment.replies.length - 3 === 1 ? 'reply' : 'replies' }}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -546,10 +499,12 @@
 <script setup lang="ts">
 import { 
   CheckCircle, XCircle, Paperclip, FileText, Image, File,
-  Download, MessageCircle, Heart, AlertCircle, PenSquare, Trash2
+  Download, MessageCircle, Heart, AlertCircle, PenSquare, Trash2,
+  ChevronDown, ChevronUp
 } from 'lucide-vue-next'
 import VideoPlayer from '@/components/lessons/VideoPlayer.vue'
 import LessonContent from '@/components/lessons/LessonContent.vue'
+import ReplyItem from '@/components/lessons/ReplyItem.vue'
 import { useUserStore } from '@/stores/userStore'
 import { ref, watch, nextTick } from 'vue'
 
@@ -599,6 +554,9 @@ const editingLocally = ref<{ id: number; content: string } | null>(null)
 // Estado para o modal de delete
 const showDeleteModal = ref(false)
 const commentToDelete = ref<number | null>(null)
+
+// Estado para controlar visibilidade das replies (expandido/recolhido)
+const commentRepliesVisibility = ref<Record<number, { expanded: boolean }>>({})
 
 // Referência para o textarea
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
@@ -679,6 +637,13 @@ const saveEdit = (commentId: number | null | undefined) => {
   if (!editingLocally.value?.content?.trim()) return
   if (props.isEditingComment) return
   emit('edit-comment', commentId, editingLocally.value.content)
+}
+
+// ================================================
+// FUNÇÕES DE VISIBILIDADE DAS REPLIES
+// ================================================
+const toggleRepliesVisibility = (commentId: number, expanded: boolean) => {
+  commentRepliesVisibility.value[commentId] = { expanded }
 }
 
 // ================================================

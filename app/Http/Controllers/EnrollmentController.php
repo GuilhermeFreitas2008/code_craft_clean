@@ -40,6 +40,15 @@ class EnrollmentController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+        
+        // Verificar se é um user normal (role_id = 2)
+        if ($user->role->name !== 'user') {
+            return response()->json([
+                'error' => 'Only regular users can enroll in courses.'
+            ], 403);
+        }
+
         // Validar request
         $request->validate([
             'course_id' => 'required|exists:courses,id',
@@ -56,7 +65,7 @@ class EnrollmentController extends Controller
         }
 
         // Evitar inscrições duplicadas
-        $alreadyEnrolled = Enrollment::where('user_id', $request->user()->id)
+        $alreadyEnrolled = Enrollment::where('user_id', $user->id)
             ->where('course_id', $course->id)
             ->exists();
 
@@ -68,7 +77,7 @@ class EnrollmentController extends Controller
 
         // Criar inscrição
         $enrollment = Enrollment::create([
-            'user_id'   => $request->user()->id,
+            'user_id'   => $user->id,
             'course_id' => $course->id,
         ]);
 
@@ -95,13 +104,11 @@ class EnrollmentController extends Controller
             })
             ->delete();
 
-
         // Se o user sai do curso, o registo "tem 50% feito" deixa de fazer sentido.
         UserCourseProgress::where('user_id', $enrollment->user_id)
             ->where('course_id', $enrollment->course_id)
             ->delete();
 
-        
         // Apagar enrollment
         $enrollment->delete();
 
@@ -109,5 +116,4 @@ class EnrollmentController extends Controller
             'message' => 'Enrollment and related progress deleted successfully'
         ]);
     }
-
 }

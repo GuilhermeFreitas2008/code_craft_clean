@@ -22,24 +22,38 @@ export const useCourseStore = defineStore('course', () => {
     const currentLessonResources = ref<Resource[]>([])
     const currentLessonComments = ref<Comment[]>([])
 
+    // TRIGGER PARA FORÇAR REATIVIDADE
+    const updateTrigger = ref(0)
+
     // ================================================
-    // Computed
+    // Computed - CORRIGIDO (com cópia de objetos)
     // ================================================
     const currentLesson = computed<Lesson | null>(() => {
         if (!currentLessonId.value || !modules.value.length) return null
         
+        // Dependência do trigger para forçar recálculo
+        void updateTrigger.value
+        
         for (const module of modules.value) {
             const lesson = module.lessons.find(l => l.id === currentLessonId.value)
-            if (lesson) return lesson
+            if (lesson) {
+                // RETORNAR UMA CÓPIA DO OBJETO para forçar reatividade
+                return {
+                    ...lesson,
+                    resources: lesson.resources ? [...lesson.resources] : []
+                }
+            }
         }
         return null
     })
 
     const totalLessons = computed(() => {
+        void updateTrigger.value
         return modules.value.reduce((total, module) => total + module.lessons.length, 0)
     })
 
     const completedLessons = computed(() => {
+        void updateTrigger.value
         return modules.value.reduce(
             (total, module) => total + module.lessons.filter(l => l.completed).length, 
             0
@@ -47,6 +61,7 @@ export const useCourseStore = defineStore('course', () => {
     })
 
     const courseProgress = computed(() => {
+        void updateTrigger.value
         if (totalLessons.value === 0) return 0
         return Math.round((completedLessons.value / totalLessons.value) * 100)
     })
@@ -54,13 +69,13 @@ export const useCourseStore = defineStore('course', () => {
     // ================================================
     // Buscar dados do curso
     // ================================================
-    const fetchCourse = async (courseId: number) => {
+    const fetchCourse = async (courseId: number, headers = {}) => {
         const userStore = useUserStore()
         isLoading.value = true
         error.value = null
         
         try {
-            const courseResponse = await api.get(`/courses/${courseId}`)
+            const courseResponse = await api.get(`/courses/${courseId}`, { headers })
             const courseData = courseResponse.data
             
             currentCourseId.value = courseId
@@ -70,9 +85,13 @@ export const useCourseStore = defineStore('course', () => {
             if (userStore.isAuthenticated()) {
                 try {
                     const progressResponse = await api.get('/user-progress', {
-                        params: { course_id: courseId }
+                        params: { course_id: courseId },
+                        headers
                     })
-                    completedLessonIds = progressResponse.data.map((p: any) => p.lesson_id)
+                    // 👉 FILTRAR SÓ AS QUE TÊM completed = true
+                    completedLessonIds = progressResponse.data
+                        .filter((p: any) => p.completed === true)
+                        .map((p: any) => p.lesson_id)
                 } catch (err) {
                     console.warn('Erro ao buscar progresso:', err)
                 }
@@ -92,6 +111,9 @@ export const useCourseStore = defineStore('course', () => {
                     resources: []
                 }))
             }))
+
+            // Incrementar trigger para forçar recálculo
+            updateTrigger.value++
             
         } catch (err: any) {
             error.value = err.response?.data?.message || 'Erro ao carregar curso'
@@ -101,11 +123,11 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Buscar recursos de uma lição
+    // Buscar recursos de uma lição (COM HEADERS)
     // ================================================
-    const fetchLessonResources = async (lessonId: number) => {
+    const fetchLessonResources = async (lessonId: number, headers = {}) => {
         try {
-            const response = await api.get(`/lessons/${lessonId}/resources`)
+            const response = await api.get(`/lessons/${lessonId}/resources`, { headers })
             currentLessonResources.value = response.data
             return response.data
         } catch (err) {
@@ -115,11 +137,11 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Buscar comentários de uma lição
+    // Buscar comentários de uma lição (COM HEADERS)
     // ================================================
-    const fetchLessonComments = async (lessonId: number) => {
+    const fetchLessonComments = async (lessonId: number, headers = {}) => {
         try {
-            const response = await api.get(`/lessons/${lessonId}/comments`)
+            const response = await api.get(`/lessons/${lessonId}/comments`, { headers })
             currentLessonComments.value = response.data
             return response.data
         } catch (err) {
@@ -222,7 +244,7 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Dar like em comentário (AGORA COM liked NA RESPOSTA)
+    // Dar like em comentário
     // ================================================
     const likeComment = async (commentId: number): Promise<LikeCommentResponse> => {
         try {
@@ -257,21 +279,24 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Marcar lição como completa
+    // Marcar/DESMARCAR lição como completa
     // ================================================
     const markLessonComplete = async (lessonId: number) => {
         try {
-            await api.post(`/lessons/${lessonId}/complete`)
+            const response = await api.post(`/lessons/${lessonId}/complete`)
             
             const lesson = modules.value
                 .flatMap(m => m.lessons)
                 .find(l => l.id === lessonId)
             
             if (lesson) {
-                lesson.completed = true
+                lesson.completed = response.data.completed ?? !lesson.completed
             }
             
-            return { success: true }
+            // Incrementar trigger para forçar recálculo
+            updateTrigger.value++
+            
+            return { success: true, completed: lesson?.completed }
         } catch (err: any) {
             return { 
                 success: false, 
@@ -320,6 +345,7 @@ export const useCourseStore = defineStore('course', () => {
         likeComment,
         markLessonComplete,
         selectLesson,
-        clearCourse
+        clearCourse,
+        updateTrigger,
     }
 })

@@ -362,6 +362,7 @@ import {
 import { useUserStore } from '@/stores/userStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
+import api from '@/services/axios' // 👈 IMPORT ADICIONADO
 
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
@@ -478,10 +479,38 @@ const goBack = () => {
 }
 
 // ================================================
-// GO TO FIRST LESSON
+// FUNÇÃO PARA INSCREVER NO CURSO (NOVA)
 // ================================================
-const goToFirstLesson = () => {
+const enrollInCourse = async () => {
+  if (!props.course || !userStore.isAuthenticated()) return false
+  
+  try {
+    console.log('📝 A inscrever no curso:', props.course.id)
+    const response = await api.post('/enrollments', {
+      course_id: props.course.id
+    })
+    console.log('✅ Inscrição criada:', response.data)
+    return true
+  } catch (error: any) {
+    console.error('❌ Erro ao inscrever:', error.response?.data || error.message)
+    return false
+  }
+}
+
+// ================================================
+// GO TO FIRST LESSON (MODIFICADO)
+// ================================================
+const goToFirstLesson = async () => {
   if (!props.course) return
+  
+  // Se o progresso é 0, significa que não está inscrito
+  if (props.course.progressPercentage === 0) {
+    const enrolled = await enrollInCourse()
+    if (!enrolled) {
+      // Se falhou a inscrição, não navega
+      return
+    }
+  }
   
   const firstModule = props.course.modules[0]
   if (firstModule && firstModule.lessons.length > 0) {
