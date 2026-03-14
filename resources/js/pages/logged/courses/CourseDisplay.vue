@@ -362,7 +362,7 @@ import {
 import { useUserStore } from '@/stores/userStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
-import api from '@/services/axios' // 👈 IMPORT ADICIONADO
+import api from '@/services/axios'
 
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
@@ -479,7 +479,7 @@ const goBack = () => {
 }
 
 // ================================================
-// FUNÇÃO PARA INSCREVER NO CURSO (NOVA)
+// FUNÇÃO PARA INSCREVER NO CURSO
 // ================================================
 const enrollInCourse = async () => {
   if (!props.course || !userStore.isAuthenticated()) return false
@@ -498,7 +498,7 @@ const enrollInCourse = async () => {
 }
 
 // ================================================
-// GO TO FIRST LESSON (MODIFICADO)
+// GO TO FIRST LESSON
 // ================================================
 const goToFirstLesson = async () => {
   if (!props.course) return
@@ -525,13 +525,11 @@ const goToFirstLesson = async () => {
 const isMobile = ref(window.innerWidth < 1024)
 
 // ================================================
-// MENU FUNCTIONS
+// MENU FUNCTIONS - ÚNICA ALTERAÇÃO
 // ================================================
 const handleMenuClick = (menuName: string) => {
   uiStore.setActiveMenu(menuName)
-  if (menuName === 'All Series') {
-    router.push('/user')
-  }
+  router.push('/user') // Volta para a página user com o menu ativo
 }
 
 // ================================================

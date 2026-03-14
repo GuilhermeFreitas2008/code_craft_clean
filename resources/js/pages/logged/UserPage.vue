@@ -232,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/axios'
 import { 
@@ -260,6 +260,7 @@ import { useUiStore } from '@/stores/uiStore'
 import { useFilterStore } from '@/stores/filterStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
 import { useProgressStore } from '@/stores/progressStore'
+import { useCourseStore } from '@/stores/courseStore'
 
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
@@ -270,6 +271,7 @@ const uiStore = useUiStore()
 const filterStore = useFilterStore()
 const watchlistStore = useWatchlistStore()
 const progressStore = useProgressStore()
+const courseStore = useCourseStore()
 
 const router = useRouter()
 
@@ -313,6 +315,9 @@ const difficultyDropdownOpen = ref(false)
 
 // Courses Data
 const courses = ref<Course[]>([])
+
+// Enrolled courses IDs (para o filtro Continue)
+const enrolledCourseIds = ref<number[]>([])
 
 // Cache key
 const CACHE_KEY = 'cached_courses'
@@ -393,6 +398,19 @@ const saveToCache = (data: Course[]) => {
 }
 
 // ================================================
+// BUSCAR INSCRIÇÕES DO USER
+// ================================================
+const fetchEnrollments = async () => {
+  try {
+    const response = await api.get('/enrollments')
+    enrolledCourseIds.value = response.data.map((e: any) => e.course_id)
+    console.log('📋 Cursos inscritos:', enrolledCourseIds.value)
+  } catch (error) {
+    console.error('Erro ao buscar inscrições:', error)
+  }
+}
+
+// ================================================
 // FILTERED COURSES - COM FILTRO POR MENU
 // ================================================
 const filteredCourses = computed(() => {
@@ -424,7 +442,7 @@ const filteredCourses = computed(() => {
       filtered = filtered.filter(course => watchlistStore.isInWatchlist(course.id))
       break
     case 'Continue':
-      filtered = filtered.filter(course => progressStore.hasProgress(course.id))
+      filtered = filtered.filter(course => enrolledCourseIds.value.includes(course.id))
       break
     case 'Completed':
       filtered = filtered.filter(course => progressStore.isCompleted(course.id))
@@ -455,6 +473,22 @@ const handleMenuClick = (menuName: string) => {
   uiStore.setActiveMenu(menuName)
   // Não redireciona, apenas atualiza o filtro
 }
+
+// ================================================
+// WATCH PARA MUDANÇAS NO MENU ATIVO - ATIVAR SKELETON
+// ================================================
+watch(() => uiStore.activeMenuItem, (newMenu, oldMenu) => {
+  if (newMenu !== oldMenu) {
+    // Ativar skeleton loader para mostrar que está a carregar
+    isLoading.value = true
+    
+    // Simular um pequeno delay para mostrar o skeleton
+    // (os dados já estão em memória, mas queremos dar feedback visual)
+    setTimeout(() => {
+      isLoading.value = false
+    }, 300)
+  }
+})
 
 // Difficulty Helper
 const getDifficultyIcon = (difficulty: string) => {
@@ -519,11 +553,12 @@ onMounted(async () => {
     courses.value = coursesResult.data
     saveToCache(coursesResult.data)
     
-    // Se estiver autenticado, carregar watchlist e progresso
+    // Se estiver autenticado, carregar watchlist, progresso e inscrições
     if (userStore.isAuthenticated()) {
       await Promise.all([
         watchlistStore.fetchWatchlist(),
-        progressStore.fetchProgressCourses()
+        progressStore.fetchProgressCourses(),
+        fetchEnrollments()
       ])
     }
     

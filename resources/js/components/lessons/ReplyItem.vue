@@ -1,58 +1,31 @@
 <!-- components/lessons/ReplyItem.vue -->
 <template>
-  <div class="group/reply relative rounded-lg transition-all duration-200 hover:bg-white/5 hover:shadow-lg hover:shadow-black/20 p-2">
-    <div class="absolute inset-0 rounded-lg border border-transparent group-hover/reply:border-primary/10 pointer-events-none"></div>
-    
+  <div class="p-2">
     <div class="flex gap-2">
       <div class="w-6 h-6 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
         <span class="text-xs font-medium text-primary">{{ reply?.userInitials }}</span>
       </div>
       <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between">
-          <!-- Nome + seta + @reply + data -->
-          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-            <span v-if="currentUserId && reply?.userId === currentUserId" class="font-medium text-foreground text-xs">You</span>
-            <span v-else class="font-medium text-foreground text-xs">{{ reply?.userName }}</span>
-            
-            <!-- Seta estilo TikTok -->
-            <span class="text-xs text-foreground/40 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-0.5">
-                <path d="M5 12h14"/>
-                <path d="m12 5 7 7-7 7"/>
-              </svg>
-            </span>
-            
-            <!-- @username de quem está a responder -->
-            <span v-if="reply?.replyToUserName" class="text-xs text-primary/80 font-medium">
-              @{{ reply?.replyToUserName }}
-            </span>
-            
-            <!-- Data -->
-            <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(reply?.createdAt) }}</span>
-          </div>
+        <!-- Nome + seta + @reply + data -->
+        <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+          <span v-if="currentUserId && reply?.userId === currentUserId" class="font-medium text-foreground text-xs">You</span>
+          <span v-else class="font-medium text-foreground text-xs">{{ reply?.userName }}</span>
           
-          <!-- Botões de ação -->
-          <div v-if="currentUserId && reply?.userId === currentUserId" 
-               class="flex items-center gap-1 opacity-0 group-hover/reply:opacity-100 transition-opacity duration-200 ml-2">
-            
-            <button 
-              @click="$emit('start-editing', reply)"
-              class="p-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-              :disabled="isEditingComment || isDeletingComment"
-            >
-              <PenSquare :size="12" :class="{ 'opacity-50': isEditingComment }" />
-            </button>
-            
-            <button 
-              @click="$emit('open-delete-modal', reply?.id)"
-              class="p-1 rounded-md bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors relative min-w-[24px] flex items-center justify-center"
-              :disabled="isDeletingComment || isEditingComment"
-            >
-              <span v-if="isDeletingComment && deletingCommentId === reply?.id" 
-                    class="h-3 w-3 animate-spin rounded-full border-2 border-red-500 border-t-transparent"></span>
-              <Trash2 v-else :size="12" :class="{ 'opacity-50': isDeletingComment }" />
-            </button>
-          </div>
+          <!-- Seta estilo TikTok -->
+          <span class="text-xs text-foreground/40 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-0.5">
+              <path d="M5 12h14"/>
+              <path d="m12 5 7 7-7 7"/>
+            </svg>
+          </span>
+          
+          <!-- @username de quem está a responder -->
+          <span v-if="reply?.replyToUserName" class="text-xs text-primary/80 font-medium">
+            @{{ reply?.replyToUserName }}
+          </span>
+          
+          <!-- Data -->
+          <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(reply?.createdAt) }}</span>
         </div>
         
         <!-- Modo de edição -->
@@ -74,8 +47,9 @@
         
         <p v-else class="text-xs text-foreground/80 break-words whitespace-pre-wrap">{{ reply?.content }}</p>
         
-        <!-- Botões de ação (like e reply) -->
-        <div class="flex items-center gap-3 mt-2">
+        <!-- Botões de ação (like, reply, edit, delete) - TODOS AO MESMO NÍVEL -->
+        <div class="flex items-center gap-3 mt-2 flex-wrap">
+          <!-- Like -->
           <button 
             @click="$emit('like-comment', reply?.id)"
             class="relative group flex items-center gap-1 transition-all duration-200"
@@ -90,16 +64,43 @@
             <span class="text-xs transition-all duration-300" :class="[reply?.isLikedByCurrentUser ? 'text-primary font-medium' : 'text-foreground/40']" :key="reply?.likes">{{ reply?.likes || 0 }}</span>
           </button>
           
+          <!-- Reply -->
           <button 
             @click="$emit('reply-to', reply)"
             class="text-xs text-foreground/40 hover:text-primary transition-colors"
           >
             Reply
           </button>
+
+          <!-- Edit (só para o próprio user) -->
+          <button 
+            v-if="currentUserId && reply?.userId === currentUserId"
+            @click="$emit('start-editing', reply)"
+            class="text-xs text-foreground/40 hover:text-primary transition-colors flex items-center gap-1"
+            title="Edit"
+            :disabled="isEditingComment || isDeletingComment"
+          >
+            <PenSquare :size="12" :class="{ 'opacity-50': isEditingComment }" />
+            <span>Edit</span>
+          </button>
+          
+          <!-- Delete (só para o próprio user) -->
+          <button 
+            v-if="currentUserId && reply?.userId === currentUserId"
+            @click="$emit('open-delete-modal', reply?.id)"
+            class="text-xs text-foreground/40 hover:text-red-500 transition-colors flex items-center gap-1"
+            title="Delete"
+            :disabled="isDeletingComment || isEditingComment"
+          >
+            <span v-if="isDeletingComment && deletingCommentId === reply?.id" 
+                  class="h-3 w-3 animate-spin rounded-full border-2 border-red-500 border-t-transparent"></span>
+            <Trash2 v-else :size="12" :class="{ 'opacity-50': isDeletingComment }" />
+            <span>Delete</span>
+          </button>
         </div>
 
         <!-- ================================================ -->
-        <!-- NOVO: Renderizar replies desta reply (recursivo) -->
+        <!-- Renderizar replies desta reply (recursivo) -->
         <!-- ================================================ -->
         <div v-if="reply?.replies?.length" class="mt-3 space-y-2">
           <ReplyItem
