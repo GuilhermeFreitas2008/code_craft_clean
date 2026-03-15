@@ -1,35 +1,17 @@
-<!-- components/lessons/LessonContent.vue -->
 <template>
   <div class="prose prose-invert max-w-none" v-html="renderedContent"></div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
+import { renderMarkdown } from '@/services/markdown'
 
 const props = defineProps<{
   content: string
 }>()
 
-// Configurar markdown-it
-const md: MarkdownIt = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-  highlight: function (str: string, lang: string): string {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        const highlighted = hljs.highlight(str, { language: lang }).value
-        return `<pre class="code-block"><code class="hljs language-${lang}">${highlighted}</code></pre>`
-      } catch (__) {}
-    }
-    return `<pre class="code-block"><code>${md.utils.escapeHtml(str)}</code></pre>`
-  }
-})
-
 const renderedContent = computed<string>(() => {
-  return md.render(props.content)
+  return renderMarkdown(props.content)
 })
 </script>
 
@@ -103,6 +85,23 @@ const renderedContent = computed<string>(() => {
   height: 2px;
   background: linear-gradient(90deg, #3b82f6, #8b5cf6);
   border-radius: 0.75rem 0.75rem 0 0;
+}
+
+/* Mostrar a linguagem do código */
+.prose .code-block.language-javascript::after,
+.prose .code-block.language-php::after,
+.prose .code-block.language-python::after,
+.prose .code-block.language-html::after,
+.prose .code-block.language-css::after,
+.prose .code-block.language-typescript::after {
+  content: attr(class);
+  position: absolute;
+  top: 0.5rem;
+  right: 1rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .prose .code-block code {
@@ -237,5 +236,14 @@ const renderedContent = computed<string>(() => {
 
 .prose tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.02);
+}
+
+/* Imagens */
+.prose img {
+  border-radius: 0.5rem;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 </style>

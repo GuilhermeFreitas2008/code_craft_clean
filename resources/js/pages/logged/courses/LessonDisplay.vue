@@ -1,3 +1,4 @@
+<!-- pages/logged/courses/LessonDisplay.vue -->
 <template>
   <div class="mx-auto max-w-4xl">
     <!-- Skeleton Loader -->
@@ -53,7 +54,6 @@
           :thumbnail="lesson.thumbnail"
           :autoplay="false"
           aspect-ratio="16:9"
-          :show-custom-controls="true"
           @play="$emit('video-play')"
           @pause="$emit('video-pause')"
           @ended="$emit('video-ended')"

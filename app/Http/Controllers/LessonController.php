@@ -69,6 +69,7 @@ class LessonController extends Controller
         $data = $request->validate([
             'title' => 'required|string',
             'content' => 'required|string',
+            'video_url' => 'nullable|url',
             'position' => 'required|integer',
             'module_id' => 'required|exists:modules,id',
             'slug' => 'required|string|unique:lessons'
@@ -92,6 +93,7 @@ class LessonController extends Controller
         $data = $request->validate([
             'title' => 'string',
             'content' => 'string',
+            'video_url' => 'nullable|url',
             'position' => 'integer',
             'module_id' => 'exists:modules,id',
             'slug' => 'string|unique:lessons,slug,' . $lesson->id

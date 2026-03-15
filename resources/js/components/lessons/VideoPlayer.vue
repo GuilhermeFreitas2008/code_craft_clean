@@ -55,12 +55,17 @@
       </div>
     </div>
 
-    <!-- Thumbnail Overlay (antes de iniciar o vídeo) -->
-    <div v-if="!videoStarted && thumbnail" 
+    <!-- Thumbnail Overlay (antes de iniciar o vídeo) - CORRIGIDO -->
+    <div v-if="!videoStarted" 
          class="absolute inset-0 cursor-pointer z-20"
          @click="startVideo"
     >
-      <img :src="thumbnail" alt="Video thumbnail" class="w-full h-full object-cover" />
+      <!-- Se existir thumbnail, mostra a imagem -->
+      <img v-if="thumbnail" :src="thumbnail" alt="Video thumbnail" class="w-full h-full object-cover" />
+      <!-- Se não existir thumbnail, mostra um fundo escuro com gradiente -->
+      <div v-else class="w-full h-full bg-gradient-to-br from-gray-900 to-gray-800"></div>
+      
+      <!-- Overlay com botão play (igual para ambos os casos) -->
       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/40">
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="relative">
@@ -91,19 +96,19 @@
       
       <!-- Direct Video File -->
       <video
-      v-else-if="provider === 'direct'"
-      ref="videoElement"
-      class="w-full h-full"
-      :src="videoUrl"
-      :poster="thumbnail || ''"
-      @play="onPlay"
-      @pause="onPause"
-      @ended="onEnded"
-      @timeupdate="onTimeUpdate"
-      @loadedmetadata="onLoadedMetadata"
-    >
-      <source :src="videoUrl" :type="getVideoType(videoUrl)" />
-    </video>
+        v-else-if="provider === 'direct'"
+        ref="videoElement"
+        class="w-full h-full"
+        :src="videoUrl"
+        :poster="thumbnail || ''"
+        @play="onPlay"
+        @pause="onPause"
+        @ended="onEnded"
+        @timeupdate="onTimeUpdate"
+        @loadedmetadata="onLoadedMetadata"
+      >
+        <source :src="videoUrl" :type="getVideoType(videoUrl)" />
+      </video>
 
       <!-- Overlay com controles CodeCraft -->
       <div 
