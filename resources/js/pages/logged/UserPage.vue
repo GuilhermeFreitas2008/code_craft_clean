@@ -1,4 +1,3 @@
-<!-- UserPage.vue -->
 <template>
   <div class="flex min-h-screen flex-col bg-background">
     <!-- Navbar -->

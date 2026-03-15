@@ -1,4 +1,3 @@
-// stores/courseStore.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/axios'

@@ -1,6 +1,5 @@
-<!-- components/lessons/ReplyItem.vue -->
 <template>
-  <div class="p-2">
+  <div class="relative">
     <div class="flex gap-2">
       <div class="w-6 h-6 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
         <span class="text-xs font-medium text-primary">{{ reply?.userInitials }}</span>
@@ -47,7 +46,7 @@
         
         <p v-else class="text-xs text-foreground/80 break-words whitespace-pre-wrap">{{ reply?.content }}</p>
         
-        <!-- Botões de ação (like, reply, edit, delete) - TODOS AO MESMO NÍVEL -->
+        <!-- Botões de ação -->
         <div class="flex items-center gap-3 mt-2 flex-wrap">
           <!-- Like -->
           <button 
@@ -72,7 +71,7 @@
             Reply
           </button>
 
-          <!-- Edit (só para o próprio user) -->
+          <!-- Edit -->
           <button 
             v-if="currentUserId && reply?.userId === currentUserId"
             @click="$emit('start-editing', reply)"
@@ -84,7 +83,7 @@
             <span>Edit</span>
           </button>
           
-          <!-- Delete (só para o próprio user) -->
+          <!-- Delete -->
           <button 
             v-if="currentUserId && reply?.userId === currentUserId"
             @click="$emit('open-delete-modal', reply?.id)"
@@ -97,14 +96,39 @@
             <Trash2 v-else :size="12" :class="{ 'opacity-50': isDeletingComment }" />
             <span>Delete</span>
           </button>
+
+          <!-- Controlos de expansão para respostas deste reply - COM SCROLL CORRIGIDO -->
+          <template v-if="reply?.replies?.length">
+            <button 
+              v-if="!isExpanded"
+              @click="handleViewMore"
+              class="text-xs text-primary/70 hover:text-primary transition-all duration-200 hover:scale-105 flex items-center gap-1 group"
+            >
+              <ChevronDown :size="14" class="transition-transform duration-200 group-hover:translate-y-0.5" />
+              View more ({{ getHiddenRepliesCount }})
+            </button>
+            
+            <button 
+              v-if="isExpanded"
+              @click="$emit('toggle-replies', { replyId: reply.id, expanded: false })"
+              class="text-xs text-foreground/40 hover:text-foreground/60 transition-all duration-200 hover:scale-105 flex items-center gap-1 group"
+            >
+              <ChevronUp :size="14" class="transition-transform duration-200 group-hover:-translate-y-0.5" />
+              Close all
+            </button>
+          </template>
         </div>
 
         <!-- ================================================ -->
-        <!-- Renderizar replies desta reply (recursivo) -->
+        <!-- Respostas deste reply com ID para scroll -->
         <!-- ================================================ -->
-        <div v-if="reply?.replies?.length" class="mt-3 space-y-2">
+        <div 
+          v-if="reply?.replies?.length && isExpanded" 
+          :id="`nested-replies-${reply.id}`"
+          class="relative mt-3 space-y-2 animate-fadeIn"
+        >
           <ReplyItem
-            v-for="nestedReply in reply.replies"
+            v-for="(nestedReply, nestedIndex) in visibleNestedReplies"
             :key="nestedReply.id"
             :reply="nestedReply"
             :current-user-id="currentUserId"
@@ -114,12 +138,14 @@
             :deleting-comment-id="deletingCommentId"
             :liking-comment-id="likingCommentId"
             :editing-locally="editingLocally"
+            :reply-visibility="replyVisibility"
             @reply-to="$emit('reply-to', $event)"
             @like-comment="$emit('like-comment', $event)"
             @start-editing="$emit('start-editing', $event)"
             @cancel-editing="$emit('cancel-editing')"
             @save-edit="$emit('save-edit', $event)"
             @open-delete-modal="$emit('open-delete-modal', $event)"
+            @toggle-replies="$emit('toggle-replies', $event)"
           />
         </div>
       </div>
@@ -128,7 +154,8 @@
 </template>
 
 <script setup lang="ts">
-import { PenSquare, Trash2, Heart } from 'lucide-vue-next'
+import { PenSquare, Trash2, Heart, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { computed } from 'vue'
 
 const props = defineProps<{
   reply: any
@@ -139,16 +166,66 @@ const props = defineProps<{
   deletingCommentId: number | null
   likingCommentId: number | null
   editingLocally: { id: number; content: string } | null
+  replyVisibility?: Record<number, { expanded: boolean }>
+  totalReplies?: number
+  currentIndex?: number
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'reply-to', comment: any): void
   (e: 'like-comment', commentId: number): void
   (e: 'start-editing', comment: any): void
   (e: 'cancel-editing'): void
   (e: 'save-edit', commentId: number): void
   (e: 'open-delete-modal', commentId: number): void
+  (e: 'toggle-replies', payload: { replyId: number; expanded: boolean }): void
 }>()
+
+// ================================================
+// FUNÇÃO PARA LIDAR COM VIEW MORE E SCROLL
+// ================================================
+const handleViewMore = () => {
+  emit('toggle-replies', { replyId: props.reply.id, expanded: true })
+  
+  window.setTimeout(() => {
+    const element = window.document.getElementById(`nested-replies-${props.reply.id}`)
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center'
+      })
+    }
+  }, 150)
+}
+
+// ================================================
+// VERIFICAR SE ESTE REPLY ESTÁ EXPANDIDO
+// ================================================
+const isExpanded = computed(() => {
+  return props.replyVisibility?.[props.reply.id]?.expanded || false
+})
+
+// ================================================
+// REPLIES VISÍVEIS DESTE REPLY (só mostra se expandido)
+// ================================================
+const visibleNestedReplies = computed(() => {
+  if (!props.reply?.replies?.length || !isExpanded.value) return []
+  
+  // Quando expandido, mostra 4 respostas
+  return props.reply.replies.slice(0, 4)
+})
+
+// ================================================
+// CONTAGEM DE RESPOSTAS OCULTAS
+// ================================================
+const getHiddenRepliesCount = computed(() => {
+  if (!props.reply?.replies?.length) return 0
+  
+  if (isExpanded.value) {
+    return Math.max(0, props.reply.replies.length - 4)
+  }
+  return props.reply.replies.length
+})
 
 // ================================================
 // FORMAT DATE
@@ -166,3 +243,20 @@ const formatDate = (date: Date | string | null | undefined) => {
   }
 }
 </script>
+
+<style scoped>
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+</style>

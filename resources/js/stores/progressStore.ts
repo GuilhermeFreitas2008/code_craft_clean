@@ -1,4 +1,3 @@
-// stores/progressStore.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/axios'

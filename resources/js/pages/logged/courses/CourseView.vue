@@ -1,4 +1,3 @@
-<!-- CourseView.vue -->
 <template>
   <CourseDisplay 
     :course="courseData" 

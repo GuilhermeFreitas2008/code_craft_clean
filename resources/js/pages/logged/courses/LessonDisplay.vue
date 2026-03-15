@@ -1,4 +1,3 @@
-<!-- pages/logged/courses/LessonDisplay.vue -->
 <template>
   <div class="mx-auto max-w-4xl">
     <!-- Skeleton Loader -->
@@ -174,14 +173,14 @@
               <p v-else class="text-center text-foreground/40 py-8">No resources available for this lesson yet.</p>
             </div>
 
-            <!-- SECÇÃO: Comentários - SEM HOVER, BOTÕES AO LADO DO REPLY -->
+            <!-- SECÇÃO: Comentários - COM ANIMAÇÕES SUAVES -->
             <div v-if="activeSection === 'comments'" class="bg-white/5 rounded-xl p-6">
               <h3 class="text-lg font-semibold text-foreground mb-4">
                 Comments <span class="text-sm text-foreground/40 ml-2">({{ comments?.length || 0 }})</span>
               </h3>
               
-              <!-- Formulário de Novo Comentário -->
-              <div class="flex gap-3 mb-6">
+              <!-- Formulário de Novo Comentário com ref para scroll -->
+              <div class="flex gap-3 mb-6 pb-4 border-b border-white/5" ref="commentFormRef">
                 <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                   <span class="text-xs font-medium text-primary">{{ userInitials }}</span>
                 </div>
@@ -202,7 +201,7 @@
                     </span>
                   </div>
                   
-                  <!-- Textarea livre -->
+                  <!-- Textarea livre com ref -->
                   <textarea
                     :value="newComment || ''"
                     @input="$emit('update:new-comment', ($event.target as HTMLTextAreaElement).value)"
@@ -233,14 +232,15 @@
                 </div>
               </div>
 
-              <!-- Lista de Comentários Principais - SEM HOVER -->
+              <!-- Lista de Comentários Principais (máx 5) - SEM SEPARADORES -->
               <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
                 <div
-                  v-for="comment in comments || []"
+                  v-for="(comment, index) in visibleComments"
                   :key="comment?.id"
-                  class="relative p-3"
+                  class="relative"
                 >
                   <div class="flex gap-3">
+                    <!-- Avatar -->
                     <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <span class="text-xs font-medium text-primary">{{ comment?.userInitials }}</span>
                     </div>
@@ -283,7 +283,7 @@
                       <!-- Modo de visualização -->
                       <p v-else class="text-sm text-foreground/80 break-words whitespace-pre-wrap mb-2">{{ comment?.content }}</p>
                       
-                      <!-- Botões de ação (like, reply, edit, delete, view more) - TODOS AO MESMO NÍVEL -->
+                      <!-- Botões de ação -->
                       <div class="flex items-center gap-3 mt-1 flex-wrap">
                         <!-- Like -->
                         <button 
@@ -337,7 +337,7 @@
                           Reply
                         </button>
 
-                        <!-- Edit (só para o próprio user) -->
+                        <!-- Edit -->
                         <button 
                           v-if="currentUserId && comment?.userId === currentUserId"
                           @click="startEditing(comment)"
@@ -349,7 +349,7 @@
                           <span>Edit</span>
                         </button>
                         
-                        <!-- Delete (só para o próprio user) -->
+                        <!-- Delete -->
                         <button 
                           v-if="currentUserId && comment?.userId === currentUserId"
                           @click="openDeleteModal(comment?.id)"
@@ -363,33 +363,35 @@
                           <span>Delete</span>
                         </button>
 
-                        <!-- View More / Close all (se houver replies) -->
+                        <!-- Controlos de expansão para replies do comentário principal - COM ANIMAÇÕES SIMPLES -->
                         <template v-if="comment?.replies?.length">
                           <button 
-                            v-if="!commentRepliesVisibility[comment.id]?.expanded && comment.replies.length > 3"
-                            @click="toggleRepliesVisibility(comment.id, true)"
-                            class="text-xs text-primary/70 hover:text-primary transition-colors flex items-center gap-1"
+                            v-if="!isCommentExpanded(comment.id) && comment.replies.length > 2"
+                            @click="toggleCommentReplies(comment.id, true)"
+                            class="text-xs text-primary/70 hover:text-primary transition-all duration-200 hover:scale-105 flex items-center gap-1 group"
                           >
-                            <ChevronDown :size="14" />
-                            View {{ comment.replies.length - 3 }} more
+                            <ChevronDown :size="14" class="transition-transform duration-200 group-hover:translate-y-0.5" />
+                            View more ({{ getHiddenRepliesCount(comment) }})
                           </button>
                           
                           <button 
-                            v-if="commentRepliesVisibility[comment.id]?.expanded"
-                            @click="toggleRepliesVisibility(comment.id, false)"
-                            class="text-xs text-foreground/40 hover:text-foreground/60 transition-colors flex items-center gap-1"
+                            v-if="isCommentExpanded(comment.id)"
+                            @click="toggleCommentReplies(comment.id, false)"
+                            class="text-xs text-foreground/40 hover:text-foreground/60 transition-all duration-200 hover:scale-105 flex items-center gap-1 group"
                           >
-                            <ChevronUp :size="14" />
+                            <ChevronUp :size="14" class="transition-transform duration-200 group-hover:-translate-y-0.5" />
                             Close all
                           </button>
                         </template>
                       </div>
 
-                      <!-- Replies (SEM EFEITO ESCADA - mesma margem) -->
-                      <div v-if="comment?.replies?.length" class="mt-3 space-y-2">
-                        <!-- Replies visíveis -->
+                      <!-- Replies do comentário principal (2 ou expandido) - COM ANIMAÇÃO FADE -->
+                      <div 
+                        v-if="comment?.replies?.length" 
+                        class="mt-3 space-y-2"
+                      >
                         <ReplyItem
-                          v-for="reply in visibleReplies(comment)"
+                          v-for="(reply, replyIndex) in getVisibleReplies(comment)"
                           :key="reply.id"
                           :reply="reply"
                           :current-user-id="currentUserId"
@@ -399,16 +401,31 @@
                           :deleting-comment-id="deletingCommentId"
                           :liking-comment-id="likingCommentId"
                           :editing-locally="editingLocally"
+                          :reply-visibility="replyRepliesVisibility"
+                          :total-replies="comment.replies.length"
+                          :current-index="Number(replyIndex)"
                           @reply-to="handleReplyTo"
                           @like-comment="handleLikeComment"
                           @start-editing="startEditing"
                           @cancel-editing="cancelEditing"
                           @save-edit="saveEdit"
                           @open-delete-modal="openDeleteModal"
+                          @toggle-replies="toggleReplyReplies"
                         />
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <!-- Botão View More Comments - COM ANIMAÇÃO -->
+                <div v-if="comments && comments.length > 5" class="flex justify-center mt-4">
+                  <button
+                    @click="showMoreComments"
+                    class="px-4 py-2 text-xs text-primary/70 hover:text-primary transition-all duration-200 hover:scale-105 flex items-center gap-2 group"
+                  >
+                    <ChevronDown :size="16" class="transition-transform duration-200 group-hover:translate-y-1" />
+                    View More Comments ({{ comments.length - 5 }} more)
+                  </button>
                 </div>
                 
                 <div v-if="!comments?.length" class="text-center text-foreground/40 py-8">
@@ -477,7 +494,7 @@ import VideoPlayer from '@/components/lessons/VideoPlayer.vue'
 import LessonContent from '@/components/lessons/LessonContent.vue'
 import ReplyItem from '@/components/lessons/ReplyItem.vue'
 import { useUserStore } from '@/stores/userStore'
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 
 const props = defineProps<{
   lesson: any
@@ -519,29 +536,76 @@ const emit = defineEmits<{
 const userStore = useUserStore()
 const currentUserId = userStore.user?.id
 
-// Estado local para edição
+// Estados
 const editingLocally = ref<{ id: number; content: string } | null>(null)
-
-// Estado para o modal de delete
 const showDeleteModal = ref(false)
 const commentToDelete = ref<number | null>(null)
 
-// Estado para controlar visibilidade das replies (expandido/recolhido)
-const commentRepliesVisibility = ref<Record<number, { expanded: boolean }>>({})
+// Estado para controlo de paginação de comentários principais
+const commentsPage = ref(1)
+const COMMENTS_PER_PAGE = 5
 
-// Referência para o textarea
+// Estado para controlar expansão de replies de comentários principais
+const commentRepliesExpanded = ref<Record<number, boolean>>({})
+
+// Estado para controlar visibilidade das replies de replies
+const replyRepliesVisibility = ref<Record<number, { expanded: boolean }>>({})
+
+// Referências para elementos
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const commentFormRef = ref<HTMLElement | null>(null)
 
 // ================================================
-// FUNÇÃO PARA REPLIES VISÍVEIS
+// COMPUTED - Comentários visíveis (paginados)
 // ================================================
-const visibleReplies = (comment: any) => {
+const visibleComments = computed(() => {
+  if (!props.comments?.length) return []
+  return props.comments.slice(0, commentsPage.value * COMMENTS_PER_PAGE)
+})
+
+// ================================================
+// FUNÇÕES PARA REPLIES DE COMENTÁRIOS PRINCIPAIS
+// ================================================
+const isCommentExpanded = (commentId: number): boolean => {
+  return commentRepliesExpanded.value[commentId] || false
+}
+
+const toggleCommentReplies = (commentId: number, expanded: boolean) => {
+  commentRepliesExpanded.value[commentId] = expanded
+}
+
+const getVisibleReplies = (comment: any) => {
   if (!comment?.replies?.length) return []
   
-  if (commentRepliesVisibility.value[comment.id]?.expanded) {
-    return comment.replies
+  // Se expandido, mostra 6 (2 iniciais + 4 extra)
+  if (isCommentExpanded(comment.id)) {
+    return comment.replies.slice(0, 6)
   }
-  return comment.replies.slice(0, 3)
+  // Se não expandido, mostra apenas 2
+  return comment.replies.slice(0, 2)
+}
+
+const getHiddenRepliesCount = (comment: any): number => {
+  if (!comment?.replies?.length) return 0
+  
+  if (isCommentExpanded(comment.id)) {
+    return Math.max(0, comment.replies.length - 6)
+  }
+  return Math.max(0, comment.replies.length - 2)
+}
+
+// ================================================
+// FUNÇÕES PARA REPLIES DE REPLIES
+// ================================================
+const toggleReplyReplies = (payload: { replyId: number; expanded: boolean }) => {
+  replyRepliesVisibility.value[payload.replyId] = { expanded: payload.expanded }
+}
+
+// ================================================
+// FUNÇÃO PARA MOSTRAR MAIS COMENTÁRIOS
+// ================================================
+const showMoreComments = () => {
+  commentsPage.value++
 }
 
 // ================================================
@@ -585,7 +649,7 @@ watch(() => props.comments, () => {
 }, { deep: true })
 
 // ================================================
-// FUNÇÕES AUXILIARES
+// FUNÇÕES AUXILIARES - COM SCROLL
 // ================================================
 const handleLikeComment = (commentId: number | null | undefined) => {
   if (!commentId) return
@@ -596,9 +660,17 @@ const handleReplyTo = (comment: any) => {
   if (!comment?.id) return
   emit('reply-to', comment)
   
-  // Apenas focar no textarea, sem meter @
+  // Scroll suave para a textarea com foco
   nextTick(() => {
-    textareaRef.value?.focus()
+    if (textareaRef.value) {
+      textareaRef.value.focus()
+      setTimeout(() => {
+        commentFormRef.value?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center'
+        })
+      }, 100)
+    }
   })
 }
 
@@ -620,13 +692,6 @@ const saveEdit = (commentId: number | null | undefined) => {
   if (!editingLocally.value?.content?.trim()) return
   if (props.isEditingComment) return
   emit('edit-comment', commentId, editingLocally.value.content)
-}
-
-// ================================================
-// FUNÇÕES DE VISIBILIDADE DAS REPLIES
-// ================================================
-const toggleRepliesVisibility = (commentId: number, expanded: boolean) => {
-  commentRepliesVisibility.value[commentId] = { expanded }
 }
 
 // ================================================
@@ -692,5 +757,21 @@ textarea::placeholder {
 .whitespace-pre-wrap {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* Animações suaves */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
 }
 </style>

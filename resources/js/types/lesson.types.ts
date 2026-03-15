@@ -1,5 +1,3 @@
-// types/lesson.types.ts
-
 export interface Resource {
   id: number
   title: string
