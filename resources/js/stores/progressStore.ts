@@ -3,16 +3,21 @@ import { ref } from 'vue'
 import api from '@/services/axios'
 import { useUserStore } from './userStore'
 
+// 👇 DECLARAÇÃO PARA TYPESCRIPT
+declare global {
+  interface Window {
+    __PROGRESS_STORE__: any;
+  }
+}
+
 export const useProgressStore = defineStore('progress', () => {
-    const coursesWithProgress = ref<number[]>([]) // IDs dos cursos que têm progresso (>0%)
-    const completedCourses = ref<number[]>([]) // IDs dos cursos completos (100%)
+    const coursesWithProgress = ref<number[]>([])
+    const completedCourses = ref<number[]>([])
     const isLoading = ref(false)
 
-    // ================================================
-    // Buscar cursos com progresso do utilizador
-    // ================================================
     const fetchProgressCourses = async () => {
         const userStore = useUserStore()
+        
         if (!userStore.isAuthenticated()) {
             coursesWithProgress.value = []
             completedCourses.value = []
@@ -23,17 +28,21 @@ export const useProgressStore = defineStore('progress', () => {
         try {
             const response = await api.get('/user-course-progress')
             
-            // Separar por tipo de progresso
+            // 👉 CONVERSÃO SEGURA: converte para número antes de comparar
             coursesWithProgress.value = response.data
-                .filter((p: any) => p.progress_percent > 0 && p.progress_percent < 100)
+                .filter((p: any) => {
+                    const progress = Number(p.progress_percent)
+                    return progress > 0 && progress < 100
+                })
                 .map((p: any) => p.course_id)
             
             completedCourses.value = response.data
-                .filter((p: any) => p.progress_percent === 100)
+                .filter((p: any) => {
+                    const progress = Number(p.progress_percent)
+                    return progress === 100
+                })
                 .map((p: any) => p.course_id)
             
-            console.log('📦 Cursos em progresso:', coursesWithProgress.value)
-            console.log('📦 Cursos completos:', completedCourses.value)
         } catch (error) {
             console.error('Erro ao carregar progresso:', error)
         } finally {
@@ -61,6 +70,16 @@ export const useProgressStore = defineStore('progress', () => {
     const clearProgress = () => {
         coursesWithProgress.value = []
         completedCourses.value = []
+    }
+
+    // 👇 EXPOR GLOBALMENTE PARA DEBUG (opcional, podes remover se não precisares)
+    if (typeof window !== 'undefined') {
+        window.__PROGRESS_STORE__ = {
+            fetchProgressCourses,
+            get completed() { return completedCourses.value },
+            get inProgress() { return coursesWithProgress.value },
+            isLoading
+        };
     }
 
     return {

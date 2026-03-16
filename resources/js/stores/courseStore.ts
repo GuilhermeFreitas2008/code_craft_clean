@@ -13,6 +13,7 @@ export interface LikeCommentResponse {
 
 export const useCourseStore = defineStore('course', () => {
     const currentCourseId = ref<number | null>(null)
+    const courseTitle = ref<string>('')  // <-- ADICIONADO
     const modules = ref<Module[]>([])
     const currentLessonId = ref<number | null>(null)
     const isLoading = ref(false)
@@ -25,7 +26,7 @@ export const useCourseStore = defineStore('course', () => {
     const updateTrigger = ref(0)
 
     // ================================================
-    // Computed - CORRIGIDO (com cópia de objetos)
+    // Computed
     // ================================================
     const currentLesson = computed<Lesson | null>(() => {
         if (!currentLessonId.value || !modules.value.length) return null
@@ -36,7 +37,6 @@ export const useCourseStore = defineStore('course', () => {
         for (const module of modules.value) {
             const lesson = module.lessons.find(l => l.id === currentLessonId.value)
             if (lesson) {
-                // RETORNAR UMA CÓPIA DO OBJETO para forçar reatividade
                 return {
                     ...lesson,
                     resources: lesson.resources ? [...lesson.resources] : []
@@ -78,6 +78,7 @@ export const useCourseStore = defineStore('course', () => {
             const courseData = courseResponse.data
             
             currentCourseId.value = courseId
+            courseTitle.value = courseData.title || 'Curso de Teste'  // <-- GUARDA O TÍTULO
             
             let completedLessonIds: number[] = []
             
@@ -87,7 +88,6 @@ export const useCourseStore = defineStore('course', () => {
                         params: { course_id: courseId },
                         headers
                     })
-                    // 👉 FILTRAR SÓ AS QUE TÊM completed = true
                     completedLessonIds = progressResponse.data
                         .filter((p: any) => p.completed === true)
                         .map((p: any) => p.lesson_id)
@@ -111,7 +111,6 @@ export const useCourseStore = defineStore('course', () => {
                 }))
             }))
 
-            // Incrementar trigger para forçar recálculo
             updateTrigger.value++
             
         } catch (err: any) {
@@ -122,7 +121,7 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Buscar recursos de uma lição (COM HEADERS)
+    // Buscar recursos de uma lição
     // ================================================
     const fetchLessonResources = async (lessonId: number, headers = {}) => {
         try {
@@ -136,7 +135,7 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Buscar comentários de uma lição (COM HEADERS)
+    // Buscar comentários de uma lição
     // ================================================
     const fetchLessonComments = async (lessonId: number, headers = {}) => {
         try {
@@ -185,7 +184,6 @@ export const useCourseStore = defineStore('course', () => {
         try {
             const response = await api.put(`/comments/${commentId}`, { content })
             
-            // Função recursiva para encontrar e atualizar o comentário
             const updateCommentContent = (comments: Comment[]): boolean => {
                 for (const comment of comments) {
                     if (comment.id === commentId) {
@@ -217,7 +215,6 @@ export const useCourseStore = defineStore('course', () => {
         try {
             await api.delete(`/comments/${commentId}`)
             
-            // Função recursiva para encontrar e remover o comentário
             const removeComment = (comments: Comment[]): boolean => {
                 for (let i = 0; i < comments.length; i++) {
                     if (comments[i].id === commentId) {
@@ -292,7 +289,6 @@ export const useCourseStore = defineStore('course', () => {
                 lesson.completed = response.data.completed ?? !lesson.completed
             }
             
-            // Incrementar trigger para forçar recálculo
             updateTrigger.value++
             
             return { success: true, completed: lesson?.completed }
@@ -302,6 +298,44 @@ export const useCourseStore = defineStore('course', () => {
                 error: err.response?.data?.error || 'Erro ao marcar lição'
             }
         }
+    }
+
+    // ================================================
+    // NOVAS FUNÇÕES PARA ATUALIZAÇÃO OTIMISTA
+    // ================================================
+    
+    /**
+     * Buscar apenas o progresso atualizado do curso
+     */
+    const fetchUpdatedProgress = async (courseId: number) => {
+        try {
+            const response = await api.get('/user-progress', {
+                params: { course_id: courseId }
+            })
+            
+            const completedLessonIds = response.data
+                .filter((p: any) => p.completed === true)
+                .map((p: any) => p.lesson_id)
+            
+            return { completedLessonIds }
+        } catch (err) {
+            console.error('Erro ao buscar progresso:', err)
+            return null
+        }
+    }
+
+    /**
+     * Atualizar o status de conclusão de uma lição nos módulos
+     */
+    const updateLessonCompletionStatus = (lessonId: number, completed: boolean) => {
+        for (const module of modules.value) {
+            const lesson = module.lessons.find(l => l.id === lessonId)
+            if (lesson) {
+                lesson.completed = completed
+                break
+            }
+        }
+        updateTrigger.value++
     }
 
     // ================================================
@@ -316,6 +350,7 @@ export const useCourseStore = defineStore('course', () => {
     // ================================================
     const clearCourse = () => {
         currentCourseId.value = null
+        courseTitle.value = ''  // <-- LIMPAR TÍTULO
         modules.value = []
         currentLessonId.value = null
         currentLessonResources.value = []
@@ -325,6 +360,7 @@ export const useCourseStore = defineStore('course', () => {
 
     return {
         currentCourseId,
+        courseTitle,  // <-- EXPORTA A VARIÁVEL
         modules,
         currentLessonId,
         currentLesson,
@@ -346,5 +382,8 @@ export const useCourseStore = defineStore('course', () => {
         selectLesson,
         clearCourse,
         updateTrigger,
+        // NOVAS FUNÇÕES
+        fetchUpdatedProgress,
+        updateLessonCompletionStatus,
     }
 })

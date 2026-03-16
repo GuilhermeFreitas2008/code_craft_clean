@@ -100,7 +100,7 @@
             </button>
           </div>
 
-          <!-- Botão de Marcar como Concluída -->
+          <!-- Botão de Marcar como Concluída - COM LOADING STATE -->
           <button
             @click="$emit('toggle-complete')"
             class="group relative w-[160px] px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
@@ -111,9 +111,13 @@
                   : 'bg-primary/10 text-primary border border-primary/20 cursor-default opacity-75'
                 : 'bg-primary text-white hover:bg-primary/60 shadow-sm shadow-primary/20'
             ]"
-            :disabled="lesson.completed && !canRemoveCompletion"
+            :disabled="(lesson.completed && !canRemoveCompletion) || isUpdatingCompletion"
           >
-            <template v-if="lesson.completed">
+            <template v-if="isUpdatingCompletion">
+              <span class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+              <span>Updating...</span>
+            </template>
+            <template v-else-if="lesson.completed">
               <template v-if="!canRemoveCompletion">
                 <CheckCircle :size="18" />
                 <span>Completed</span>
@@ -513,6 +517,7 @@ const props = defineProps<{
   isDeletingComment: boolean
   deletingCommentId: number | null
   likingCommentId: number | null
+  isUpdatingCompletion?: boolean  // <-- NOVA PROP ADICIONADA
 }>()
 
 const emit = defineEmits<{

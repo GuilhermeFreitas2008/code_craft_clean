@@ -18,6 +18,7 @@
         :open="isMobile ? mobileMenuOpen : lessonSidebarOpen"
         :is-mobile="isMobile"
         :course-id="courseId"
+        :updating-lesson-id="updatingLessonId"
         @close="closeMobileMenu"
         @lesson-select="handleLessonSelect"
       />
@@ -46,6 +47,7 @@
             :is-deleting-comment="isDeletingComment"
             :deleting-comment-id="deletingCommentId"
             :liking-comment-id="likingCommentId"
+            :is-updating-completion="isUpdatingCompletion"
             @update:new-comment="newComment = $event"
             @retry="fetchLessonData"
             @video-play="onVideoPlay"
@@ -65,17 +67,103 @@
         </main>
       </div>
     </div>
+
+    <!-- Modal de Conclusão do Curso - ORIGINAL -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div 
+          v-if="showCompletionModal"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          <!-- Overlay -->
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeCompletionModal"></div>
+          
+          <!-- Modal Content -->
+          <div class="relative bg-card border border-primary/20 rounded-2xl max-w-md w-full p-8 shadow-2xl">
+            <!-- Ícone de Sucesso -->
+            <div class="flex justify-center mb-6">
+              <div class="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
+                <Trophy :size="40" class="text-primary" />
+              </div>
+            </div>
+            
+            <!-- Título -->
+            <h2 class="text-2xl font-bold text-center text-foreground mb-2">
+              🎉 Congratulations!
+            </h2>
+            
+            <!-- Mensagem - CORRIGIDA com courseTitle da store -->
+            <p class="text-center text-foreground/70 mb-8">
+              You've successfully completed the 
+              <span class="font-semibold text-primary">"{{ courseStore.courseTitle || 'Curso de Teste' }}"</span> course! 
+              Great job on your dedication and hard work.
+            </p>
+            
+            <!-- Estatísticas -->
+            <div class="bg-white/5 rounded-xl p-4 mb-8">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-foreground/60">Course progress</span>
+                <span class="text-primary font-semibold">{{ courseStore.courseProgress }}%</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-white/10 mb-4">
+                <div 
+                  class="h-full rounded-full bg-primary transition-all duration-500"
+                  :style="{ width: `${courseStore.courseProgress}%` }"
+                ></div>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-foreground/60">{{ courseStore.completedLessons }} lessons completed</span>
+                <span class="text-foreground/60">🏆 Certificate earned</span>
+              </div>
+            </div>
+            
+            <!-- Botões de Ação -->
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button
+                @click="continueLearning"
+                class="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Continue Learning
+              </button>
+              <button
+                @click="goToDashboard"
+                class="flex-1 px-6 py-3 bg-white/5 text-foreground rounded-lg font-medium hover:bg-white/10 transition-colors border border-white/10"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+            
+            <!-- Fechar (X) -->
+            <button 
+              @click="closeCompletionModal"
+              class="absolute top-4 right-4 text-foreground/40 hover:text-foreground transition-colors"
+            >
+              <X :size="20" />
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { CheckCircle, XCircle, Trophy, X } from 'lucide-vue-next'
 import NavBar from '@/components/layout/NavBar.vue'
 import LessonSidebar from '@/components/lessons/LessonSidebar.vue'
 import LessonDisplay from './LessonDisplay.vue'
 import { useUserStore } from '@/stores/userStore'
 import { useCourseStore, type LikeCommentResponse } from '@/stores/courseStore'
+import { useProgressStore } from '@/stores/progressStore'  // <-- IMPORT ADICIONADO
 import type { Comment, CommentWithLikeStatus } from '@/types/lesson.types'
 
 const props = defineProps<{
@@ -86,6 +174,7 @@ const props = defineProps<{
 const router = useRouter()
 const userStore = useUserStore()
 const courseStore = useCourseStore()
+const progressStore = useProgressStore()  // <-- INSTÂNCIA ADICIONADA
 
 const courseId = Number(props.id)
 const initialLessonId = Number(props.lessonId)
@@ -111,6 +200,20 @@ const deletingCommentId = ref<number | null>(null)
 
 // Estado para animação de like
 const likingCommentId = ref<number | null>(null)
+
+// Estados para loading do complete
+const isUpdatingCompletion = ref(false)
+const updatingLessonId = ref<number | null>(null)
+
+// ================================================
+// FUNÇÃO PARA SCROLL PARA O TOPO
+// ================================================
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
+}
 
 // ================================================
 // COMPUTED
@@ -325,7 +428,7 @@ const handleDeleteComment = async (commentId: number) => {
 }
 
 // ================================================
-// LESSON COMPLETION
+// LESSON COMPLETION - OTIMIZADO E CORRIGIDO
 // ================================================
 const startRemoveDelay = () => {
   canRemoveCompletion.value = false
@@ -344,13 +447,29 @@ const toggleLessonComplete = async () => {
   if (!courseStore.currentLesson) return
   
   const wasCompleted = courseStore.currentLesson.completed
-  const currentCourseId = courseStore.currentCourseId
+  const lessonId = courseStore.currentLesson.id
   
   if (wasCompleted && !canRemoveCompletion.value) {
     return
   }
   
-  const result = await courseStore.markLessonComplete(courseStore.currentLesson.id)
+  // Ativar loading
+  isUpdatingCompletion.value = true
+  updatingLessonId.value = lessonId
+  
+  // Optimistic update - atualiza a UI imediatamente
+  const lesson = courseStore.modules
+    .flatMap(m => m.lessons)
+    .find(l => l.id === lessonId)
+  
+  if (lesson) {
+    lesson.completed = !wasCompleted
+    // Forçar atualização do trigger
+    courseStore.updateTrigger++
+  }
+  
+  // Fazer a chamada API
+  const result = await courseStore.markLessonComplete(lessonId)
   
   if (result?.success) {
     if (!wasCompleted) {
@@ -363,23 +482,65 @@ const toggleLessonComplete = async () => {
       canRemoveCompletion.value = true
     }
     
-    if (currentCourseId) {
-      await courseStore.fetchCourse(currentCourseId)
+    // Verificar se o curso foi completo
+    const completedCount = courseStore.completedLessons
+    const totalCount = courseStore.totalLessons
+    
+    if (completedCount === totalCount && totalCount > 0 && !wasCompleted) {
+      showCompletionModal.value = true
+    }
+    
+    // 👉 CORREÇÃO CRÍTICA: Atualizar o progressStore
+    await progressStore.fetchProgressCourses()
+    
+    // Atualizar o progresso sem recarregar tudo
+    try {
+      const progressData = await courseStore.fetchUpdatedProgress(courseId)
+      if (progressData) {
+        // Atualizar todas as lições com o novo progresso
+        progressData.completedLessonIds.forEach((id: number) => {
+          courseStore.updateLessonCompletionStatus(id, true)
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar progresso:', error)
+    }
+  } else {
+    // Reverter em caso de erro
+    if (lesson) {
+      lesson.completed = wasCompleted
+      courseStore.updateTrigger++
     }
   }
+  
+  // Desativar loading
+  setTimeout(() => {
+    isUpdatingCompletion.value = false
+    updatingLessonId.value = null
+  }, 500)
 }
 
 // ================================================
 // COURSE COMPLETION MODAL
 // ================================================
 watch(() => courseStore.completedLessons, (newValue, oldValue) => {
-  if (newValue === courseStore.totalLessons && courseStore.totalLessons > 0 && newValue > oldValue) {
+  if (newValue === courseStore.totalLessons && courseStore.totalLessons > 0 && newValue > (oldValue || 0)) {
     showCompletionModal.value = true
   }
 })
 
 const closeCompletionModal = () => {
   showCompletionModal.value = false
+}
+
+const continueLearning = () => {
+  closeCompletionModal()
+  // Pode redirecionar para a próxima lição ou lista de cursos
+}
+
+const goToDashboard = () => {
+  router.push('/user')
+  closeCompletionModal()
 }
 
 // ================================================
@@ -417,7 +578,7 @@ const handleLessonSelect = async (lessonId: number) => {
 }
 
 // ================================================
-// FETCH DATA - CORRIGIDO COM ANTI-CACHE
+// FETCH DATA
 // ================================================
 const fetchLessonData = async () => {
   if (courseId) {
@@ -429,14 +590,6 @@ const fetchLessonData = async () => {
       if (lessonId) {
         courseStore.selectLesson(lessonId)
         
-        // 👉 FORÇAR HEADERS ANTI-CACHE
-        const headers = {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-        
-        // 👉 USAR TIMESTAMP PARA EVITAR CACHE
         await Promise.all([
           courseStore.fetchLessonResources(lessonId),
           courseStore.fetchLessonComments(lessonId)
@@ -445,6 +598,15 @@ const fetchLessonData = async () => {
     }
   }
 }
+
+// ================================================
+// WATCH PARA MUDANÇA DE LIÇÃO - SCROLL PARA O TOPO
+// ================================================
+watch(() => courseStore.currentLessonId, () => {
+  setTimeout(() => {
+    scrollToTop()
+  }, 100)
+})
 
 // ================================================
 // WINDOW RESIZE
@@ -463,6 +625,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
   handleResize()
   fetchLessonData()
+  scrollToTop()
 })
 
 onUnmounted(() => {

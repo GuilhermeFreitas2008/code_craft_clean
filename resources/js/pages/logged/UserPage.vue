@@ -147,7 +147,7 @@
             <div
               v-for="n in 8"
               :key="n"
-              class="animate-pulse rounded-xl border border-white/5 bg-card p-6"
+              class="animate-pulse rounded-xl border border-white/5 bg-card p-6 h-[280px]"
             >
               <div class="mb-4 flex justify-start">
                 <div class="h-16 w-16 rounded-2xl bg-white/5"></div>
@@ -168,9 +168,14 @@
               v-for="course in filteredCourses"
               :key="course.id"
               :to="`/course/${course.id}`"
-              class="block"
+              class="block h-full"
             >
-              <div class="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+              <div class="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 h-[280px]">
+                <!-- Completed Badge (canto superior direito) -->
+                <div v-if="progressStore.isCompleted(course.id)" class="absolute top-4 right-4 z-10">
+                    <CheckCircle :size="16" class="mr-1" color="#3b82f6" />
+                </div>
+
                 <!-- Technology Icon -->
                 <div class="mb-4 flex justify-start">
                   <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -180,7 +185,7 @@
 
                 <!-- Title -->
                 <div class="mb-2">
-                  <h3 class="text-left text-lg font-semibold text-foreground">
+                  <h3 class="text-left text-lg font-semibold text-foreground line-clamp-2 pr-20">
                     {{ course.title }}
                   </h3>
                 </div>
@@ -188,8 +193,8 @@
                 <!-- Separator -->
                 <div class="my-4 border-t border-white/5"></div>
 
-                <!-- Metadata -->
-                <div class="flex flex-col items-start gap-2 text-xs">
+                <!-- Metadata - sempre no fundo -->
+                <div class="flex flex-col items-start gap-2 text-xs mt-auto">
                   <!-- Lessons -->
                   <div class="flex items-center space-x-1 text-foreground/60">
                     <Film :size="14" />
@@ -231,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, onActivated } from 'vue'  // <-- ADICIONADO onActivated
 import { useRouter } from 'vue-router'
 import api from '@/services/axios'
 import { 
@@ -251,7 +256,8 @@ import {
   Cloud,
   Award,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  CheckCircle
 } from 'lucide-vue-next'
 
 import { useUserStore } from '@/stores/userStore'
@@ -410,7 +416,7 @@ const fetchEnrollments = async () => {
 }
 
 // ================================================
-// FILTERED COURSES - COM FILTRO POR MENU
+// FILTERED COURSES - CORRIGIDO
 // ================================================
 const filteredCourses = computed(() => {
   let filtered = courses.value
@@ -441,9 +447,14 @@ const filteredCourses = computed(() => {
       filtered = filtered.filter(course => watchlistStore.isInWatchlist(course.id))
       break
     case 'Continue':
-      filtered = filtered.filter(course => enrolledCourseIds.value.includes(course.id))
+      // Mostrar apenas cursos inscritos QUE NÃO ESTÃO COMPLETOS
+      filtered = filtered.filter(course => 
+        enrolledCourseIds.value.includes(course.id) && 
+        !progressStore.isCompleted(course.id)
+      )
       break
     case 'Completed':
+      // Mostrar apenas cursos completos (progress_percent = 100)
       filtered = filtered.filter(course => progressStore.isCompleted(course.id))
       break
   }
@@ -478,14 +489,49 @@ const handleMenuClick = (menuName: string) => {
 // ================================================
 watch(() => uiStore.activeMenuItem, (newMenu, oldMenu) => {
   if (newMenu !== oldMenu) {
-    // Ativar skeleton loader para mostrar que está a carregar
     isLoading.value = true
-    
-    // Simular um pequeno delay para mostrar o skeleton
-    // (os dados já estão em memória, mas queremos dar feedback visual)
     setTimeout(() => {
       isLoading.value = false
     }, 300)
+  }
+})
+
+// ================================================
+// WATCH PARA MUDANÇAS NO PROGRESSO - ATUALIZAR UI
+// ================================================
+watch(() => progressStore.completedCourses, () => {
+  isLoading.value = true
+  setTimeout(() => {
+    isLoading.value = false
+  }, 100)
+}, { deep: true })
+
+// ================================================
+// WATCH PARA MUDANÇAS NAS INSCRIÇÕES - ATUALIZAR UI
+// ================================================
+watch(() => enrolledCourseIds.value, () => {
+  isLoading.value = true
+  setTimeout(() => {
+    isLoading.value = false
+  }, 100)
+}, { deep: true })
+
+// ================================================
+// RECARREGAR DADOS QUANDO A PÁGINA FICA VISÍVEL
+// ================================================
+onActivated(async () => {
+  console.log('🔄 UserPage ativada - recarregando dados...')
+  isLoading.value = true
+  
+  try {
+    await Promise.all([
+      progressStore.fetchProgressCourses(),
+      fetchEnrollments()
+    ])
+  } catch (error) {
+    console.error('Erro ao recarregar dados:', error)
+  } finally {
+    isLoading.value = false
   }
 })
 
