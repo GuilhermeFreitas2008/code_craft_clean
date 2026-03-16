@@ -5,6 +5,8 @@ import RegisterPage from '@/pages/public/RegisterPage.vue';
 import UserPage from '@/pages/logged/UserPage.vue';
 import CourseView from '@/pages/logged/courses/CourseView.vue';
 import LessonView from '@/pages/logged/courses/LessonView.vue';
+import ProfileView from '@/pages/logged/profile/ProfileView.vue';
+import SettingsPage from '@/pages/logged/profile/SettingsPage.vue';
 
 
 const router = createRouter({
@@ -21,6 +23,10 @@ const router = createRouter({
         {path: '/course/:id', name: 'course', component: CourseView, props: true},
 
         { path: '/course/:id/lesson/:lessonId', name: 'lesson', component: LessonView, props: true },
+
+        { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
+        
+        { path: '/settings', name: 'settings', component: SettingsPage, meta: { requiresAuth: true } },
     ],
 });
 

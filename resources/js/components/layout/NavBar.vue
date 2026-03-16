@@ -1,4 +1,3 @@
-<!-- NavBar.vue -->
 <template>
   <header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
     <div class="flex h-16 items-center justify-between pl-5 pr-8">
@@ -138,12 +137,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Menu, PanelRightClose, PanelLeftClose, User, Settings, LogOut } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/userStore'
 import { useUiStore } from '@/stores/uiStore'
 
 const userStore = useUserStore()
 const uiStore = useUiStore()
+const router = useRouter()
 
 // Props
 defineProps<{
@@ -181,12 +182,12 @@ const reloadPage = () => {
 
 // Handlers
 const handleProfileClick = () => {
-  console.log('Profile clicked')
+  router.push('/profile')
   closeUserMenu()
 }
 
 const handleSettingsClick = () => {
-  console.log('Settings clicked')
+  router.push('/settings')
   closeUserMenu()
 }
 

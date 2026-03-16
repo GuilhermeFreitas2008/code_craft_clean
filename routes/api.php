@@ -109,6 +109,7 @@ Route::post('/login', function (Request $request) {
             'email' => $user->email,
             'role' => $user->role->name,
             'role_id' => $user->role_id,
+            'created_at' => $user->created_at,
         ],
     ]);
 });
@@ -149,6 +150,7 @@ Route::post('/register', function (Request $request) {
             'email' => $user->email,
             'role' => $user->role->name ?? 'user',
             'role_id' => $user->role_id,
+            'created_at' => $user->created_at,
         ],
     ], 201);
 });
