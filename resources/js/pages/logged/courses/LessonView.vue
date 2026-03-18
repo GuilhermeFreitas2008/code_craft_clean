@@ -5,6 +5,7 @@
       :sidebar-visible="lessonSidebarOpen"
       :user-name="userStore.user?.name"
       :user-email="userStore.user?.email"
+      :user-avatar="userStore.user?.avatar"
       :user-initials="userStore.user?.name?.charAt(0)"
       @toggle-mobile-menu="toggleMobileMenu"
       @toggle-sidebar="toggleLessonSidebar"
@@ -38,6 +39,7 @@
             :error="courseStore.error"
             :active-section="activeSection"
             :can-remove-completion="canRemoveCompletion"
+            :user-avatar="userStore.user?.avatar"
             :user-initials="userInitials"
             :replying-to="replyToComment"
             :comment-submitting="commentSubmitting"
@@ -68,7 +70,7 @@
       </div>
     </div>
 
-    <!-- Modal de Conclusão do Curso - ORIGINAL -->
+    <!-- Modal de Conclusão do Curso -->
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-300 ease-out"
@@ -99,7 +101,7 @@
               🎉 Congratulations!
             </h2>
             
-            <!-- Mensagem - CORRIGIDA com courseTitle da store -->
+            <!-- Mensagem -->
             <p class="text-center text-foreground/70 mb-8">
               You've successfully completed the 
               <span class="font-semibold text-primary">"{{ courseStore.courseTitle || 'Curso de Teste' }}"</span> course! 
@@ -163,7 +165,7 @@ import LessonSidebar from '@/components/lessons/LessonSidebar.vue'
 import LessonDisplay from './LessonDisplay.vue'
 import { useUserStore } from '@/stores/userStore'
 import { useCourseStore, type LikeCommentResponse } from '@/stores/courseStore'
-import { useProgressStore } from '@/stores/progressStore'  // <-- IMPORT ADICIONADO
+import { useProgressStore } from '@/stores/progressStore'
 import type { Comment, CommentWithLikeStatus } from '@/types/lesson.types'
 
 const props = defineProps<{
@@ -174,7 +176,7 @@ const props = defineProps<{
 const router = useRouter()
 const userStore = useUserStore()
 const courseStore = useCourseStore()
-const progressStore = useProgressStore()  // <-- INSTÂNCIA ADICIONADA
+const progressStore = useProgressStore()
 
 const courseId = Number(props.id)
 const initialLessonId = Number(props.lessonId)

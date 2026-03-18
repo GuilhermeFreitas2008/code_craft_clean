@@ -44,8 +44,14 @@
           @click="toggleUserMenu"
           class="flex items-center space-x-3 rounded-lg p-2 hover:bg-white/5 transition-colors duration-200"
         >
-          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary">
-            <span class="text-sm font-semibold">{{ userStore.user?.name?.charAt(0) || 'U' }}</span>
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary overflow-hidden">
+            <img 
+              v-if="userAvatar"
+              :src="userAvatar" 
+              alt="Avatar"
+              class="w-full h-full object-cover"
+            />
+            <span v-else class="text-sm font-semibold">{{ userInitials }}</span>
           </div>
           <span class="hidden text-sm font-medium text-foreground lg:block">{{ userStore.user?.name || 'User' }}</span>
         </button>
@@ -67,8 +73,14 @@
             <!-- Perfil do Utilizador -->
             <div class="px-1 py-3 border-b border-white/5">
               <div class="flex items-center space-x-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  <span class="text-lg font-semibold">{{ userStore.user?.name?.charAt(0) || 'U' }}</span>
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary overflow-hidden">
+                  <img 
+                    v-if="userAvatar"
+                    :src="userAvatar" 
+                    alt="Avatar"
+                    class="w-full h-full object-cover"
+                  />
+                  <span v-else class="text-lg font-semibold">{{ userInitials }}</span>
                 </div>
                 <div class="flex flex-col">
                   <span class="text-base font-medium text-foreground">{{ userStore.user?.name || 'User' }}</span>
@@ -136,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Menu, PanelRightClose, PanelLeftClose, User, Settings, LogOut } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/userStore'
@@ -156,6 +168,14 @@ defineEmits<{
   (e: 'toggle-mobile-menu'): void
   (e: 'toggle-sidebar'): void
 }>()
+
+// Computed para avatar e iniciais
+const userAvatar = computed(() => userStore.user?.avatar || null)
+const userInitials = computed(() => {
+  const name = userStore.user?.name
+  if (!name) return 'U'
+  return name.charAt(0).toUpperCase()
+})
 
 // User menu state
 const userMenuOpen = ref(false)

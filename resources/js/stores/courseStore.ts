@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/axios'
-import type { Module, Lesson, Resource, Comment } from '@/types/lesson.types'
+import type { Module, Lesson, Resource, Comment, CommentWithLikeStatus } from '@/types/lesson.types'
 import { useUserStore } from './userStore'
 
 export interface LikeCommentResponse {
@@ -13,17 +13,67 @@ export interface LikeCommentResponse {
 
 export const useCourseStore = defineStore('course', () => {
     const currentCourseId = ref<number | null>(null)
-    const courseTitle = ref<string>('')  // <-- ADICIONADO
+    const courseTitle = ref<string>('')
     const modules = ref<Module[]>([])
     const currentLessonId = ref<number | null>(null)
     const isLoading = ref(false)
     const error = ref<string | null>(null)
     
     const currentLessonResources = ref<Resource[]>([])
-    const currentLessonComments = ref<Comment[]>([])
-
+    const currentLessonComments = ref<CommentWithLikeStatus[]>([])
+    
     // TRIGGER PARA FORÇAR REATIVIDADE
     const updateTrigger = ref(0)
+
+    // ================================================
+    // FUNÇÃO AUXILIAR PARA MAPEAR COMENTÁRIOS COM AVATAR
+    // ================================================
+    const mapCommentWithAvatar = (comment: any, currentUserId?: number): CommentWithLikeStatus => {
+        const userId = comment.userId || comment.user_id || comment.user?.id
+        const userName = comment.userName || comment.user?.username || 'Unknown'
+        const userAvatar = comment.userAvatar || comment.user?.avatar || null
+        
+        // 👇 DEBUG: Ver o que está a chegar
+        console.log('🎯 Mapeando comentário:', { 
+            id: comment.id, 
+            userId, 
+            userName, 
+            userAvatar,
+            rawComment: comment 
+        })
+        
+        // Descobrir se é uma resposta e para quem está a responder
+        let replyToUserName = null
+        if (comment.parent_id) {
+            const findParent = (comments: any[], parentId: number): string | null => {
+                for (const c of comments) {
+                    if (c.id === parentId) {
+                        return c.userName || c.user?.username || 'Unknown'
+                    }
+                    if (c.replies?.length) {
+                        const found = findParent(c.replies, parentId)
+                        if (found) return found
+                    }
+                }
+                return null
+            }
+            replyToUserName = findParent([comment], comment.parent_id)
+        }
+
+        return {
+            id: comment.id,
+            userId: userId,
+            userName: userName,
+            userInitials: userName.charAt(0).toUpperCase(),
+            userAvatar: userAvatar,  // 👈 Isto já está correto!
+            content: comment.content,
+            createdAt: comment.createdAt || comment.created_at,
+            likes: comment.likes || 0,
+            isLikedByCurrentUser: comment.is_liked_by_user || false,
+            replyToUserName: replyToUserName,
+            replies: comment.replies?.map((reply: any) => mapCommentWithAvatar(reply, currentUserId))
+        }
+    }
 
     // ================================================
     // Computed
@@ -31,7 +81,6 @@ export const useCourseStore = defineStore('course', () => {
     const currentLesson = computed<Lesson | null>(() => {
         if (!currentLessonId.value || !modules.value.length) return null
         
-        // Dependência do trigger para forçar recálculo
         void updateTrigger.value
         
         for (const module of modules.value) {
@@ -78,7 +127,7 @@ export const useCourseStore = defineStore('course', () => {
             const courseData = courseResponse.data
             
             currentCourseId.value = courseId
-            courseTitle.value = courseData.title || 'Curso de Teste'  // <-- GUARDA O TÍTULO
+            courseTitle.value = courseData.title || 'Curso de Teste'
             
             let completedLessonIds: number[] = []
             
@@ -135,21 +184,33 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Buscar comentários de uma lição
+    // Buscar comentários de uma lição (COM AVATAR)
     // ================================================
     const fetchLessonComments = async (lessonId: number, headers = {}) => {
         try {
+            console.log('📥 Buscando comentários da lição:', lessonId)
             const response = await api.get(`/lessons/${lessonId}/comments`, { headers })
-            currentLessonComments.value = response.data
-            return response.data
+            
+            console.log('📦 Resposta da API (comentários):', response.data)
+            
+            const userStore = useUserStore()
+            const commentsWithAvatar = response.data.map((comment: any) => 
+                mapCommentWithAvatar(comment, userStore.user?.id)
+            )
+            
+            console.log('✅ Comentários mapeados:', commentsWithAvatar)
+            
+            currentLessonComments.value = commentsWithAvatar
+            return commentsWithAvatar
         } catch (err) {
+            console.error('❌ Erro ao buscar comentários:', err)
             currentLessonComments.value = []
             return []
         }
     }
 
     // ================================================
-    // Criar comentário
+    // Criar comentário (ATUALIZADO)
     // ================================================
     const createComment = async (lessonId: number, content: string, parentId: number | null = null) => {
         try {
@@ -158,17 +219,20 @@ export const useCourseStore = defineStore('course', () => {
                 parent_id: parentId
             })
             
+            const userStore = useUserStore()
+            const newComment = mapCommentWithAvatar(response.data, userStore.user?.id)
+            
             if (parentId) {
                 const parentComment = currentLessonComments.value.find(c => c.id === parentId)
                 if (parentComment) {
                     if (!parentComment.replies) parentComment.replies = []
-                    parentComment.replies.push(response.data)
+                    parentComment.replies.push(newComment)
                 }
             } else {
-                currentLessonComments.value.unshift(response.data)
+                currentLessonComments.value.unshift(newComment)
             }
             
-            return { success: true, comment: response.data }
+            return { success: true, comment: newComment }
         } catch (err: any) {
             return { 
                 success: false, 
@@ -184,7 +248,7 @@ export const useCourseStore = defineStore('course', () => {
         try {
             const response = await api.put(`/comments/${commentId}`, { content })
             
-            const updateCommentContent = (comments: Comment[]): boolean => {
+            const updateCommentContent = (comments: CommentWithLikeStatus[]): boolean => {
                 for (const comment of comments) {
                     if (comment.id === commentId) {
                         comment.content = content
@@ -215,7 +279,7 @@ export const useCourseStore = defineStore('course', () => {
         try {
             await api.delete(`/comments/${commentId}`)
             
-            const removeComment = (comments: Comment[]): boolean => {
+            const removeComment = (comments: CommentWithLikeStatus[]): boolean => {
                 for (let i = 0; i < comments.length; i++) {
                     if (comments[i].id === commentId) {
                         comments.splice(i, 1)
@@ -246,7 +310,7 @@ export const useCourseStore = defineStore('course', () => {
         try {
             const response = await api.post(`/comments/${commentId}/like`)
             
-            const updateCommentLikes = (comments: Comment[]) => {
+            const updateCommentLikes = (comments: CommentWithLikeStatus[]) => {
                 for (const comment of comments) {
                     if (comment.id === commentId) {
                         comment.likes = response.data.likes
@@ -304,9 +368,6 @@ export const useCourseStore = defineStore('course', () => {
     // NOVAS FUNÇÕES PARA ATUALIZAÇÃO OTIMISTA
     // ================================================
     
-    /**
-     * Buscar apenas o progresso atualizado do curso
-     */
     const fetchUpdatedProgress = async (courseId: number) => {
         try {
             const response = await api.get('/user-progress', {
@@ -324,9 +385,6 @@ export const useCourseStore = defineStore('course', () => {
         }
     }
 
-    /**
-     * Atualizar o status de conclusão de uma lição nos módulos
-     */
     const updateLessonCompletionStatus = (lessonId: number, completed: boolean) => {
         for (const module of modules.value) {
             const lesson = module.lessons.find(l => l.id === lessonId)
@@ -350,7 +408,7 @@ export const useCourseStore = defineStore('course', () => {
     // ================================================
     const clearCourse = () => {
         currentCourseId.value = null
-        courseTitle.value = ''  // <-- LIMPAR TÍTULO
+        courseTitle.value = ''
         modules.value = []
         currentLessonId.value = null
         currentLessonResources.value = []
@@ -360,7 +418,7 @@ export const useCourseStore = defineStore('course', () => {
 
     return {
         currentCourseId,
-        courseTitle,  // <-- EXPORTA A VARIÁVEL
+        courseTitle,
         modules,
         currentLessonId,
         currentLesson,
@@ -382,7 +440,6 @@ export const useCourseStore = defineStore('course', () => {
         selectLesson,
         clearCourse,
         updateTrigger,
-        // NOVAS FUNÇÕES
         fetchUpdatedProgress,
         updateLessonCompletionStatus,
     }

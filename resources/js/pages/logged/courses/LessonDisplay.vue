@@ -100,7 +100,7 @@
             </button>
           </div>
 
-          <!-- Botão de Marcar como Concluída - COM LOADING STATE -->
+          <!-- Botão de Marcar como Concluída -->
           <button
             @click="$emit('toggle-complete')"
             class="group relative w-[160px] px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
@@ -136,7 +136,7 @@
           </button>
         </div>
 
-        <!-- Conteúdo Expandido (Recursos ou Comentários) -->
+        <!-- Conteúdo Expandido -->
         <Transition
           enter-active-class="transition-all duration-300 ease-out"
           enter-from-class="opacity-0 -translate-y-4"
@@ -177,35 +177,37 @@
               <p v-else class="text-center text-foreground/40 py-8">No resources available for this lesson yet.</p>
             </div>
 
-            <!-- SECÇÃO: Comentários - COM ANIMAÇÕES SUAVES -->
+            <!-- SECÇÃO: Comentários -->
             <div v-if="activeSection === 'comments'" class="bg-white/5 rounded-xl p-6">
               <h3 class="text-lg font-semibold text-foreground mb-4">
                 Comments <span class="text-sm text-foreground/40 ml-2">({{ comments?.length || 0 }})</span>
               </h3>
               
-              <!-- Formulário de Novo Comentário com ref para scroll -->
+              <!-- Formulário de Novo Comentário -->
               <div class="flex gap-3 mb-6 pb-4 border-b border-white/5" ref="commentFormRef">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                  <span class="text-xs font-medium text-primary">{{ userInitials }}</span>
+                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+                  <img 
+                    v-if="userAvatar"
+                    :src="userAvatar" 
+                    alt="Your avatar"
+                    class="w-full h-full object-cover"
+                  />
+                  <span v-else class="text-xs font-medium text-primary">{{ userInitials }}</span>
                 </div>
                 <div class="flex-1">
-                  <!-- Badge de Reply (com deteção de self-reply) -->
+                  <!-- Badge de Reply -->
                   <div v-if="replyingTo" class="mb-2 flex items-center gap-2">
                     <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-lg inline-flex items-center gap-1">
                       <span>
                         Replying to 
-                        <span v-if="replyingTo?.userId === currentUserId" class="font-semibold text-primary">
-                          yourself
-                        </span>
-                        <span v-else class="font-semibold text-primary">
-                          @{{ replyingTo?.userName }}
-                        </span>
+                        <span v-if="replyingTo?.userId === currentUserId" class="font-semibold text-primary">yourself</span>
+                        <span v-else class="font-semibold text-primary">@{{ replyingTo?.userName }}</span>
                       </span>
                       <button @click="$emit('cancel-reply')" class="hover:text-primary/80 ml-1">✕</button>
                     </span>
                   </div>
                   
-                  <!-- Textarea livre com ref -->
+                  <!-- Textarea -->
                   <textarea
                     :value="newComment || ''"
                     @input="$emit('update:new-comment', ($event.target as HTMLTextAreaElement).value)"
@@ -236,7 +238,7 @@
                 </div>
               </div>
 
-              <!-- Lista de Comentários Principais (máx 5) - SEM SEPARADORES -->
+              <!-- Lista de Comentários -->
               <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
                 <div
                   v-for="(comment, index) in visibleComments"
@@ -244,16 +246,33 @@
                   class="relative"
                 >
                   <div class="flex gap-3">
-                    <!-- Avatar -->
-                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span class="text-xs font-medium text-primary">{{ comment?.userInitials }}</span>
+                    <!-- Avatar do comentário principal -->
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                      <!-- Se for o user atual, usa o userAvatar da store -->
+                      <img 
+                        v-if="comment?.userId === currentUserId && userAvatar"
+                        :src="userAvatar" 
+                        :alt="`${comment?.userName}'s avatar`"
+                        class="w-full h-full object-cover"
+                        @error="handleImageError"
+                      />
+                      <!-- Se for outro user, tenta usar o avatar do comentário -->
+                      <img 
+                        v-else-if="comment?.userAvatar"
+                        :src="comment.userAvatar" 
+                        :alt="`${comment?.userName}'s avatar`"
+                        class="w-full h-full object-cover"
+                        @error="handleImageError"
+                      />
+                      <!-- Fallback para iniciais -->
+                      <span v-else class="text-xs font-medium text-primary">{{ comment?.userInitials || 'U' }}</span>
                     </div>
                     
                     <div class="flex-1 min-w-0">
                       <!-- Nome + data -->
                       <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <span v-if="currentUserId && comment?.userId === currentUserId" class="font-medium text-foreground text-sm">You</span>
-                        <span v-else class="font-medium text-foreground text-sm">{{ comment?.userName }}</span>
+                        <span v-else class="font-medium text-foreground text-sm">{{ comment?.userName || 'Unknown' }}</span>
                         <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(comment?.createdAt) }}</span>
                       </div>
                       
@@ -284,7 +303,7 @@
                         </div>
                       </div>
                       
-                      <!-- Modo de visualização -->
+                      <!-- Conteúdo do comentário -->
                       <p v-else class="text-sm text-foreground/80 break-words whitespace-pre-wrap mb-2">{{ comment?.content }}</p>
                       
                       <!-- Botões de ação -->
@@ -367,7 +386,7 @@
                           <span>Delete</span>
                         </button>
 
-                        <!-- Controlos de expansão para replies do comentário principal - COM ANIMAÇÕES SIMPLES -->
+                        <!-- Expansão de replies -->
                         <template v-if="comment?.replies?.length">
                           <button 
                             v-if="!isCommentExpanded(comment.id) && comment.replies.length > 2"
@@ -389,39 +408,121 @@
                         </template>
                       </div>
 
-                      <!-- Replies do comentário principal (2 ou expandido) - COM ANIMAÇÃO FADE -->
+                      <!-- Replies -->
                       <div 
                         v-if="comment?.replies?.length" 
                         class="mt-3 space-y-2"
                       >
-                        <ReplyItem
+                        <div
                           v-for="(reply, replyIndex) in getVisibleReplies(comment)"
                           :key="reply.id"
-                          :reply="reply"
-                          :current-user-id="currentUserId"
-                          :is-editing-comment="isEditingComment"
-                          :editing-comment-id="editingCommentId"
-                          :is-deleting-comment="isDeletingComment"
-                          :deleting-comment-id="deletingCommentId"
-                          :liking-comment-id="likingCommentId"
-                          :editing-locally="editingLocally"
-                          :reply-visibility="replyRepliesVisibility"
-                          :total-replies="comment.replies.length"
-                          :current-index="Number(replyIndex)"
-                          @reply-to="handleReplyTo"
-                          @like-comment="handleLikeComment"
-                          @start-editing="startEditing"
-                          @cancel-editing="cancelEditing"
-                          @save-edit="saveEdit"
-                          @open-delete-modal="openDeleteModal"
-                          @toggle-replies="toggleReplyReplies"
-                        />
+                          class="flex gap-2 pl-2"
+                        >
+                          <!-- Avatar da reply (tamanho menor) -->
+                          <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden mt-1">
+                            <!-- Se for o user atual, usa o userAvatar da store -->
+                            <img 
+                              v-if="reply?.userId === currentUserId && userAvatar"
+                              :src="userAvatar" 
+                              :alt="`${reply?.userName}'s avatar`"
+                              class="w-full h-full object-cover"
+                              @error="handleImageError"
+                            />
+                            <!-- Se for outro user, tenta usar o avatar da reply -->
+                            <img 
+                              v-else-if="reply?.userAvatar"
+                              :src="reply.userAvatar" 
+                              :alt="`${reply?.userName}'s avatar`"
+                              class="w-full h-full object-cover"
+                              @error="handleImageError"
+                            />
+                            <!-- Fallback para iniciais -->
+                            <span v-else class="text-[10px] font-medium text-primary">{{ reply?.userInitials || 'U' }}</span>
+                          </div>
+                          
+                          <div class="flex-1">
+                            <!-- Nome + data da reply -->
+                            <div class="flex items-center gap-2 mb-1">
+                              <span v-if="currentUserId && reply?.userId === currentUserId" class="font-medium text-foreground text-xs">You</span>
+                              <span v-else class="font-medium text-foreground text-xs">{{ reply?.userName || 'Unknown' }}</span>
+                              <span class="text-xs text-foreground/30">{{ formatDate(reply?.createdAt) }}</span>
+                            </div>
+                            
+                            <!-- Conteúdo da reply -->
+                            <p class="text-sm text-foreground/80 break-words whitespace-pre-wrap">{{ reply?.content }}</p>
+                            
+                            <!-- Botões da reply -->
+                            <div class="flex items-center gap-3 mt-1">
+                              <!-- Like da reply -->
+                              <button 
+                                @click="handleLikeComment(reply?.id)"
+                                class="relative group flex items-center gap-1 transition-all duration-200"
+                                :class="[
+                                  reply?.isLikedByCurrentUser 
+                                    ? 'text-primary' 
+                                    : 'text-foreground/40 hover:text-primary'
+                                ]"
+                                :disabled="likingCommentId === reply?.id"
+                              >
+                                <div class="relative w-3 h-3">
+                                  <Heart 
+                                    :size="12" 
+                                    class="absolute inset-0 transition-all duration-300 text-current"
+                                    :class="reply?.isLikedByCurrentUser ? 'opacity-0' : 'opacity-100'"
+                                  />
+                                  <Heart 
+                                    :size="12" 
+                                    class="absolute inset-0 transition-all duration-300 fill-current text-primary"
+                                    :class="[
+                                      reply?.isLikedByCurrentUser 
+                                        ? 'opacity-100 scale-110' 
+                                        : 'opacity-0 scale-90'
+                                    ]"
+                                  />
+                                </div>
+                                <span class="text-xs transition-all duration-300" :class="reply?.isLikedByCurrentUser ? 'text-primary' : 'text-foreground/40'">
+                                  {{ reply?.likes || 0 }}
+                                </span>
+                              </button>
+                              
+                              <!-- Reply à reply -->
+                              <button 
+                                @click="handleReplyTo(reply)"
+                                class="text-xs text-foreground/40 hover:text-primary transition-colors"
+                              >
+                                Reply
+                              </button>
+
+                              <!-- Edit da reply -->
+                              <button 
+                                v-if="currentUserId && reply?.userId === currentUserId"
+                                @click="startEditing(reply)"
+                                class="text-xs text-foreground/40 hover:text-primary transition-colors flex items-center gap-1"
+                                :disabled="isEditingComment || isDeletingComment"
+                              >
+                                <PenSquare :size="10" />
+                                <span>Edit</span>
+                              </button>
+                              
+                              <!-- Delete da reply -->
+                              <button 
+                                v-if="currentUserId && reply?.userId === currentUserId"
+                                @click="openDeleteModal(reply?.id)"
+                                class="text-xs text-foreground/40 hover:text-red-500 transition-colors flex items-center gap-1"
+                                :disabled="isDeletingComment || isEditingComment"
+                              >
+                                <Trash2 :size="10" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Botão View More Comments - COM ANIMAÇÃO -->
+                <!-- Botão View More -->
                 <div v-if="comments && comments.length > 5" class="flex justify-center mt-4">
                   <button
                     @click="showMoreComments"
@@ -442,7 +543,7 @@
       </div>
     </div>
 
-    <!-- Modal de Confirmação de Delete com LOADING -->
+    <!-- Modal de Delete -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0"
@@ -496,7 +597,6 @@ import {
 } from 'lucide-vue-next'
 import VideoPlayer from '@/components/lessons/VideoPlayer.vue'
 import LessonContent from '@/components/lessons/LessonContent.vue'
-import ReplyItem from '@/components/lessons/ReplyItem.vue'
 import { useUserStore } from '@/stores/userStore'
 import { ref, watch, nextTick, computed } from 'vue'
 
@@ -509,6 +609,7 @@ const props = defineProps<{
   activeSection: 'resources' | 'comments' | null
   canRemoveCompletion: boolean
   userInitials: string
+  userAvatar?: string | null
   replyingTo: any | null
   commentSubmitting: boolean
   newComment: string
@@ -517,7 +618,7 @@ const props = defineProps<{
   isDeletingComment: boolean
   deletingCommentId: number | null
   likingCommentId: number | null
-  isUpdatingCompletion?: boolean  // <-- NOVA PROP ADICIONADA
+  isUpdatingCompletion?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -546,22 +647,20 @@ const editingLocally = ref<{ id: number; content: string } | null>(null)
 const showDeleteModal = ref(false)
 const commentToDelete = ref<number | null>(null)
 
-// Estado para controlo de paginação de comentários principais
+// Paginação
 const commentsPage = ref(1)
 const COMMENTS_PER_PAGE = 5
 
-// Estado para controlar expansão de replies de comentários principais
+// Expansão de replies
 const commentRepliesExpanded = ref<Record<number, boolean>>({})
-
-// Estado para controlar visibilidade das replies de replies
 const replyRepliesVisibility = ref<Record<number, { expanded: boolean }>>({})
 
-// Referências para elementos
+// Refs
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const commentFormRef = ref<HTMLElement | null>(null)
 
 // ================================================
-// COMPUTED - Comentários visíveis (paginados)
+// COMPUTED
 // ================================================
 const visibleComments = computed(() => {
   if (!props.comments?.length) return []
@@ -569,7 +668,7 @@ const visibleComments = computed(() => {
 })
 
 // ================================================
-// FUNÇÕES PARA REPLIES DE COMENTÁRIOS PRINCIPAIS
+// FUNÇÕES DE EXPANSÃO
 // ================================================
 const isCommentExpanded = (commentId: number): boolean => {
   return commentRepliesExpanded.value[commentId] || false
@@ -581,40 +680,30 @@ const toggleCommentReplies = (commentId: number, expanded: boolean) => {
 
 const getVisibleReplies = (comment: any) => {
   if (!comment?.replies?.length) return []
-  
-  // Se expandido, mostra 6 (2 iniciais + 4 extra)
   if (isCommentExpanded(comment.id)) {
     return comment.replies.slice(0, 6)
   }
-  // Se não expandido, mostra apenas 2
   return comment.replies.slice(0, 2)
 }
 
 const getHiddenRepliesCount = (comment: any): number => {
   if (!comment?.replies?.length) return 0
-  
   if (isCommentExpanded(comment.id)) {
     return Math.max(0, comment.replies.length - 6)
   }
   return Math.max(0, comment.replies.length - 2)
 }
 
-// ================================================
-// FUNÇÕES PARA REPLIES DE REPLIES
-// ================================================
 const toggleReplyReplies = (payload: { replyId: number; expanded: boolean }) => {
   replyRepliesVisibility.value[payload.replyId] = { expanded: payload.expanded }
 }
 
-// ================================================
-// FUNÇÃO PARA MOSTRAR MAIS COMENTÁRIOS
-// ================================================
 const showMoreComments = () => {
   commentsPage.value++
 }
 
 // ================================================
-// WATCH PARA LIMPAR ESTADO LOCAL QUANDO A EDIÇÃO TERMINA
+// WATCH
 // ================================================
 watch(() => props.editingCommentId, (newId) => {
   if (newId === null && editingLocally.value) {
@@ -622,30 +711,6 @@ watch(() => props.editingCommentId, (newId) => {
   }
 })
 
-// ================================================
-// FUNÇÕES DO MODAL DE DELETE
-// ================================================
-const openDeleteModal = (commentId: number | null | undefined) => {
-  if (!commentId) return
-  if (props.isDeletingComment) return
-  
-  commentToDelete.value = commentId
-  showDeleteModal.value = true
-}
-
-const closeDeleteModal = () => {
-  if (props.isDeletingComment) return
-  showDeleteModal.value = false
-  commentToDelete.value = null
-}
-
-const confirmDelete = () => {
-  if (commentToDelete.value && !props.isDeletingComment) {
-    emit('delete-comment', commentToDelete.value)
-  }
-}
-
-// Observar quando o comentário é removido para fechar o modal
 watch(() => props.comments, () => {
   if (commentToDelete.value && !props.comments?.some((c: any) => c.id === commentToDelete.value)) {
     showDeleteModal.value = false
@@ -654,7 +719,7 @@ watch(() => props.comments, () => {
 }, { deep: true })
 
 // ================================================
-// FUNÇÕES AUXILIARES - COM SCROLL
+// FUNÇÕES DE COMENTÁRIOS
 // ================================================
 const handleLikeComment = (commentId: number | null | undefined) => {
   if (!commentId) return
@@ -665,7 +730,6 @@ const handleReplyTo = (comment: any) => {
   if (!comment?.id) return
   emit('reply-to', comment)
   
-  // Scroll suave para a textarea com foco
   nextTick(() => {
     if (textareaRef.value) {
       textareaRef.value.focus()
@@ -679,9 +743,6 @@ const handleReplyTo = (comment: any) => {
   })
 }
 
-// ================================================
-// FUNÇÕES DE EDIÇÃO
-// ================================================
 const startEditing = (comment: any) => {
   if (!comment?.id) return
   if (props.isEditingComment || props.isDeletingComment) return
@@ -700,7 +761,29 @@ const saveEdit = (commentId: number | null | undefined) => {
 }
 
 // ================================================
-// FUNÇÃO PARA ENTER
+// MODAL DE DELETE
+// ================================================
+const openDeleteModal = (commentId: number | null | undefined) => {
+  if (!commentId) return
+  if (props.isDeletingComment) return
+  commentToDelete.value = commentId
+  showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  if (props.isDeletingComment) return
+  showDeleteModal.value = false
+  commentToDelete.value = null
+}
+
+const confirmDelete = () => {
+  if (commentToDelete.value && !props.isDeletingComment) {
+    emit('delete-comment', commentToDelete.value)
+  }
+}
+
+// ================================================
+// UTILITÁRIOS
 // ================================================
 const handleEnterKey = () => {
   if (props.newComment?.trim() && !props.commentSubmitting) {
@@ -708,17 +791,11 @@ const handleEnterKey = () => {
   }
 }
 
-// ================================================
-// FORMAT COUNT
-// ================================================
 const formatCount = (count: number): string => {
   if (count > 99) return '+99'
   return count.toString()
 }
 
-// ================================================
-// GET RESOURCE ICON
-// ================================================
 const getResourceIcon = (type: string) => {
   const icons: Record<string, any> = {
     pdf: FileText, image: Image, presentation: File, archive: File, default: Paperclip
@@ -726,9 +803,6 @@ const getResourceIcon = (type: string) => {
   return icons[type] || icons.default
 }
 
-// ================================================
-// FORMAT DATE
-// ================================================
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return 'recently'
   try {
@@ -740,6 +814,10 @@ const formatDate = (date: Date | string | null | undefined) => {
   } catch (e) {
     return 'recently'
   }
+}
+
+const handleImageError = (e: Event) => {
+  console.error('❌ Erro ao carregar imagem:', (e.target as HTMLImageElement).src)
 }
 </script>
 
@@ -753,18 +831,15 @@ const formatDate = (date: Date | string | null | undefined) => {
   animation: like-pop 0.3s ease-out;
 }
 
-/* Para o placeholder */
 textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* Para manter o whitespace no texto */
 .whitespace-pre-wrap {
   white-space: pre-wrap;
   word-wrap: break-word;
 }
 
-/* Animações suaves */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -778,5 +853,10 @@ textarea::placeholder {
 
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
+}
+
+img {
+  display: block;
+  max-width: 100%;
 }
 </style>

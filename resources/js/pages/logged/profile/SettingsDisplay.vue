@@ -175,7 +175,7 @@
         </div>
       </Transition>
 
-      <!-- Preferences (mantém igual) -->
+      <!-- Preferences -->
       <Transition
         enter-active-class="transition-all duration-500 ease-out delay-100"
         enter-from-class="opacity-0 translate-y-4"
@@ -193,7 +193,7 @@
           </div>
 
           <div class="space-y-3">
-            <!-- Language - com modal -->
+            <!-- Language - com modal (apenas estético por agora) -->
             <div>
               <label class="block text-xs font-medium text-foreground/80 mb-2">Language</label>
               <button
@@ -212,7 +212,7 @@
               </button>
             </div>
 
-            <!-- Theme -->
+            <!-- Theme (AGORA FUNCIONAL) -->
             <div>
               <label class="block text-xs font-medium text-foreground/80 mb-2">Theme</label>
               <div class="grid grid-cols-3 gap-2">
@@ -233,7 +233,7 @@
               </div>
             </div>
 
-            <!-- Notifications -->
+            <!-- Notifications (apenas estético por agora) -->
             <div>
               <label class="block text-xs font-medium text-foreground/80 mb-2">Notifications</label>
               <label class="flex items-center justify-between p-2 rounded-lg bg-white/5 cursor-pointer hover:bg-white/10 transition-all duration-300 group/notify relative overflow-hidden">
@@ -271,7 +271,7 @@
         </div>
       </Transition>
 
-      <!-- Session & Danger Zone - Lado a lado -->
+      <!-- Session & Danger Zone - Lado a lado (mantém igual) -->
       <Transition
         enter-active-class="transition-all duration-500 ease-out delay-150"
         enter-from-class="opacity-0 translate-y-4"
@@ -629,15 +629,23 @@ const closeLanguageModal = () => {
 
 const selectLanguage = (code: string) => {
   preferences.value.language = code
+  // Nota: language ainda não está a ser guardado na BD
   setTimeout(() => {
     closeLanguageModal()
   }, 200)
 }
 
-// Carregar dados do user
-onMounted(() => {
+// Carregar dados do user e preferências
+onMounted(async () => {
   accountForm.value.name = userStore.user?.name || ''
   accountForm.value.email = userStore.user?.email || ''
+  
+  // Carregar preferências da BD
+  const prefs = await userStore.fetchPreferences()
+  if (prefs) {
+    preferences.value.theme = prefs.theme
+    // Nota: language e emailNotifications ainda não estão na BD
+  }
 })
 
 // Save account settings (inclui password)
@@ -656,7 +664,7 @@ const saveAccountSettings = async () => {
   }
   
   try {
-    // Simular chamada API
+    // TODO: Implementar chamada real à API para atualizar nome/password
     await new Promise(resolve => setTimeout(resolve, 1000))
     console.log('Saved data:', data)
     
@@ -674,12 +682,19 @@ const saveAccountSettings = async () => {
   }
 }
 
-// Save preferences
+// Save preferences (AGORA FUNCIONAL para theme)
 const savePreferences = async () => {
   saving.value.preferences = true
-  setTimeout(() => {
-    saving.value.preferences = false
-  }, 1000)
+  
+  const result = await userStore.updatePreferences({
+    theme: preferences.value.theme
+  })
+  
+  if (result.success) {
+    console.log('Theme updated successfully')
+  }
+  
+  saving.value.preferences = false
 }
 
 // Logout

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -82,5 +83,44 @@ class UserController extends Controller
     {
         $user->delete();
         return response()->json(['message' => 'User deleted']);
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        $user = $request->user();
+        
+        // Apagar avatar antigo se existir
+        if ($user->avatar) {
+            $oldPath = str_replace('/storage/', '', $user->avatar);
+            Storage::disk('public')->delete($oldPath);
+        }
+        
+        // Guardar novo avatar
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->avatar = '/storage/' . $path;
+        $user->save();
+        
+        return response()->json([
+            'success' => true,
+            'avatar_url' => $user->avatar
+        ]);
+    }
+
+    public function removeAvatar(Request $request)
+    {
+        $user = $request->user();
+        
+        if ($user->avatar) {
+            $oldPath = str_replace('/storage/', '', $user->avatar);
+            Storage::disk('public')->delete($oldPath);
+            $user->avatar = null;
+            $user->save();
+        }
+        
+        return response()->json(['success' => true]);
     }
 }

@@ -86,4 +86,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(CommentLike::class);
     }
+
+    public function preferences()
+    {
+        return $this->hasOne(UserPreference::class);
+    }
 }

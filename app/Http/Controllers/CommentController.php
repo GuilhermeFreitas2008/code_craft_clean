@@ -45,10 +45,13 @@ class CommentController extends Controller
         // Mapear para adicionar o campo is_liked_by_user
         $comments->each(function ($comment) use ($user) {
             $comment->is_liked_by_user = $comment->likedByUsers->isNotEmpty();
+
+            $comment->userAvatar = $comment->user->avatar ?? null;
             
             if ($comment->replies) {
                 $comment->replies->each(function ($reply) {
                     $reply->is_liked_by_user = $reply->likedByUsers->isNotEmpty();
+                    $reply->userAvatar = $reply->user->avatar ?? null;
                 });
             }
             
@@ -89,6 +92,9 @@ class CommentController extends Controller
             'parent_id' => $data['parent_id'] ?? null,
             'likes' => 0
         ]);
+
+        $comment->load('user');
+        $comment->userAvatar = $user->avatar;
 
         return response()->json($comment->load('user'), 201);
     }

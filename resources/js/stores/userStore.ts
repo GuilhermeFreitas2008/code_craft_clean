@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import api from '@/services/axios'
 import router from '@/router'
 import { useWatchlistStore } from './watchlistStore'
-import { useProgressStore } from './progressStore' // 👈 NOVO IMPORT
+import { useProgressStore } from './progressStore'
 
 export const useUserStore = defineStore('user', () => {
   // Estado
@@ -21,6 +21,101 @@ export const useUserStore = defineStore('user', () => {
       token.value = storedToken
     }
   }
+
+  // ================================================
+  // AVATAR METHODS
+  // ================================================
+  
+  /**
+   * Upload de novo avatar
+   */
+  const updateAvatar = async (formData: FormData) => {
+    isLoading.value = true
+    try {
+      const response = await api.post('/user/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      
+      if (user.value) {
+        user.value.avatar = response.data.avatar_url
+        // Atualizar localStorage
+        localStorage.setItem('user', JSON.stringify(user.value))
+      }
+      
+      return { success: true, avatar_url: response.data.avatar_url }
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error)
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Erro ao atualizar avatar' 
+      }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Remover avatar
+   */
+  const removeAvatar = async () => {
+    isLoading.value = true
+    try {
+      await api.delete('/user/avatar')
+      
+      if (user.value) {
+        delete user.value.avatar
+        // Atualizar localStorage
+        localStorage.setItem('user', JSON.stringify(user.value))
+      }
+      
+      return { success: true }
+    } catch (error: any) {
+      console.error('Erro ao remover avatar:', error)
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Erro ao remover avatar' 
+      }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // ================================================
+  // PREFERENCES METHODS
+  // ================================================
+  
+  /**
+   * Buscar preferências do utilizador
+   */
+  const fetchPreferences = async () => {
+    try {
+      const response = await api.get('/user/preferences')
+      return response.data
+    } catch (error: any) {
+      console.error('Erro ao buscar preferências:', error)
+      return null
+    }
+  }
+
+  /**
+   * Atualizar preferências do utilizador
+   */
+  const updatePreferences = async (data: { theme: string }) => {
+    try {
+      const response = await api.put('/user/preferences', data)
+      return { success: true, data: response.data }
+    } catch (error: any) {
+      console.error('Erro ao atualizar preferências:', error)
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Erro ao atualizar preferências' 
+      }
+    }
+  }
+
+  // ================================================
+  // AUTH METHODS
+  // ================================================
 
   // Login
   const login = async (email: string, password: string, rememberMe: boolean) => {
@@ -42,7 +137,7 @@ export const useUserStore = defineStore('user', () => {
 
       if (userData.role_id === 2) {
         const watchlistStore = useWatchlistStore()
-        const progressStore = useProgressStore() // 👈 ADICIONADO
+        const progressStore = useProgressStore()
         await Promise.all([
           watchlistStore.fetchWatchlist(),
           progressStore.fetchProgressCourses()
@@ -82,7 +177,7 @@ export const useUserStore = defineStore('user', () => {
 
       if (newUser.role_id === 2) {
         const watchlistStore = useWatchlistStore()
-        const progressStore = useProgressStore() // 👈 ADICIONADO
+        const progressStore = useProgressStore()
         await Promise.all([
           watchlistStore.fetchWatchlist(),
           progressStore.fetchProgressCourses()
@@ -131,13 +226,26 @@ export const useUserStore = defineStore('user', () => {
   loadFromStorage()
 
   return {
+    // Estado
     user,
     token,
     isLoading,
+    
+    // Getters
     isAuthenticated,
+    
+    // Auth Methods
     login,
     register,
-    logout
+    logout,
+    
+    // Avatar Methods
+    updateAvatar,
+    removeAvatar,
+    
+    // Preferences Methods
+    fetchPreferences,
+    updatePreferences,
   }
 }, {
   persist: {

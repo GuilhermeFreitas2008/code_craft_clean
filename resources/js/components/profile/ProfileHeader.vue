@@ -11,8 +11,8 @@
             @click="triggerFileInput"
           >
             <img 
-              v-if="avatarPreview"
-              :src="avatarPreview" 
+              v-if="avatarUrl"
+              :src="avatarUrl" 
               alt="Avatar"
               class="w-full h-full object-cover"
             />
@@ -22,8 +22,14 @@
             </div>
           </div>
           <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
-          <button v-if="avatarPreview" @click="avatarPreview = null" class="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20">
-            <Trash2 :size="16" />
+          <button 
+            v-if="avatarUrl" 
+            @click="removeAvatar"
+            :disabled="userStore.isLoading"
+            class="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="userStore.isLoading" class="h-3 w-3 animate-spin rounded-full border-2 border-red-400 border-t-transparent"></span>
+            <Trash2 v-else :size="16" />
           </button>
         </div>
 
@@ -50,14 +56,14 @@
       </div>
     </div>
 
-    <!-- Modal CodeCraft Style - Ligeiramente mais pequeno -->
+    <!-- Modal CodeCraft Style -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeEditModal"></div>
           
           <div class="relative bg-card border border-white/10 rounded-xl w-[440px] shadow-2xl overflow-hidden">
-            <!-- Header com gradiente - mais compacto -->
+            <!-- Header -->
             <div class="relative px-5 py-4 border-b border-white/5 bg-gradient-to-r from-primary/5 to-transparent">
               <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -73,7 +79,7 @@
               </button>
             </div>
 
-            <!-- Área do Círculo CodeCraft - mais compacta -->
+            <!-- Área do Círculo -->
             <div v-if="tempImage" class="p-6 flex flex-col items-center bg-gradient-to-b from-transparent to-black/20">
               <div class="relative w-48 h-48 mb-5">
                 <!-- Container do círculo com glow effect -->
@@ -94,13 +100,13 @@
                   </div>
                 </div>
 
-                <!-- Preview pequeno - ligeiramente menor -->
+                <!-- Preview pequeno -->
                 <div class="absolute -bottom-2 -right-2 w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 bg-card shadow-lg">
                   <img :src="tempImage" class="w-full h-full object-cover" />
                 </div>
               </div>
 
-              <!-- Controles CodeCraft - mais compactos -->
+              <!-- Controles -->
               <div class="w-full space-y-5">
                 <!-- Zoom Slider -->
                 <div class="space-y-1.5">
@@ -144,14 +150,19 @@
               </div>
             </div>
 
-            <!-- Footer - mais compacto -->
+            <!-- Footer -->
             <div class="px-5 py-3.5 bg-white/5 border-t border-white/5 flex justify-end gap-2.5">
               <button @click="closeEditModal" class="px-3 py-1.5 text-xs text-foreground/60 hover:text-foreground hover:bg-white/5 rounded-lg transition-colors">
                 Cancel
               </button>
-              <button @click="saveImage" class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5">
-                <Check :size="14" />
-                <span>Save Changes</span>
+              <button 
+                @click="saveImage" 
+                :disabled="userStore.isLoading"
+                class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span v-if="userStore.isLoading" class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                <Check v-else :size="14" />
+                <span>{{ userStore.isLoading ? 'Saving...' : 'Save Changes' }}</span>
               </button>
             </div>
           </div>
@@ -180,12 +191,14 @@ defineEmits<{
 }>()
 
 const fileInput = ref<HTMLInputElement | null>(null)
-const avatarPreview = ref<string | null>(null)
 const showEditModal = ref(false)
 const tempImage = ref<string | null>(null)
 const cropperImage = ref<HTMLImageElement | null>(null)
 const zoomLevel = ref(100)
 const rotation = ref(0)
+
+// Computed para a URL do avatar (da store)
+const avatarUrl = computed(() => userStore.user?.avatar || null)
 
 const userInitials = computed(() => {
   const name = userStore.user?.name
@@ -234,11 +247,43 @@ const resetImage = (): void => {
   rotation.value = 0
 }
 
-const saveImage = (): void => {
-  if (tempImage.value) {
-    avatarPreview.value = tempImage.value
+const saveImage = async (): Promise<void> => {
+  if (!cropperImage.value || !tempImage.value) return
+
+  // Criar canvas com a imagem atual
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  const size = 300
+  
+  canvas.width = size
+  canvas.height = size
+
+  if (ctx) {
+    // Desenhar a imagem do cropper no canvas
+    ctx.drawImage(cropperImage.value, 0, 0, size, size)
+    
+    // Converter canvas para blob
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.9)
+    })
+    
+    // Criar FormData e fazer upload
+    const formData = new FormData()
+    formData.append('avatar', blob, 'avatar.jpg')
+    
+    const result = await userStore.updateAvatar(formData)
+    
+    if (result.success) {
+      closeEditModal()
+    }
   }
-  closeEditModal()
+}
+
+const removeAvatar = async (): Promise<void> => {
+  const result = await userStore.removeAvatar()
+  if (result.success) {
+    // O avatar já foi removido da store
+  }
 }
 
 const closeEditModal = (): void => {

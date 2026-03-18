@@ -1,3 +1,5 @@
+// resources/js/types/lesson.types.ts
+
 export interface Resource {
   id: number
   title: string
@@ -12,19 +14,20 @@ export interface Comment {
   userId: number
   userName: string
   userInitials: string
+  userAvatar?: string | null  // 👈 NOVO CAMPO
   content: string
   createdAt: Date | string
   likes: number
-  is_liked_by_user?: boolean           // <-- ADICIONADO
-  parent_id?: number | null            // <-- ADICIONADO (para saber se é resposta)
-  replies?: Comment[]                  // Comentários podem ter respostas
+  is_liked_by_user?: boolean
+  parent_id?: number | null
+  replies?: Comment[]
 }
 
 // Interface estendida para o Display (com propriedades UI)
 export interface CommentWithLikeStatus extends Omit<Comment, 'replies' | 'is_liked_by_user' | 'parent_id'> {
   isLikedByCurrentUser: boolean
-  replyToUserName?: string | null      // <-- ADICIONADO (para mostrar @ de quem responde)
-  replies?: CommentWithLikeStatus[]    // Respostas também têm o status
+  replyToUserName?: string | null
+  replies?: CommentWithLikeStatus[]
 }
 
 export interface Lesson {

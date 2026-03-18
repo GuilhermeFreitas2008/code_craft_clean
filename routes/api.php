@@ -14,6 +14,7 @@ use App\Http\Controllers\TopicController;
 use App\Http\Controllers\WatchlistController;
 use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\UserPreferenceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -42,6 +43,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rotas acessíveis a qualquer utilizador autenticado (sem role:)
     Route::apiResource('users', UserController::class)->only(['show', 'update']);
+    Route::post('/user/avatar', [UserController::class, 'uploadAvatar']);
+    Route::delete('/user/avatar', [UserController::class, 'removeAvatar']);
+    Route::get('/user/preferences', [UserPreferenceController::class, 'show']);
+    Route::put('/user/preferences', [UserPreferenceController::class, 'update']);
+
     Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
     Route::apiResource('modules', ModuleController::class)->only(['index', 'show']);
     Route::apiResource('lessons', LessonController::class)->only(['index', 'show']);
