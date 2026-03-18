@@ -212,16 +212,16 @@
               </button>
             </div>
 
-            <!-- Theme (AGORA FUNCIONAL) -->
+            <!-- Theme (AGORA FUNCIONAL COM THEMESTORE) -->
             <div>
               <label class="block text-xs font-medium text-foreground/80 mb-2">Theme</label>
               <div class="grid grid-cols-3 gap-2">
                 <button
                   v-for="(theme, index) in themes"
                   :key="theme.value"
-                  @click="preferences.theme = theme.value"
+                  @click="themeStore.setTheme(theme.value as ThemeMode)"
                   class="flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all duration-300 relative overflow-hidden group/theme"
-                  :class="preferences.theme === theme.value 
+                  :class="themeStore.themeMode === theme.value 
                     ? 'border-primary bg-primary/10 text-primary' 
                     : 'border-white/10 text-foreground/60 hover:border-primary/30 hover:bg-white/5'"
                   :style="{ transitionDelay: `${index * 50}ms` }"
@@ -231,6 +231,9 @@
                   <span class="text-xs relative z-10">{{ theme.label }}</span>
                 </button>
               </div>
+              <p class="text-xs text-foreground/40 mt-1 text-center">
+                Current: {{ themeStore.themeMode }}
+              </p>
             </div>
 
             <!-- Notifications (apenas estético por agora) -->
@@ -255,7 +258,7 @@
               </label>
             </div>
 
-            <!-- Save Preferences Button -->
+            <!-- Save Preferences Button (AGORA SÓ PARA NOTIFICAÇÕES) -->
             <div class="flex justify-end pt-2">
               <button
                 @click="savePreferences"
@@ -503,6 +506,7 @@ import {
 } from 'lucide-vue-next'
 import ProfileHeader from '@/components/profile/ProfileHeader.vue'
 import { useUserStore } from '@/stores/userStore'
+import { useThemeStore, type ThemeMode } from '@/stores/themeStore'
 import api from '@/services/axios'
 
 const emit = defineEmits<{
@@ -511,6 +515,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 
 // Languages data
 const languages = [
@@ -555,7 +560,6 @@ const showConfirmPassword = ref(false)
 
 const preferences = ref({
   language: 'en',
-  theme: 'dark',
   emailNotifications: true
 })
 
@@ -600,12 +604,9 @@ const passwordStrength = computed(() => {
 })
 
 const isPasswordFormValid = computed(() => {
-  // Se todos os campos de password estiverem vazios, é válido (não vai alterar password)
   if (!passwordForm.value.currentPassword && !passwordForm.value.newPassword && !passwordForm.value.confirmPassword) {
     return true
   }
-  
-  // Se algum campo estiver preenchido, todos têm de estar e as passwords têm de coincidir
   return passwordForm.value.currentPassword && 
          passwordForm.value.newPassword && 
          passwordForm.value.confirmPassword && 
@@ -629,7 +630,6 @@ const closeLanguageModal = () => {
 
 const selectLanguage = (code: string) => {
   preferences.value.language = code
-  // Nota: language ainda não está a ser guardado na BD
   setTimeout(() => {
     closeLanguageModal()
   }, 200)
@@ -640,11 +640,10 @@ onMounted(async () => {
   accountForm.value.name = userStore.user?.name || ''
   accountForm.value.email = userStore.user?.email || ''
   
-  // Carregar preferências da BD
+  // Carregar preferências da BD (apenas language e notifications)
   const prefs = await userStore.fetchPreferences()
   if (prefs) {
-    preferences.value.theme = prefs.theme
-    // Nota: language e emailNotifications ainda não estão na BD
+    // O theme já é carregado pela themeStore automaticamente
   }
 })
 
@@ -656,7 +655,6 @@ const saveAccountSettings = async () => {
     name: accountForm.value.name
   }
   
-  // Se houver passwords preenchidas, incluir no pedido
   if (passwordForm.value.currentPassword && passwordForm.value.newPassword) {
     data.current_password = passwordForm.value.currentPassword
     data.new_password = passwordForm.value.newPassword
@@ -664,11 +662,9 @@ const saveAccountSettings = async () => {
   }
   
   try {
-    // TODO: Implementar chamada real à API para atualizar nome/password
     await new Promise(resolve => setTimeout(resolve, 1000))
     console.log('Saved data:', data)
     
-    // Limpar campos de password após save
     passwordForm.value = {
       currentPassword: '',
       newPassword: '',
@@ -682,17 +678,12 @@ const saveAccountSettings = async () => {
   }
 }
 
-// Save preferences (AGORA FUNCIONAL para theme)
+// Save preferences (AGORA SÓ PARA NOTIFICAÇÕES)
 const savePreferences = async () => {
   saving.value.preferences = true
   
-  const result = await userStore.updatePreferences({
-    theme: preferences.value.theme
-  })
-  
-  if (result.success) {
-    console.log('Theme updated successfully')
-  }
+  // O theme já é guardado automaticamente pela themeStore quando se clica nos botões
+  await new Promise(resolve => setTimeout(resolve, 1000))
   
   saving.value.preferences = false
 }

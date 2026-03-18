@@ -156,3 +156,30 @@ body {
 .animation-delay-800 { animation-delay: 800ms; }
 .animation-delay-900 { animation-delay: 900ms; }
 .animation-delay-1000 { animation-delay: 1000ms; }
+
+/* ================================================
+   LIGHT MODE - Substitui azul escuro por branco
+   ================================================ */
+.light-theme {
+  --color-background: #ffffff;
+  --color-foreground: #020617;
+  --color-card: #ffffff;
+  --color-border: rgba(0, 0, 0, 0.1);
+  
+  /* Mantém o azul claro igual */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+}
+
+.light-theme ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.light-theme ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border: 2px solid #f1f1f1;
+}
+
+.light-theme ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
