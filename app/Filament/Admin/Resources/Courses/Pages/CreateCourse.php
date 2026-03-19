@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Filament\Admin\Resources\Courses\Pages;
+
+use App\Filament\Admin\Resources\Courses\CourseResource;
+use App\Filament\Admin\Resources\Courses\Schemas\CourseForm;
+use Filament\Resources\Pages\CreateRecord;
+use Filament\Schemas\Schema; // <-- ALTERADO PARA SCHEMA
+
+class CreateCourse extends CreateRecord
+{
+    protected static string $resource = CourseResource::class;
+
+    // ALTERADO PARA SCHEMA
+    public function form(Schema $schema): Schema 
+    {
+        return CourseForm::configure($schema);
+    }
+}

@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser; 
+use Filament\Models\Contracts\HasName; // <-- 1. IMPORTANTE: Adicionado o HasName
+use Filament\Panel; 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+// 2. IMPORTANTE: Adicionado o HasName à lista de implementações
+class User extends Authenticatable implements FilamentUser, HasName 
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Campos que podem ser preenchidos automaticamente
-     */
     protected $fillable = [
         'username',
         'email',
@@ -22,50 +23,59 @@ class User extends Authenticatable
         'slug'
     ];
 
-    /**
-     * Campos que devem ficar ocultos quando o modelo é convertido em array ou JSON
-     */
     protected $hidden = [
         'password_hash',
     ];
 
     /**
-     * Casts (transformações automáticas de tipos)
+     * 1. DIZER AO LARAVEL ONDE ESTÁ A PASSWORD
      */
-    protected function casts(): array
+    public function getAuthPassword()
     {
-        return [
-            //
-        ];
+        return $this->password_hash;
     }
 
     /**
-     * Um utilizador pertence a um role
+     * 2. DIZER AO FILAMENT QUEM PODE ENTRAR
      */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->role_id === 1;
+    }
+
+    /**
+     * 3. DIZER AO FILAMENT ONDE ESTÁ O NOME DO UTILIZADOR
+     */
+    public function getFilamentName(): string
+    {
+        // Retorna o vosso campo 'username' da base de dados
+        return $this->username; 
+    }
+
+    protected function casts(): array
+    {
+        return [
+            // ...
+        ];
+    }
+
+    // --- Relações ---
+
     public function role()
     {
         return $this->belongsTo(Role::class);
     }
 
-    /**
-     * Um utilizador pode estar inscrito em vários cursos
-     */
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
     }
 
-    /**
-     * Um utilizador pode ter progresso em cursos
-     */
     public function courseProgress()
     {
         return $this->hasMany(UserCourseProgress::class);
     }
 
-    /**
-     * Um utilizador pode ter progresso em várias lições
-     */
     public function lessonProgress()
     {
         return $this->hasMany(UserProgress::class);
@@ -73,8 +83,7 @@ class User extends Authenticatable
 
     public function watchlist() 
     {
-        return $this->belongsToMany(Course::class, 'watchlist')
-                    ->withTimestamps();
+        return $this->belongsToMany(Course::class, 'watchlist')->withTimestamps();
     }
 
     public function comments()
