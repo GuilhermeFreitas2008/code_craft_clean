@@ -212,7 +212,7 @@
               </button>
             </div>
 
-            <!-- Theme (AGORA FUNCIONAL COM THEMESTORE) -->
+            <!-- Theme -->
             <div>
               <label class="block text-xs font-medium text-foreground/80 mb-2">Theme</label>
               <div class="grid grid-cols-3 gap-2">
@@ -243,7 +243,7 @@
                 <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover/notify:translate-x-[100%] transition-transform duration-700"></span>
                 <div class="relative z-10">
                   <span class="text-xs text-foreground">Email Notifications</span>
-                  <p class="text-xs text-foreground/40">Receive updates</p>
+                  <p class="text-xs text-foreground/40">Receive updates about your courses</p>
                 </div>
                 <button
                   @click="preferences.emailNotifications = !preferences.emailNotifications"
@@ -258,7 +258,7 @@
               </label>
             </div>
 
-            <!-- Save Preferences Button (AGORA SÓ PARA NOTIFICAÇÕES) -->
+            <!-- Save Preferences Button -->
             <div class="flex justify-end pt-2">
               <button
                 @click="savePreferences"
@@ -274,7 +274,7 @@
         </div>
       </Transition>
 
-      <!-- Session & Danger Zone - Lado a lado (mantém igual) -->
+      <!-- Session & Danger Zone - Lado a lado -->
       <Transition
         enter-active-class="transition-all duration-500 ease-out delay-150"
         enter-from-class="opacity-0 translate-y-4"
@@ -342,7 +342,7 @@
       </Transition>
     </div>
 
-    <!-- Language Selection Modal (mantém igual) -->
+    <!-- Language Selection Modal -->
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-200 ease-out"
@@ -427,7 +427,7 @@
       </Transition>
     </Teleport>
 
-    <!-- Delete Account Confirmation Modal (mantém igual) -->
+    <!-- Delete Account Confirmation Modal -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0"
@@ -500,7 +500,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
-  ArrowLeft, User, Settings, Sun, Moon, Monitor, 
+  ArrowLeft, User, Settings, Sun, Moon, Monitor,
   LogOut, AlertCircle, Trash2, Globe, ChevronRight, X, Check,
   Eye, EyeOff
 } from 'lucide-vue-next'
@@ -640,11 +640,7 @@ onMounted(async () => {
   accountForm.value.name = userStore.user?.name || ''
   accountForm.value.email = userStore.user?.email || ''
   
-  // Carregar preferências da BD (apenas language e notifications)
-  const prefs = await userStore.fetchPreferences()
-  if (prefs) {
-    // O theme já é carregado pela themeStore automaticamente
-  }
+  // O tema é carregado automaticamente pela themeStore com prioridade BD > localStorage
 })
 
 // Save account settings (inclui password)
@@ -678,12 +674,20 @@ const saveAccountSettings = async () => {
   }
 }
 
-// Save preferences (AGORA SÓ PARA NOTIFICAÇÕES)
+// Save preferences (guarda o tema atual na BD)
 const savePreferences = async () => {
   saving.value.preferences = true
   
-  // O theme já é guardado automaticamente pela themeStore quando se clica nos botões
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  // Guardar o tema atual na BD
+  const result = await userStore.updatePreferences({
+    theme: themeStore.themeMode
+  })
+  
+  if (result.success) {
+    console.log('✅ Tema guardado na BD:', themeStore.themeMode)
+  } else {
+    console.error('❌ Erro ao guardar tema:', result.error)
+  }
   
   saving.value.preferences = false
 }

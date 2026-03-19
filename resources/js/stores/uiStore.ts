@@ -6,28 +6,27 @@ export const useUiStore = defineStore('ui', () => {
   const sidebarVisible = ref(true)
   const mobileMenuOpen = ref(false)
   
-  // Menu items
-  const menuItems = ref([
-    { name: 'All Series', icon: 'LayoutGrid', active: true },
-    { name: 'Continue', icon: 'PlayCircle', active: false },
-    { name: 'Watchlist', icon: 'Bookmark', active: false },
-    { name: 'Completed', icon: 'CheckCircle', active: false }
+  // Estado do menu ativo (pode ser null)
+  const activeMenuName = ref<string | null>('All Series')
+  
+  // Menu items (o active é derivado do activeMenuName)
+  const menuItems = computed(() => [
+    { name: 'All Series', icon: 'LayoutGrid', active: activeMenuName.value === 'All Series' },
+    { name: 'Continue', icon: 'PlayCircle', active: activeMenuName.value === 'Continue' },
+    { name: 'Watchlist', icon: 'Bookmark', active: activeMenuName.value === 'Watchlist' },
+    { name: 'Completed', icon: 'CheckCircle', active: activeMenuName.value === 'Completed' }
   ])
 
-  // Getter
-  const activeMenuItem = computed(() => {
-    return menuItems.value.find(item => item.active)?.name || 'All Series'
-  })
+  // Getter (mantém para compatibilidade)
+  const activeMenuItem = computed(() => activeMenuName.value)
 
   // Actions
   const toggleSidebar = () => {
     sidebarVisible.value = !sidebarVisible.value
   }
 
-  const setActiveMenu = (menuName: string) => {
-    menuItems.value.forEach(item => {
-      item.active = item.name === menuName
-    })
+  const setActiveMenu = (menuName: string | null) => {
+    activeMenuName.value = menuName
   }
 
   const toggleMobileMenu = () => {
@@ -43,6 +42,7 @@ export const useUiStore = defineStore('ui', () => {
     mobileMenuOpen,
     menuItems,
     activeMenuItem,
+    activeMenuName,
     toggleSidebar,
     setActiveMenu,
     toggleMobileMenu,

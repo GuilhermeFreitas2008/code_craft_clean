@@ -236,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, onActivated } from 'vue'  // <-- ADICIONADO onActivated
+import { ref, computed, onMounted, onUnmounted, watch, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/axios'
 import { 
@@ -606,6 +606,9 @@ onMounted(async () => {
         fetchEnrollments()
       ])
     }
+    
+    // 👉 GARANTIR QUE O MENU ATIVO É 'All Series' QUANDO CARREGA A PÁGINA
+    uiStore.setActiveMenu('All Series')
     
   } catch (error) {
     console.error('❌ Erro ao carregar dados:', error)

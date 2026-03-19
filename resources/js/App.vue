@@ -1,27 +1,18 @@
 <template>
-  <RouterView />
+  <div :class="themeClass">
+    <RouterView />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
 import { useThemeStore } from '@/stores/themeStore'
 
-// ================================================
-// INICIALIZAÇÃO DA STORE DE TEMA
-// ================================================
 const themeStore = useThemeStore()
 
-// Opcional: Garantir que o tema é aplicado quando a app monta
-onMounted(() => {
-  // A store já se inicializa automaticamente, mas podemos garantir
-  // que o tema está aplicado (a store já faz isto no loadTheme)
-  console.log('🎨 Tema inicializado:', themeStore.themeMode)
-})
-
-// Opcional: Limpeza se necessário
-onUnmounted(() => {
-  // A store já faz a limpeza dos listeners automaticamente
+const themeClass = computed(() => {
+  return themeStore.effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme'
 })
 </script>
 

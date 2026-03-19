@@ -14,7 +14,7 @@ export interface Comment {
   userId: number
   userName: string
   userInitials: string
-  userAvatar?: string | null  // 👈 NOVO CAMPO
+  userAvatar?: string | null
   content: string
   createdAt: Date | string
   likes: number
@@ -24,10 +24,11 @@ export interface Comment {
 }
 
 // Interface estendida para o Display (com propriedades UI)
-export interface CommentWithLikeStatus extends Omit<Comment, 'replies' | 'is_liked_by_user' | 'parent_id'> {
+export interface CommentWithLikeStatus extends Omit<Comment, 'replies' | 'is_liked_by_user'> {
   isLikedByCurrentUser: boolean
   replyToUserName?: string | null
   replies?: CommentWithLikeStatus[]
+  parent_id?: number | null  // 👈 ADICIONADO
 }
 
 export interface Lesson {

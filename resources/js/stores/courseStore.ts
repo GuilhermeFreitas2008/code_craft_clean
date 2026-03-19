@@ -28,36 +28,18 @@ export const useCourseStore = defineStore('course', () => {
     // ================================================
     // FUNÇÃO AUXILIAR PARA MAPEAR COMENTÁRIOS COM AVATAR
     // ================================================
-    const mapCommentWithAvatar = (comment: any, currentUserId?: number): CommentWithLikeStatus => {
+    const mapCommentWithAvatar = (comment: any, allComments: any[], currentUserId?: number): CommentWithLikeStatus => {
         const userId = comment.userId || comment.user_id || comment.user?.id
         const userName = comment.userName || comment.user?.username || 'Unknown'
         const userAvatar = comment.userAvatar || comment.user?.avatar || null
         
-        // 👇 DEBUG: Ver o que está a chegar
-        console.log('🎯 Mapeando comentário:', { 
-            id: comment.id, 
-            userId, 
-            userName, 
-            userAvatar,
-            rawComment: comment 
-        })
-        
         // Descobrir se é uma resposta e para quem está a responder
         let replyToUserName = null
         if (comment.parent_id) {
-            const findParent = (comments: any[], parentId: number): string | null => {
-                for (const c of comments) {
-                    if (c.id === parentId) {
-                        return c.userName || c.user?.username || 'Unknown'
-                    }
-                    if (c.replies?.length) {
-                        const found = findParent(c.replies, parentId)
-                        if (found) return found
-                    }
-                }
-                return null
+            const parentComment = allComments.find((c: any) => c.id === comment.parent_id)
+            if (parentComment) {
+                replyToUserName = parentComment.userName || parentComment.user?.username || 'Unknown'
             }
-            replyToUserName = findParent([comment], comment.parent_id)
         }
 
         return {
@@ -65,13 +47,16 @@ export const useCourseStore = defineStore('course', () => {
             userId: userId,
             userName: userName,
             userInitials: userName.charAt(0).toUpperCase(),
-            userAvatar: userAvatar,  // 👈 Isto já está correto!
+            userAvatar: userAvatar,
             content: comment.content,
             createdAt: comment.createdAt || comment.created_at,
             likes: comment.likes || 0,
             isLikedByCurrentUser: comment.is_liked_by_user || false,
             replyToUserName: replyToUserName,
-            replies: comment.replies?.map((reply: any) => mapCommentWithAvatar(reply, currentUserId))
+            parent_id: comment.parent_id,
+            replies: comment.replies?.map((reply: any) => 
+                mapCommentWithAvatar(reply, allComments, currentUserId)
+            )
         }
     }
 
@@ -194,14 +179,37 @@ export const useCourseStore = defineStore('course', () => {
             console.log('📦 Resposta da API (comentários):', response.data)
             
             const userStore = useUserStore()
-            const commentsWithAvatar = response.data.map((comment: any) => 
-                mapCommentWithAvatar(comment, userStore.user?.id)
+            const allComments = response.data
+            
+            // Mapear todos os comentários com acesso à lista completa
+            const commentsWithAvatar: CommentWithLikeStatus[] = allComments.map((comment: any) => 
+                mapCommentWithAvatar(comment, allComments, userStore.user?.id)
             )
             
-            console.log('✅ Comentários mapeados:', commentsWithAvatar)
+            // Organizar em árvore (replies)
+            const commentMap = new Map<number, CommentWithLikeStatus>()
+            const topLevelComments: CommentWithLikeStatus[] = []
             
-            currentLessonComments.value = commentsWithAvatar
-            return commentsWithAvatar
+            commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
+                commentMap.set(comment.id, comment)
+            })
+            
+            commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
+                if (comment.parent_id) {
+                    const parent = commentMap.get(comment.parent_id)
+                    if (parent) {
+                        if (!parent.replies) parent.replies = []
+                        parent.replies.push(comment)
+                    }
+                } else {
+                    topLevelComments.push(comment)
+                }
+            })
+            
+            console.log('✅ Comentários organizados:', topLevelComments)
+            
+            currentLessonComments.value = topLevelComments
+            return topLevelComments
         } catch (err) {
             console.error('❌ Erro ao buscar comentários:', err)
             currentLessonComments.value = []
@@ -210,7 +218,7 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Criar comentário (ATUALIZADO)
+    // Criar comentário
     // ================================================
     const createComment = async (lessonId: number, content: string, parentId: number | null = null) => {
         try {
@@ -220,7 +228,15 @@ export const useCourseStore = defineStore('course', () => {
             })
             
             const userStore = useUserStore()
-            const newComment = mapCommentWithAvatar(response.data, userStore.user?.id)
+            
+            // Buscar todos os comentários atuais para ter contexto
+            const allComments = currentLessonComments.value.flatMap(c => [c, ...(c.replies || [])])
+            
+            const newComment = mapCommentWithAvatar(
+                response.data, 
+                allComments, 
+                userStore.user?.id
+            )
             
             if (parentId) {
                 const parentComment = currentLessonComments.value.find(c => c.id === parentId)

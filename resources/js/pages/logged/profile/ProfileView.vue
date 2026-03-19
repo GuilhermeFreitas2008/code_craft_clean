@@ -49,6 +49,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
 import ProfileDisplay from './ProfileDisplay.vue'
@@ -58,6 +59,7 @@ import { useProgressStore } from '@/stores/progressStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
 import api from '@/services/axios'
 
+const router = useRouter()
 const userStore = useUserStore()
 const uiStore = useUiStore()
 const progressStore = useProgressStore()
@@ -69,6 +71,7 @@ const courses = ref<any[]>([])
 
 const handleMenuClick = (menuName: string) => {
   uiStore.setActiveMenu(menuName)
+  router.push('/user') // Navega para a página principal com o filtro
 }
 
 const handleResize = () => {
@@ -102,6 +105,9 @@ const loadData = async () => {
 onMounted(() => {
   window.addEventListener('resize', handleResize)
   loadData()
+  
+  // Limpar menu ativo quando entra na página de perfil
+  uiStore.setActiveMenu(null)
 })
 
 onUnmounted(() => {

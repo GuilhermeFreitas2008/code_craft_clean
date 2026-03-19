@@ -1,6 +1,7 @@
 // resources/js/stores/themeStore.ts
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
+import { useUserStore } from './userStore'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -8,6 +9,7 @@ export const useThemeStore = defineStore('theme', () => {
   // Estado
   const themeMode = ref<ThemeMode>('dark')
   const effectiveTheme = ref<'light' | 'dark'>('dark')
+  const userStore = useUserStore()
 
   // Detetar tema do sistema
   const detectSystemTheme = () => {
@@ -31,7 +33,7 @@ export const useThemeStore = defineStore('theme', () => {
     root.classList.add(`${effectiveTheme.value}-theme`)
   }
 
-  // Mudar tema
+  // Mudar tema (APENAS visual e localStorage, NÃO guarda na BD)
   const setTheme = (mode: ThemeMode) => {
     themeMode.value = mode
     updateEffectiveTheme()
@@ -39,14 +41,33 @@ export const useThemeStore = defineStore('theme', () => {
     localStorage.setItem('theme_mode', mode)
   }
 
-  // Carregar tema guardado
-  const loadTheme = () => {
+  // Carregar tema guardado (PRIORIDADE: BD > localStorage)
+  const loadTheme = async () => {
+    // 1. Se user estiver autenticado, buscar da BD primeiro
+    if (userStore.isAuthenticated()) {
+      try {
+        const prefs = await userStore.fetchPreferences()
+        if (prefs?.theme) {
+          themeMode.value = prefs.theme as ThemeMode
+          updateEffectiveTheme()
+          applyTheme()
+          localStorage.setItem('theme_mode', prefs.theme) // atualiza localStorage
+          console.log('🎨 Tema carregado da BD:', prefs.theme)
+          return
+        }
+      } catch (error) {
+        console.error('Erro ao carregar tema da BD:', error)
+      }
+    }
+    
+    // 2. Fallback para localStorage
     const saved = localStorage.getItem('theme_mode') as ThemeMode | null
     if (saved) {
       themeMode.value = saved
+      updateEffectiveTheme()
+      applyTheme()
+      console.log('🎨 Tema carregado do localStorage:', saved)
     }
-    updateEffectiveTheme()
-    applyTheme()
   }
 
   // Watch para mudanças no sistema (modo system)
@@ -69,5 +90,6 @@ export const useThemeStore = defineStore('theme', () => {
     themeMode,
     effectiveTheme,
     setTheme,
+    loadTheme, // expor para uso externo se necessário
   }
 })

@@ -19,10 +19,10 @@
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
       <!-- Courses Completed -->
-      <div class="bg-card rounded-xl border border-white/5 p-6">
+      <div class="bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-foreground/40 text-sm">Courses Completed</p>
+            <p class="text-foreground/60 text-sm">Courses Completed</p>
             <p class="text-3xl font-bold text-foreground mt-2">{{ completedCount }}</p>
           </div>
           <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -32,10 +32,10 @@
       </div>
 
       <!-- In Progress -->
-      <div class="bg-card rounded-xl border border-white/5 p-6">
+      <div class="bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-foreground/40 text-sm">In Progress</p>
+            <p class="text-foreground/60 text-sm">In Progress</p>
             <p class="text-3xl font-bold text-foreground mt-2">{{ inProgressCount }}</p>
           </div>
           <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -45,10 +45,10 @@
       </div>
 
       <!-- Watchlist Count -->
-      <div class="bg-card rounded-xl border border-white/5 p-6">
+      <div class="bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-foreground/40 text-sm">Watchlist</p>
+            <p class="text-foreground/60 text-sm">Watchlist</p>
             <p class="text-3xl font-bold text-foreground mt-2">{{ watchlistCount }}</p>
           </div>
           <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -61,7 +61,7 @@
     <!-- My Path Section -->
     <div class="mt-8 space-y-8 animate-fade-in">
       <!-- Courses Section -->
-      <div class="bg-card rounded-xl border border-white/5 p-6">
+      <div class="bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl font-semibold text-foreground">My Path</h2>
           
@@ -82,7 +82,7 @@
           <div 
             v-for="course in activeCourses" 
             :key="course.id"
-            class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-all group cursor-pointer"
+            class="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-primary/30 hover:bg-gray-100 dark:hover:bg-white/10 transition-all group cursor-pointer"
             @click="goToCourse(course.id)"
           >
             <div class="flex items-center space-x-4">
@@ -91,7 +91,7 @@
               </div>
               <div>
                 <h3 class="font-medium text-foreground">{{ course.title }}</h3>
-                <p class="text-sm text-foreground/40">{{ getCategoryName(course.category) }}</p>
+                <p class="text-sm text-foreground/60">{{ getCategoryName(course.category) }}</p>
               </div>
             </div>
 
@@ -100,10 +100,10 @@
               <!-- Barra de progresso para cursos em andamento -->
               <div v-if="progressStore.hasProgress(course.id) && !progressStore.isCompleted(course.id)" class="w-32">
                 <div class="flex justify-between text-xs mb-1">
-                  <span class="text-foreground/40">Progress</span>
+                  <span class="text-foreground/60">Progress</span>
                   <span class="text-primary">{{ getCourseProgress(course.id) }}%</span>
                 </div>
-                <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-1.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                   <div 
                     class="h-full bg-primary rounded-full transition-all duration-300"
                     :style="{ width: `${getCourseProgress(course.id)}%` }"
@@ -117,7 +117,7 @@
                 <span class="text-sm font-medium">Completed</span>
               </div>
 
-              <ChevronRight :size="18" class="text-foreground/20 group-hover:text-primary/50 transition-colors" />
+              <ChevronRight :size="18" class="text-gray-400 dark:text-foreground/20 group-hover:text-primary/50 transition-colors" />
             </div>
           </div>
         </div>
@@ -125,7 +125,7 @@
         <div v-else class="text-center py-12">
           <BookOpen :size="48" class="mx-auto text-primary/30 mb-4" />
           <h3 class="text-lg font-medium text-foreground mb-2">Your path begins here</h3>
-          <p class="text-foreground/40">Start learning to track your progress!</p>
+          <p class="text-foreground/60">Start learning to track your progress!</p>
         </div>
       </div>
     </div>
@@ -193,10 +193,19 @@ const formatMemberSince = (date: string | undefined): string => {
   }
 }
 
+// 👉 FUNÇÃO CORRIGIDA - USA O QUE JÁ EXISTE NA STORE
 const getCourseProgress = (courseId: number): number => {
-  // TODO: Implementar busca de progresso específico do curso
-  if (courseId === 1) return 75
-  if (courseId === 2) return 30
+  // Se está completo, retorna 100
+  if (progressStore.isCompleted(courseId)) {
+    return 100
+  }
+  
+  // Se tem progresso mas não está completo, retorna 50% (placeholder)
+  // TODO: Quando a API devolver percentagem real, atualizar aqui
+  if (progressStore.hasProgress(courseId)) {
+    return 50
+  }
+  
   return 0
 }
 

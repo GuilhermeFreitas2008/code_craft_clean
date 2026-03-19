@@ -56,15 +56,8 @@
           <span class="hidden text-sm font-medium text-foreground lg:block">{{ userStore.user?.name || 'User' }}</span>
         </button>
 
-        <!-- Popup Menu -->
-        <Transition
-          enter-active-class="transition-all duration-200 ease-out"
-          enter-from-class="opacity-0 scale-95 translate-y-[-8px]"
-          enter-to-class="opacity-100 scale-100 translate-y-0"
-          leave-active-class="transition-all duration-150 ease-in"
-          leave-from-class="opacity-100 scale-100 translate-y-0"
-          leave-to-class="opacity-0 scale-95 translate-y-[-8px]"
-        >
+        <!-- Popup Menu com animação -->
+        <Transition name="popup" mode="out-in">
           <div 
             v-if="userMenuOpen"
             ref="userMenuPopup"
@@ -243,5 +236,31 @@ button {
 
 .origin-top-right {
   transform-origin: top right;
+}
+
+/* Animações do popup */
+.popup-enter-active,
+.popup-leave-active {
+  transition: all 0.2s ease-out;
+}
+
+.popup-enter-from {
+  opacity: 0;
+  transform: scale(0.95) translateY(-8px);
+}
+
+.popup-enter-to {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.popup-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.popup-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-8px);
 }
 </style>

@@ -63,6 +63,7 @@ const isLoading = ref(false)
 
 const handleMenuClick = (menuName: string) => {
   uiStore.setActiveMenu(menuName)
+  router.push('/user') // Navega para a página principal com o filtro
 }
 
 const handleResize = () => {
@@ -75,6 +76,9 @@ const goBack = () => {
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  
+  // Limpar menu ativo quando entra na página de settings
+  uiStore.setActiveMenu(null)
 })
 
 onUnmounted(() => {

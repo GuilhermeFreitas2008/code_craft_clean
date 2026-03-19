@@ -248,7 +248,6 @@
                   <div class="flex gap-3">
                     <!-- Avatar do comentário principal -->
                     <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                      <!-- Se for o user atual, usa o userAvatar da store -->
                       <img 
                         v-if="comment?.userId === currentUserId && userAvatar"
                         :src="userAvatar" 
@@ -256,7 +255,6 @@
                         class="w-full h-full object-cover"
                         @error="handleImageError"
                       />
-                      <!-- Se for outro user, tenta usar o avatar do comentário -->
                       <img 
                         v-else-if="comment?.userAvatar"
                         :src="comment.userAvatar" 
@@ -264,7 +262,6 @@
                         class="w-full h-full object-cover"
                         @error="handleImageError"
                       />
-                      <!-- Fallback para iniciais -->
                       <span v-else class="text-xs font-medium text-primary">{{ comment?.userInitials || 'U' }}</span>
                     </div>
                     
@@ -408,7 +405,7 @@
                         </template>
                       </div>
 
-                      <!-- Replies -->
+                      <!-- REPLIES - CORRIGIDO COM SETA E @ -->
                       <div 
                         v-if="comment?.replies?.length" 
                         class="mt-3 space-y-2"
@@ -420,7 +417,6 @@
                         >
                           <!-- Avatar da reply (tamanho menor) -->
                           <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden mt-1">
-                            <!-- Se for o user atual, usa o userAvatar da store -->
                             <img 
                               v-if="reply?.userId === currentUserId && userAvatar"
                               :src="userAvatar" 
@@ -428,7 +424,6 @@
                               class="w-full h-full object-cover"
                               @error="handleImageError"
                             />
-                            <!-- Se for outro user, tenta usar o avatar da reply -->
                             <img 
                               v-else-if="reply?.userAvatar"
                               :src="reply.userAvatar" 
@@ -436,16 +431,30 @@
                               class="w-full h-full object-cover"
                               @error="handleImageError"
                             />
-                            <!-- Fallback para iniciais -->
                             <span v-else class="text-[10px] font-medium text-primary">{{ reply?.userInitials || 'U' }}</span>
                           </div>
                           
                           <div class="flex-1">
-                            <!-- Nome + data da reply -->
-                            <div class="flex items-center gap-2 mb-1">
+                            <!-- Nome + seta + @reply + data (ESTILO TIKTOK) -->
+                            <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                               <span v-if="currentUserId && reply?.userId === currentUserId" class="font-medium text-foreground text-xs">You</span>
                               <span v-else class="font-medium text-foreground text-xs">{{ reply?.userName || 'Unknown' }}</span>
-                              <span class="text-xs text-foreground/30">{{ formatDate(reply?.createdAt) }}</span>
+                              
+                              <!-- Seta estilo TikTok -->
+                              <span class="text-xs text-foreground/40 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-0.5">
+                                  <path d="M5 12h14"/>
+                                  <path d="m12 5 7 7-7 7"/>
+                                </svg>
+                              </span>
+                              
+                              <!-- @username de quem está a responder -->
+                              <span v-if="reply?.replyToUserName" class="text-xs text-primary/80 font-medium">
+                                @{{ reply.replyToUserName }}
+                              </span>
+                              
+                              <!-- Data -->
+                              <span class="text-xs text-foreground/30 whitespace-nowrap">{{ formatDate(reply?.createdAt) }}</span>
                             </div>
                             
                             <!-- Conteúdo da reply -->

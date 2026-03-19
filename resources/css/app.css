@@ -8,7 +8,7 @@ body {
 }
 
 @theme {
-  /* Cores que já tinhas, mapeadas para o padrão v4 */
+  /* Cores base (dark mode) */
   --color-background: #020617;
   --color-foreground: #f8fafc;
   --color-primary: #3b82f6;
@@ -16,7 +16,7 @@ body {
   --color-card: #0f172a;
   --color-border: rgba(255, 255, 255, 0.1);
 
-  /* Animações personalizadas */
+  /* Animações */
   --animate-fade-in-up: fade-in-up 0.5s ease-out;
   --animate-bounce-slow: bounce-slow 3s infinite ease-in-out;
   --animate-shimmer: shimmer 2s infinite;
@@ -24,14 +24,8 @@ body {
   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes bounce-slow {
@@ -45,10 +39,7 @@ body {
   }
 
   @keyframes ping {
-    75%, 100% {
-      transform: scale(2);
-      opacity: 0;
-    }
+    75%, 100% { transform: scale(2); opacity: 0; }
   }
 
   @keyframes pulse {
@@ -66,14 +57,13 @@ body {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' width='48' height='48' fill='none' stroke='rgb(255 255 255 / 0.04)'%3e%3cpath d='M0 .5H47.5V48'/%3e%3c/svg%3e");
 }
 
-/* Scrollbar Global - Main */
+/* Scrollbar Global */
 @layer base {
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Scrollbar principal da página */
   ::-webkit-scrollbar {
     width: 10px;
   }
@@ -93,7 +83,7 @@ body {
   }
 }
 
-/* Scrollbar personalizada para componentes (reutilizável) */
+/* Scrollbars personalizadas */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
@@ -111,7 +101,6 @@ body {
   background: #475569;
 }
 
-/* Scrollbar para dropdowns */
 .dropdown-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -129,7 +118,7 @@ body {
   background: #475569;
 }
 
-/* Classes de utilidade para animações */
+/* Classes de animação */
 .animate-fade-in-up {
   animation: fade-in-up 0.5s ease-out forwards;
 }
@@ -158,28 +147,232 @@ body {
 .animation-delay-1000 { animation-delay: 1000ms; }
 
 /* ================================================
-   LIGHT MODE - Substitui azul escuro por branco
+   LIGHT MODE - VERSÃO ÚNICA E ORGANIZADA
    ================================================ */
 .light-theme {
   --color-background: #ffffff;
-  --color-foreground: #020617;
-  --color-card: #ffffff;
-  --color-border: rgba(0, 0, 0, 0.1);
-  
-  /* Mantém o azul claro igual */
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
+  --color-foreground: #1e293b;
+  --color-card: #f8fafc;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
 }
 
+/* Scrollbar light mode */
 .light-theme ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #f1f5f9;
 }
 
 .light-theme ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border: 2px solid #f1f1f1;
+  border: 2px solid #f1f5f9;
 }
 
 .light-theme ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Inputs e elementos de formulário */
+.light-theme input,
+.light-theme select,
+.light-theme textarea {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.light-theme input::placeholder,
+.light-theme textarea::placeholder {
+  color: #94a3b8;
+}
+
+.light-theme input:focus,
+.light-theme select:focus,
+.light-theme textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.light-theme input:hover,
+.light-theme select:hover,
+.light-theme textarea:hover {
+  border-color: var(--color-primary);
+  background-color: #ffffff;
+}
+
+/* Cores de texto */
+.light-theme .text-foreground { color: #1e293b !important; }
+.light-theme .text-foreground\/60 { color: #475569 !important; }
+.light-theme .text-foreground\/40 { color: #64748b !important; }
+.light-theme .text-foreground\/30 { color: #94a3b8 !important; }
+.light-theme .text-primary { color: var(--color-primary) !important; }
+
+/* Cards e backgrounds */
+.light-theme .bg-card {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.light-theme .bg-white\/5 {
+  background-color: #f1f5f9 !important;
+}
+
+.light-theme .bg-white\/10 {
+  background-color: #f1f5f9 !important;
+}
+
+.light-theme .bg-primary\/10 {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+  color: var(--color-primary) !important;
+}
+
+.light-theme .bg-primary\/20 {
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Bordas */
+.light-theme .border-white\/5,
+.light-theme .border-white\/10 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Botões */
+.light-theme .bg-primary {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+}
+
+.light-theme .hover\:bg-primary\/90:hover {
+  background-color: var(--color-primary-hover) !important;
+  color: white !important;
+}
+
+.light-theme button:hover:not(.bg-primary):not(.bg-red-500) {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Hovers */
+.light-theme .bg-card:hover {
+  background-color: #f1f5f9 !important;
+  border-color: var(--color-primary) !important;
+}
+
+.light-theme .hover\:bg-primary\/10:hover {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+}
+
+.light-theme .hover\:border-primary\/30:hover {
+  border-color: rgba(37, 99, 235, 0.3) !important;
+}
+
+.light-theme a:hover {
+  color: var(--color-primary) !important;
+}
+
+/* PROSE - Conteúdo markdown */
+.light-theme .prose,
+.light-theme .prose-invert {
+  color: #1e293b !important;
+}
+
+.light-theme .prose :where(h1, h2, h3, h4) {
+  color: #0f172a !important;
+}
+
+.light-theme .prose p {
+  color: #334155 !important;
+}
+
+.light-theme .prose strong {
+  color: #0f172a !important;
+}
+
+.light-theme .prose li {
+  color: #334155 !important;
+}
+
+.light-theme .prose li::marker {
+  color: #2563eb !important;
+}
+
+.light-theme .prose a {
+  color: #2563eb !important;
+}
+
+.light-theme .prose code:not(pre code) {
+  color: #2563eb !important;
+  background: rgba(37, 99, 235, 0.1) !important;
+}
+
+.light-theme .prose .code-block {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-theme .prose .code-block code {
+  color: #1e293b !important;
+}
+
+.light-theme .prose .code-block.language-javascript::after,
+.light-theme .prose .code-block.language-php::after,
+.light-theme .prose .code-block.language-python::after,
+.light-theme .prose .code-block.language-html::after,
+.light-theme .prose .code-block.language-css::after,
+.light-theme .prose .code-block.language-typescript::after {
+  color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.light-theme .prose blockquote {
+  border-left-color: rgba(37, 99, 235, 0.3) !important;
+  background: rgba(37, 99, 235, 0.05) !important;
+}
+
+.light-theme .prose blockquote p {
+  color: #1e293b !important;
+}
+
+.light-theme .prose th {
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  background: rgba(37, 99, 235, 0.1) !important;
+}
+
+.light-theme .prose td {
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.light-theme .prose tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+/* Cores do código */
+.light-theme .prose .hljs-keyword { color: #d946ef !important; }
+.light-theme .prose .hljs-selector-tag { color: #d946ef !important; }
+.light-theme .prose .hljs-built_in { color: #d946ef !important; }
+.light-theme .prose .hljs-title { color: #2563eb !important; }
+.light-theme .prose .hljs-section { color: #2563eb !important; }
+.light-theme .prose .hljs-function { color: #2563eb !important; }
+.light-theme .prose .hljs-string { color: #059669 !important; }
+.light-theme .prose .hljs-regexp { color: #059669 !important; }
+.light-theme .prose .hljs-number { color: #059669 !important; }
+.light-theme .prose .hljs-comment { color: #64748b !important; font-style: italic !important; }
+.light-theme .prose .hljs-quote { color: #64748b !important; font-style: italic !important; }
+.light-theme .prose .hljs-variable { color: #d97706 !important; }
+.light-theme .prose .hljs-template-variable { color: #d97706 !important; }
+.light-theme .prose .hljs-operator { color: #475569 !important; }
+.light-theme .prose .hljs-punctuation { color: #475569 !important; }
+.light-theme .prose .hljs-tag { color: #dc2626 !important; }
+.light-theme .prose .hljs-name { color: #dc2626 !important; }
+.light-theme .prose .hljs-attr { color: #2563eb !important; }
+.light-theme .prose .hljs-attribute { color: #059669 !important; }
+
+/* Comments - específico */
+.light-theme [placeholder="Share your thoughts..."]::placeholder,
+.light-theme [placeholder="Write your reply..."]::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
 }

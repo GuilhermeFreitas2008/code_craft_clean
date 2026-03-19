@@ -12,6 +12,7 @@ import api from '@/services/axios'
 import { useUserStore } from '@/stores/userStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
 import { useCourseStore } from '@/stores/courseStore'
+import { useUiStore } from '@/stores/uiStore'
 import CourseDisplay from './CourseDisplay.vue'
 import type { ApiCourse, UserProgress, UserCourseProgress } from '@/types/course.types'
 
@@ -43,6 +44,7 @@ const courseId = Number(route.params.id)
 const userStore = useUserStore()
 const watchlistStore = useWatchlistStore()
 const courseStore = useCourseStore()
+const uiStore = useUiStore()
 
 const courseData = ref<Course>()
 const loading = ref(true)
@@ -179,5 +181,8 @@ watch(() => courseStore.updateTrigger, () => {
 
 onMounted(() => {
   fetchCourseData()
+  
+  // 👉 LIMPAR MENU ATIVO QUANDO ENTRA NA PÁGINA DO CURSO
+  uiStore.setActiveMenu(null)
 })
 </script>

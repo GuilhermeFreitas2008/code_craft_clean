@@ -92,8 +92,11 @@
                     <img
                       ref="cropperImage"
                       :src="tempImage"
-                      class="absolute inset-0 w-full h-full object-cover transition-transform duration-200"
-                      :style="{ transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)` }"
+                      class="absolute inset-0 w-full h-full object-cover transition-all duration-300 ease-out"
+                      :style="{ 
+                        transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }"
                       alt="Preview"
                     />
                     <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/image:opacity-100 transition-opacity"></div>
@@ -136,14 +139,25 @@
                     <span class="text-primary">{{ rotation }}°</span>
                   </div>
                   <div class="flex items-center justify-center gap-3">
-                    <button @click="rotate(-90)" class="p-2.5 rounded-lg bg-white/5 hover:bg-primary/10 border border-white/10 hover:border-primary/30 transition-all group">
-                      <RotateCcw :size="16" class="text-foreground/60 group-hover:text-primary" />
+                    <button 
+                      @click="rotate(-90)" 
+                      class="p-2.5 rounded-lg bg-white/5 hover:bg-primary/10 border border-white/10 hover:border-primary/30 transition-all duration-200"
+                    >
+                      <RotateCcw :size="16" class="text-foreground/60 hover:text-primary transition-colors duration-200" />
                     </button>
-                    <button @click="resetImage" class="px-3 py-1.5 text-xs bg-white/5 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary border border-white/10 hover:border-primary/30 transition-all">
+                    
+                    <button 
+                      @click="resetImage" 
+                      class="px-3 py-1.5 text-xs bg-white/5 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary border border-white/10 hover:border-primary/30 transition-all duration-200"
+                    >
                       Reset
                     </button>
-                    <button @click="rotate(90)" class="p-2.5 rounded-lg bg-white/5 hover:bg-primary/10 border border-white/10 hover:border-primary/30 transition-all group">
-                      <RotateCw :size="16" class="text-foreground/60 group-hover:text-primary" />
+                    
+                    <button 
+                      @click="rotate(90)" 
+                      class="p-2.5 rounded-lg bg-white/5 hover:bg-primary/10 border border-white/10 hover:border-primary/30 transition-all duration-200"
+                    >
+                      <RotateCw :size="16" class="text-foreground/60 hover:text-primary transition-colors duration-200" />
                     </button>
                   </div>
                 </div>
