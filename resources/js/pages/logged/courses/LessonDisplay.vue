@@ -191,6 +191,7 @@
                     :src="userAvatar" 
                     alt="Your avatar"
                     class="w-full h-full object-cover"
+                    @error="handleImageError"
                   />
                   <span v-else class="text-xs font-medium text-primary">{{ userInitials }}</span>
                 </div>
@@ -650,6 +651,9 @@ const emit = defineEmits<{
 
 const userStore = useUserStore()
 const currentUserId = userStore.user?.id
+
+// Computed para o avatar do utilizador atual - USAR avatar_url com fallback
+const userAvatar = computed(() => userStore.user?.avatar_url || userStore.user?.avatar || null)
 
 // Estados
 const editingLocally = ref<{ id: number; content: string } | null>(null)

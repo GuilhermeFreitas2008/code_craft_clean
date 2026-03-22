@@ -18,6 +18,7 @@ export const useCourseStore = defineStore('course', () => {
     const currentLessonId = ref<number | null>(null)
     const isLoading = ref(false)
     const error = ref<string | null>(null)
+    const isEnrolled = ref<boolean>(false) // NOVO: estado de inscrição
     
     const currentLessonResources = ref<Resource[]>([])
     const currentLessonComments = ref<CommentWithLikeStatus[]>([])
@@ -31,9 +32,8 @@ export const useCourseStore = defineStore('course', () => {
     const mapCommentWithAvatar = (comment: any, allComments: any[], currentUserId?: number): CommentWithLikeStatus => {
         const userId = comment.userId || comment.user_id || comment.user?.id
         const userName = comment.userName || comment.user?.username || 'Unknown'
-        const userAvatar = comment.userAvatar || comment.user?.avatar || null
+        const userAvatar = comment.userAvatar || comment.user?.avatar_url || comment.user?.avatar || null
         
-        // Descobrir se é uma resposta e para quem está a responder
         let replyToUserName = null
         if (comment.parent_id) {
             const parentComment = allComments.find((c: any) => c.id === comment.parent_id)
@@ -116,18 +116,36 @@ export const useCourseStore = defineStore('course', () => {
             
             let completedLessonIds: number[] = []
             
+            // Verificar se está inscrito
             if (userStore.isAuthenticated()) {
                 try {
-                    const progressResponse = await api.get('/user-progress', {
+                    const enrollmentResponse = await api.get('/enrollments', {
                         params: { course_id: courseId },
                         headers
                     })
-                    completedLessonIds = progressResponse.data
-                        .filter((p: any) => p.completed === true)
-                        .map((p: any) => p.lesson_id)
+                    isEnrolled.value = enrollmentResponse.data.length > 0
+                    console.log('📝 isEnrolled:', isEnrolled.value)
                 } catch (err) {
-                    console.warn('Erro ao buscar progresso:', err)
+                    console.warn('Erro ao buscar enrollment:', err)
+                    isEnrolled.value = false
                 }
+                
+                // Buscar progresso se estiver inscrito
+                if (isEnrolled.value) {
+                    try {
+                        const progressResponse = await api.get('/user-progress', {
+                            params: { course_id: courseId },
+                            headers
+                        })
+                        completedLessonIds = progressResponse.data
+                            .filter((p: any) => p.completed === true)
+                            .map((p: any) => p.lesson_id)
+                    } catch (err) {
+                        console.warn('Erro ao buscar progresso:', err)
+                    }
+                }
+            } else {
+                isEnrolled.value = false
             }
             
             modules.value = courseData.modules.map((module: any) => ({
@@ -140,7 +158,7 @@ export const useCourseStore = defineStore('course', () => {
                     content: lesson.content,
                     video_url: lesson.video_url,
                     position: lesson.position,
-                    completed: completedLessonIds.includes(lesson.id),
+                    completed: isEnrolled.value ? completedLessonIds.includes(lesson.id) : false,
                     resources: []
                 }))
             }))
@@ -169,53 +187,51 @@ export const useCourseStore = defineStore('course', () => {
     }
 
     // ================================================
-    // Buscar comentários de uma lição (COM AVATAR)
-    // ================================================
-    const fetchLessonComments = async (lessonId: number, headers = {}) => {
-        try {
-            console.log('📥 Buscando comentários da lição:', lessonId)
-            const response = await api.get(`/lessons/${lessonId}/comments`, { headers })
-            
-            console.log('📦 Resposta da API (comentários):', response.data)
-            
-            const userStore = useUserStore()
-            const allComments = response.data
-            
-            // Mapear todos os comentários com acesso à lista completa
-            const commentsWithAvatar: CommentWithLikeStatus[] = allComments.map((comment: any) => 
-                mapCommentWithAvatar(comment, allComments, userStore.user?.id)
-            )
-            
-            // Organizar em árvore (replies)
-            const commentMap = new Map<number, CommentWithLikeStatus>()
-            const topLevelComments: CommentWithLikeStatus[] = []
-            
-            commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
-                commentMap.set(comment.id, comment)
-            })
-            
-            commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
-                if (comment.parent_id) {
-                    const parent = commentMap.get(comment.parent_id)
-                    if (parent) {
-                        if (!parent.replies) parent.replies = []
-                        parent.replies.push(comment)
-                    }
-                } else {
-                    topLevelComments.push(comment)
+// Buscar comentários de uma lição
+// ================================================
+const fetchLessonComments = async (lessonId: number, headers = {}) => {
+    try {
+        console.log('📥 Buscando comentários da lição:', lessonId)
+        const response = await api.get(`/lessons/${lessonId}/comments`, { headers })
+        
+        console.log('📦 Resposta da API (comentários):', response.data)
+        
+        const userStore = useUserStore()
+        const allComments = response.data
+        
+        const commentsWithAvatar: CommentWithLikeStatus[] = allComments.map((comment: any) => 
+            mapCommentWithAvatar(comment, allComments, userStore.user?.id)
+        )
+        
+        const commentMap = new Map<number, CommentWithLikeStatus>()
+        const topLevelComments: CommentWithLikeStatus[] = []
+        
+        commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
+            commentMap.set(comment.id, comment)
+        })
+        
+        commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
+            if (comment.parent_id) {
+                const parent = commentMap.get(comment.parent_id)
+                if (parent) {
+                    if (!parent.replies) parent.replies = []
+                    parent.replies.push(comment)
                 }
-            })
-            
-            console.log('✅ Comentários organizados:', topLevelComments)
-            
-            currentLessonComments.value = topLevelComments
-            return topLevelComments
-        } catch (err) {
-            console.error('❌ Erro ao buscar comentários:', err)
-            currentLessonComments.value = []
-            return []
-        }
+            } else {
+                topLevelComments.push(comment)
+            }
+        })
+        
+        console.log('✅ Comentários organizados:', topLevelComments)
+        
+        currentLessonComments.value = topLevelComments
+        return topLevelComments
+    } catch (err) {
+        console.error('❌ Erro ao buscar comentários:', err)
+        currentLessonComments.value = []
+        return []
     }
+}
 
     // ================================================
     // Criar comentário
@@ -228,8 +244,6 @@ export const useCourseStore = defineStore('course', () => {
             })
             
             const userStore = useUserStore()
-            
-            // Buscar todos os comentários atuais para ter contexto
             const allComments = currentLessonComments.value.flatMap(c => [c, ...(c.replies || [])])
             
             const newComment = mapCommentWithAvatar(
@@ -430,6 +444,7 @@ export const useCourseStore = defineStore('course', () => {
         currentLessonResources.value = []
         currentLessonComments.value = []
         error.value = null
+        isEnrolled.value = false
     }
 
     return {
@@ -443,6 +458,7 @@ export const useCourseStore = defineStore('course', () => {
         totalLessons,
         completedLessons,
         courseProgress,
+        isEnrolled,
         isLoading,
         error,
         fetchCourse,

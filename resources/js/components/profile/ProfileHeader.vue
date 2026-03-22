@@ -25,10 +25,10 @@
           <button 
             v-if="avatarUrl" 
             @click="removeAvatar"
-            :disabled="userStore.isLoading"
+            :disabled="isUploading"
             class="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span v-if="userStore.isLoading" class="h-3 w-3 animate-spin rounded-full border-2 border-red-400 border-t-transparent"></span>
+            <span v-if="isUploading" class="h-3 w-3 animate-spin rounded-full border-2 border-red-400 border-t-transparent"></span>
             <Trash2 v-else :size="16" />
           </button>
         </div>
@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <!-- Modal CodeCraft Style -->
+    <!-- Modal de Edição -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -71,7 +71,7 @@
                 </div>
                 <div>
                   <h3 class="text-base font-semibold text-foreground">Edit Profile Picture</h3>
-                  <p class="text-xs text-foreground/40">Crop and adjust your image</p>
+                  <p class="text-xs text-foreground/40">Adjust your image</p>
                 </div>
               </div>
               <button @click="closeEditModal" class="absolute top-4 right-4 w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
@@ -82,24 +82,19 @@
             <!-- Área do Círculo -->
             <div v-if="tempImage" class="p-6 flex flex-col items-center bg-gradient-to-b from-transparent to-black/20">
               <div class="relative w-48 h-48 mb-5">
-                <!-- Container do círculo com glow effect -->
-                <div class="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-transparent opacity-50 blur-lg"></div>
-                <div class="absolute inset-0 rounded-full border border-primary/30"></div>
-                
                 <!-- Círculo principal -->
                 <div class="absolute inset-0 rounded-full overflow-hidden bg-card border-2 border-primary/30 shadow-xl">
-                  <div class="relative w-full h-full cursor-move group/image">
+                  <div class="relative w-full h-full overflow-hidden rounded-full">
                     <img
-                      ref="cropperImage"
+                      ref="imageElement"
                       :src="tempImage"
-                      class="absolute inset-0 w-full h-full object-cover transition-all duration-300 ease-out"
+                      class="absolute w-full h-full object-cover transition-all duration-300 ease-out"
                       :style="{ 
                         transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
                         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                       }"
                       alt="Preview"
                     />
-                    <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/image:opacity-100 transition-opacity"></div>
                   </div>
                 </div>
 
@@ -124,8 +119,7 @@
                       min="50" 
                       max="200" 
                       step="1"
-                      v-model="zoomLevel" 
-                      @input="updateZoom" 
+                      v-model.number="zoomLevel" 
                       class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
                     />
                     <ZoomIn :size="15" class="text-foreground/40" />
@@ -171,12 +165,12 @@
               </button>
               <button 
                 @click="saveImage" 
-                :disabled="userStore.isLoading"
+                :disabled="isUploading"
                 class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span v-if="userStore.isLoading" class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                <span v-if="isUploading" class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                 <Check v-else :size="14" />
-                <span>{{ userStore.isLoading ? 'Saving...' : 'Save Changes' }}</span>
+                <span>{{ isUploading ? 'Saving...' : 'Save Changes' }}</span>
               </button>
             </div>
           </div>
@@ -207,12 +201,13 @@ defineEmits<{
 const fileInput = ref<HTMLInputElement | null>(null)
 const showEditModal = ref(false)
 const tempImage = ref<string | null>(null)
-const cropperImage = ref<HTMLImageElement | null>(null)
+const imageElement = ref<HTMLImageElement | null>(null)
 const zoomLevel = ref(100)
 const rotation = ref(0)
+const isUploading = ref(false)
 
-// Computed para a URL do avatar (da store)
-const avatarUrl = computed(() => userStore.user?.avatar || null)
+// Computed para a URL do avatar - usar avatar_url
+const avatarUrl = computed(() => userStore.user?.avatar_url || userStore.user?.avatar || null)
 
 const userInitials = computed(() => {
   const name = userStore.user?.name
@@ -237,6 +232,18 @@ const handleFileSelect = (event: Event): void => {
   const file = target.files?.[0]
   if (!file) return
 
+  // Validar tipo
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file')
+    return
+  }
+
+  // Validar tamanho (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Image must be less than 5MB')
+    return
+  }
+
   const reader = new FileReader()
   reader.onload = (e) => {
     tempImage.value = e.target?.result as string
@@ -246,10 +253,6 @@ const handleFileSelect = (event: Event): void => {
   }
   reader.readAsDataURL(file)
   target.value = ''
-}
-
-const updateZoom = (): void => {
-  // O zoom é aplicado via style no template
 }
 
 const rotate = (degrees: number): void => {
@@ -262,34 +265,63 @@ const resetImage = (): void => {
 }
 
 const saveImage = async (): Promise<void> => {
-  if (!cropperImage.value || !tempImage.value) return
+  if (!imageElement.value || !tempImage.value) {
+    console.error('No image element or temp image')
+    return
+  }
 
-  // Criar canvas com a imagem atual
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
-  const size = 300
-  
-  canvas.width = size
-  canvas.height = size
+  isUploading.value = true
 
-  if (ctx) {
-    // Desenhar a imagem do cropper no canvas
-    ctx.drawImage(cropperImage.value, 0, 0, size, size)
+  try {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const size = 400
     
-    // Converter canvas para blob
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.9)
-    })
-    
-    // Criar FormData e fazer upload
-    const formData = new FormData()
-    formData.append('avatar', blob, 'avatar.jpg')
-    
-    const result = await userStore.updateAvatar(formData)
-    
-    if (result.success) {
-      closeEditModal()
+    canvas.width = size
+    canvas.height = size
+
+    if (ctx) {
+      const img = imageElement.value
+      const imgWidth = img.naturalWidth
+      const imgHeight = img.naturalHeight
+      const zoom = zoomLevel.value / 100
+      const scaledWidth = imgWidth * zoom
+      const scaledHeight = imgHeight * zoom
+      
+      const x = (size - scaledWidth) / 2
+      const y = (size - scaledHeight) / 2
+      
+      ctx.save()
+      ctx.translate(size / 2, size / 2)
+      ctx.rotate((rotation.value * Math.PI) / 180)
+      ctx.translate(-size / 2, -size / 2)
+      ctx.drawImage(img, x, y, scaledWidth, scaledHeight)
+      ctx.restore()
+      
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.85)
+      })
+      
+      const formData = new FormData()
+      formData.append('avatar', blob, 'avatar.jpg')
+      
+      const result = await userStore.updateAvatar(formData)
+      
+      if (result.success) {
+        closeEditModal()
+        // Recarregar a página para mostrar o novo avatar
+        setTimeout(() => {
+          window.location.reload()
+        }, 300)
+      } else {
+        alert(result.error || 'Failed to upload image')
+      }
     }
+  } catch (error) {
+    console.error('Error saving image:', error)
+    alert('Failed to save image')
+  } finally {
+    isUploading.value = false
   }
 }
 

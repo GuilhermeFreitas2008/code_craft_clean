@@ -28,11 +28,6 @@
       >
         <main class="p-4 lg:p-8">
           <div class="mx-auto max-w-7xl">
-            <!-- DEBUG: Mostrar estado atual (visível apenas em desenvolvimento) -->
-            <div v-if="false" class="bg-yellow-500/10 text-yellow-500 p-2 mb-4 rounded">
-              loading: {{ loading }}, hasCourse: {{ !!course }}, courseId: {{ course?.id }}
-            </div>
-
             <!-- Skeleton Loader -->
             <div v-if="loading" class="mx-auto max-w-7xl">
               <div class="mb-6">
@@ -188,13 +183,12 @@
 
                     <!-- Action Buttons -->
                     <div class="mt-6 flex flex-wrap gap-4">
-                      <!-- Botão Start/Continue -->
                       <button 
                         @click="goToFirstLesson"
                         class="inline-flex items-center space-x-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary/60"
                       >
                         <Play :size="18" />
-                        <span>{{ course.progressPercentage === 0 ? 'Start Course' : 'Continue Course' }}</span>
+                        <span>{{ course.isEnrolled ? 'Continue Course' : 'Start Course' }}</span>
                       </button>
                       
                       <button 
@@ -391,6 +385,7 @@ interface Course {
   title: string
   description: string
   progressPercentage: number
+  isEnrolled: boolean
   tags: string[]
   lastUpdate: string
   modules: Module[]
@@ -465,7 +460,7 @@ const leave = (el: Element) => {
 // ================================================
 const totalLessons = computed(() => {
   if (!props.course) return 0
-  return props.course.modules.reduce((total, module) => {
+  return props.course.modules.reduce((total: number, module: any) => {
     return total + (module.lessons?.length || 0)
   }, 0)
 })
@@ -478,43 +473,32 @@ const goBack = () => {
 }
 
 // ================================================
-// FUNÇÃO PARA INSCREVER NO CURSO
-// ================================================
-const enrollInCourse = async () => {
-  if (!props.course || !userStore.isAuthenticated()) return false
-  
-  try {
-    console.log('📝 A inscrever no curso:', props.course.id)
-    const response = await api.post('/enrollments', {
-      course_id: props.course.id
-    })
-    console.log('✅ Inscrição criada:', response.data)
-    return true
-  } catch (error: any) {
-    console.error('❌ Erro ao inscrever:', error.response?.data || error.message)
-    return false
-  }
-}
-
-// ================================================
-// GO TO FIRST LESSON
+// GO TO FIRST LESSON - CORRIGIDO
 // ================================================
 const goToFirstLesson = async () => {
   if (!props.course) return
   
-  // Se o progresso é 0, significa que não está inscrito
-  if (props.course.progressPercentage === 0) {
-    const enrolled = await enrollInCourse()
-    if (!enrolled) {
-      // Se falhou a inscrição, não navega
+  // Se NÃO está inscrito, inscreve primeiro
+  if (!props.course.isEnrolled) {
+    try {
+      console.log('📝 A inscrever no curso:', props.course.id)
+      const response = await api.post('/enrollments', {
+        course_id: Number(props.course.id)
+      })
+      console.log('✅ Inscrição criada:', response.data)
+      // Atualizar o estado local
+      props.course.isEnrolled = true
+    } catch (error: any) {
+      console.error('❌ Erro ao inscrever:', error.response?.data || error.message)
       return
     }
   }
   
+  // Vai para a primeira lição (já está inscrito ou acabou de inscrever)
   const firstModule = props.course.modules[0]
   if (firstModule && firstModule.lessons.length > 0) {
     const firstLessonId = firstModule.lessons[0].id
-    router.push(`/course/${props.course.id}/lesson/${firstLessonId}`)
+    router.push(`/course/${Number(props.course.id)}/lesson/${firstLessonId}`)
   }
 }
 
@@ -524,11 +508,11 @@ const goToFirstLesson = async () => {
 const isMobile = ref(window.innerWidth < 1024)
 
 // ================================================
-// MENU FUNCTIONS - ÚNICA ALTERAÇÃO
+// MENU FUNCTIONS
 // ================================================
 const handleMenuClick = (menuName: string) => {
   uiStore.setActiveMenu(menuName)
-  router.push('/user') // Volta para a página user com o menu ativo
+  router.push('/user')
 }
 
 // ================================================
@@ -559,9 +543,6 @@ const watchlistButton = ref<HTMLElement | null>(null)
 let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 let leaveTimeout: ReturnType<typeof setTimeout> | null = null
 
-// ================================================
-// COMPUTED PROPERTIES (WATCHLIST)
-// ================================================
 const watchlistIcon = computed(() => {
   return isInWatchlist.value ? Bookmark : BookmarkPlus
 })
@@ -585,9 +566,6 @@ const buttonClasses = computed(() => {
   }
 })
 
-// ================================================
-// HOVER FUNCTIONS
-// ================================================
 const handleMouseEnter = () => {
   if (!isInWatchlist.value) return
   
@@ -608,21 +586,15 @@ const handleMouseLeave = () => {
   }, 200)
 }
 
-// ================================================
-// FUNÇÃO PARA VERIFICAR WATCHLIST
-// ================================================
 const checkWatchlistStatus = () => {
   if (!props.course || !userStore.isAuthenticated()) {
     isInWatchlist.value = false
     return
   }
   
-  isInWatchlist.value = watchlistStore.isInWatchlist(props.course.id)
+  isInWatchlist.value = watchlistStore.isInWatchlist(Number(props.course.id))
 }
 
-// ================================================
-// WATCHER
-// ================================================
 watch(
   () => watchlistStore.items,
   () => {
@@ -639,9 +611,6 @@ watch(
   { immediate: true }
 )
 
-// ================================================
-// TOGGLE WATCHLIST
-// ================================================
 const toggleWatchlist = async (event: MouseEvent) => {
   event.preventDefault()
   
@@ -665,7 +634,7 @@ const toggleWatchlist = async (event: MouseEvent) => {
   isInWatchlist.value = !isInWatchlist.value
   
   try {
-    await watchlistStore.toggleWatchlist(props.course.id)
+    await watchlistStore.toggleWatchlist(Number(props.course.id))
   } catch (error) {
     isInWatchlist.value = previousState
   } finally {
@@ -697,7 +666,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Animações específicas do accordion */
 .v-enter-active,
 .v-leave-active {
   transition: all 0.3s ease-out;
@@ -709,7 +677,6 @@ onUnmounted(() => {
   height: 0;
 }
 
-/* Ripple animation */
 @keyframes ripple-animation {
   0% {
     transform: translate(-50%, -50%) scale(0);
@@ -731,7 +698,6 @@ onUnmounted(() => {
   z-index: 10;
 }
 
-/* Transições específicas */
 button, .group {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -17,7 +17,11 @@ export const useUserStore = defineStore('user', () => {
     const storedToken = localStorage.getItem('auth_token')
     
     if (storedUser && storedToken) {
-      user.value = JSON.parse(storedUser)
+      const parsedUser = JSON.parse(storedUser)
+      if (parsedUser && !parsedUser.avatar_url && parsedUser.avatar) {
+        parsedUser.avatar_url = parsedUser.avatar
+      }
+      user.value = parsedUser
       token.value = storedToken
     }
   }
@@ -26,9 +30,6 @@ export const useUserStore = defineStore('user', () => {
   // AVATAR METHODS
   // ================================================
   
-  /**
-   * Upload de novo avatar
-   */
   const updateAvatar = async (formData: FormData) => {
     isLoading.value = true
     try {
@@ -36,9 +37,9 @@ export const useUserStore = defineStore('user', () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       
-      if (user.value) {
+      if (user.value && response.data.success) {
+        user.value.avatar_url = response.data.avatar_url
         user.value.avatar = response.data.avatar_url
-        // Atualizar localStorage
         localStorage.setItem('user', JSON.stringify(user.value))
       }
       
@@ -54,17 +55,14 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  /**
-   * Remover avatar
-   */
   const removeAvatar = async () => {
     isLoading.value = true
     try {
       await api.delete('/user/avatar')
       
       if (user.value) {
-        delete user.value.avatar
-        // Atualizar localStorage
+        user.value.avatar_url = null
+        user.value.avatar = null
         localStorage.setItem('user', JSON.stringify(user.value))
       }
       
@@ -80,13 +78,25 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const refreshAvatar = async () => {
+    try {
+      const response = await api.get('/user')
+      if (response.data && user.value) {
+        user.value.avatar_url = response.data.avatar_url
+        user.value.avatar = response.data.avatar_url
+        localStorage.setItem('user', JSON.stringify(user.value))
+        return response.data.avatar_url
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar avatar:', error)
+    }
+    return null
+  }
+
   // ================================================
   // PREFERENCES METHODS
   // ================================================
   
-  /**
-   * Buscar preferências do utilizador
-   */
   const fetchPreferences = async () => {
     try {
       const response = await api.get('/user/preferences')
@@ -97,9 +107,6 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  /**
-   * Atualizar preferências do utilizador
-   */
   const updatePreferences = async (data: { theme: string }) => {
     try {
       const response = await api.put('/user/preferences', data)
@@ -117,7 +124,6 @@ export const useUserStore = defineStore('user', () => {
   // AUTH METHODS
   // ================================================
 
-  // Login
   const login = async (email: string, password: string, rememberMe: boolean) => {
     isLoading.value = true
     
@@ -125,11 +131,16 @@ export const useUserStore = defineStore('user', () => {
       const response = await api.post('/login', { email, password })
       const { user: userData, token: authToken } = response.data
 
-      user.value = userData
+      const processedUser = {
+        ...userData,
+        avatar_url: userData.avatar_url || userData.avatar || null
+      }
+
+      user.value = processedUser
       token.value = authToken
 
       localStorage.setItem('auth_token', authToken)
-      localStorage.setItem('user', JSON.stringify(userData))
+      localStorage.setItem('user', JSON.stringify(processedUser))
       
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true')
@@ -156,7 +167,6 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // Register
   const register = async (userData: {
     name: string
     email: string
@@ -169,11 +179,16 @@ export const useUserStore = defineStore('user', () => {
       const response = await api.post('/register', userData)
       const { user: newUser, token: authToken } = response.data
 
-      user.value = newUser
+      const processedUser = {
+        ...newUser,
+        avatar_url: newUser.avatar_url || newUser.avatar || null
+      }
+
+      user.value = processedUser
       token.value = authToken
 
       localStorage.setItem('auth_token', authToken)
-      localStorage.setItem('user', JSON.stringify(newUser))
+      localStorage.setItem('user', JSON.stringify(processedUser))
 
       if (newUser.role_id === 2) {
         const watchlistStore = useWatchlistStore()
@@ -198,7 +213,6 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // Logout
   const logout = async () => {
     isLoading.value = true
     
@@ -217,33 +231,23 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // Getter
   const isAuthenticated = (): boolean => {
     return !!token.value
   }
 
-  // Inicializar
   loadFromStorage()
 
   return {
-    // Estado
     user,
     token,
     isLoading,
-    
-    // Getters
     isAuthenticated,
-    
-    // Auth Methods
     login,
     register,
     logout,
-    
-    // Avatar Methods
     updateAvatar,
     removeAvatar,
-    
-    // Preferences Methods
+    refreshAvatar,
     fetchPreferences,
     updatePreferences,
   }

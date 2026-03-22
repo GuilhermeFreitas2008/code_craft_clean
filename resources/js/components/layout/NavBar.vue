@@ -162,8 +162,8 @@ defineEmits<{
   (e: 'toggle-sidebar'): void
 }>()
 
-// Computed para avatar e iniciais
-const userAvatar = computed(() => userStore.user?.avatar || null)
+// Computed para avatar e iniciais - USAR avatar_url
+const userAvatar = computed(() => userStore.user?.avatar_url || userStore.user?.avatar || null)
 const userInitials = computed(() => {
   const name = userStore.user?.name
   if (!name) return 'U'

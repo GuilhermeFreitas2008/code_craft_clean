@@ -3,52 +3,45 @@
 namespace App\Models;
 
 use Filament\Models\Contracts\FilamentUser; 
-use Filament\Models\Contracts\HasName; // <-- 1. IMPORTANTE: Adicionado o HasName
+use Filament\Models\Contracts\HasName;
 use Filament\Panel; 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Traits\HasAvatar; // ← ADICIONAR esta linha
 
-// 2. IMPORTANTE: Adicionado o HasName à lista de implementações
 class User extends Authenticatable implements FilamentUser, HasName 
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasAvatar; // ← ADICIONAR HasAvatar
 
     protected $fillable = [
         'username',
         'email',
         'password_hash',
         'role_id',
-        'slug'
+        'slug',
+        'avatar_path', // ← ADICIONAR avatar_path
     ];
 
     protected $hidden = [
         'password_hash',
     ];
 
-    /**
-     * 1. DIZER AO LARAVEL ONDE ESTÁ A PASSWORD
-     */
+    protected $appends = ['avatar_url']; // ← ADICIONAR para API
+
     public function getAuthPassword()
     {
         return $this->password_hash;
     }
 
-    /**
-     * 2. DIZER AO FILAMENT QUEM PODE ENTRAR
-     */
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->role_id === 1;
     }
 
-    /**
-     * 3. DIZER AO FILAMENT ONDE ESTÁ O NOME DO UTILIZADOR
-     */
     public function getFilamentName(): string
     {
-        // Retorna o vosso campo 'username' da base de dados
         return $this->username; 
     }
 

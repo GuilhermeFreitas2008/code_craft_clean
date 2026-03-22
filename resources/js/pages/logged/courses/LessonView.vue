@@ -84,31 +84,25 @@
           v-if="showCompletionModal"
           class="fixed inset-0 z-50 flex items-center justify-center p-4"
         >
-          <!-- Overlay -->
           <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeCompletionModal"></div>
           
-          <!-- Modal Content -->
           <div class="relative bg-card border border-primary/20 rounded-2xl max-w-md w-full p-8 shadow-2xl">
-            <!-- Ícone de Sucesso -->
             <div class="flex justify-center mb-6">
               <div class="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
                 <Trophy :size="40" class="text-primary" />
               </div>
             </div>
             
-            <!-- Título -->
             <h2 class="text-2xl font-bold text-center text-foreground mb-2">
               🎉 Congratulations!
             </h2>
             
-            <!-- Mensagem -->
             <p class="text-center text-foreground/70 mb-8">
               You've successfully completed the 
               <span class="font-semibold text-primary">"{{ courseStore.courseTitle || 'Curso de Teste' }}"</span> course! 
               Great job on your dedication and hard work.
             </p>
             
-            <!-- Estatísticas -->
             <div class="bg-white/5 rounded-xl p-4 mb-8">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-foreground/60">Course progress</span>
@@ -126,7 +120,6 @@
               </div>
             </div>
             
-            <!-- Botões de Ação -->
             <div class="flex flex-col sm:flex-row gap-3">
               <button
                 @click="continueLearning"
@@ -142,7 +135,6 @@
               </button>
             </div>
             
-            <!-- Fechar (X) -->
             <button 
               @click="closeCompletionModal"
               class="absolute top-4 right-4 text-foreground/40 hover:text-foreground transition-colors"
@@ -235,7 +227,6 @@ const mappedComments = computed<CommentWithLikeStatus[]>(() => {
                         comment.user?.username?.charAt(0).toUpperCase() || 
                         userName.charAt(0).toUpperCase()
     
-    // Descobrir se é uma resposta e para quem está a responder
     let replyToUserName = null
     if (comment.parent_id) {
       const findParent = (comments: any[], parentId: number): string | null => {
@@ -455,22 +446,18 @@ const toggleLessonComplete = async () => {
     return
   }
   
-  // Ativar loading
   isUpdatingCompletion.value = true
   updatingLessonId.value = lessonId
   
-  // Optimistic update - atualiza a UI imediatamente
   const lesson = courseStore.modules
     .flatMap(m => m.lessons)
     .find(l => l.id === lessonId)
   
   if (lesson) {
     lesson.completed = !wasCompleted
-    // Forçar atualização do trigger
     courseStore.updateTrigger++
   }
   
-  // Fazer a chamada API
   const result = await courseStore.markLessonComplete(lessonId)
   
   if (result?.success) {
@@ -484,7 +471,6 @@ const toggleLessonComplete = async () => {
       canRemoveCompletion.value = true
     }
     
-    // Verificar se o curso foi completo
     const completedCount = courseStore.completedLessons
     const totalCount = courseStore.totalLessons
     
@@ -492,14 +478,11 @@ const toggleLessonComplete = async () => {
       showCompletionModal.value = true
     }
     
-    // 👉 CORREÇÃO CRÍTICA: Atualizar o progressStore
     await progressStore.fetchProgressCourses()
     
-    // Atualizar o progresso sem recarregar tudo
     try {
       const progressData = await courseStore.fetchUpdatedProgress(courseId)
       if (progressData) {
-        // Atualizar todas as lições com o novo progresso
         progressData.completedLessonIds.forEach((id: number) => {
           courseStore.updateLessonCompletionStatus(id, true)
         })
@@ -508,14 +491,12 @@ const toggleLessonComplete = async () => {
       console.error('Erro ao atualizar progresso:', error)
     }
   } else {
-    // Reverter em caso de erro
     if (lesson) {
       lesson.completed = wasCompleted
       courseStore.updateTrigger++
     }
   }
   
-  // Desativar loading
   setTimeout(() => {
     isUpdatingCompletion.value = false
     updatingLessonId.value = null
@@ -537,7 +518,6 @@ const closeCompletionModal = () => {
 
 const continueLearning = () => {
   closeCompletionModal()
-  // Pode redirecionar para a próxima lição ou lista de cursos
 }
 
 const goToDashboard = () => {
@@ -592,10 +572,12 @@ const fetchLessonData = async () => {
       if (lessonId) {
         courseStore.selectLesson(lessonId)
         
+        console.log('🔍 A buscar recursos e comentários para a lição:', lessonId)
         await Promise.all([
           courseStore.fetchLessonResources(lessonId),
           courseStore.fetchLessonComments(lessonId)
         ])
+        console.log('✅ Comentários após fetch:', courseStore.currentLessonComments)
       }
     }
   }
