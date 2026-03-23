@@ -24,7 +24,7 @@ class UsersTable
                     ->toggleable(isToggledHiddenByDefault: true), 
 
                 TextColumn::make('username')
-                    ->label('Nome de Utilizador')
+                    ->label('User Name')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
@@ -37,13 +37,9 @@ class UsersTable
                     ->toggleable(),
 
                 TextColumn::make('role.name') 
-                    ->label('Cargo')
+                    ->label('Role')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Admin' => 'success', 
-                        'Student' => 'info',  
-                        default => 'gray',
-                    })
+                    ->color('primary') 
                     ->sortable()
                     ->toggleable(),
 
@@ -51,25 +47,26 @@ class UsersTable
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('avatar')
+                TextColumn::make('avatar_path')
+                    ->label('Avatar')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
-                    ->label('Data de Registo')
+                    ->label('Created At')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('updated_at')
-                    ->label('Última Atualização')
+                    ->label('Last Updated')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('role_id')
-                    ->label('Filtrar por Cargo')
+                    ->label('Filter by Role')
                     ->relationship('role', 'name')
                     ->preload(),
             ])

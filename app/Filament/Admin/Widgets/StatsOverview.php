@@ -15,18 +15,18 @@ class StatsOverview extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Total de Utilizadores', User::count())
-                ->description('Alunos e Admins')
+            Stat::make('Total Users', User::count())
+                ->description('Users and Admins')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('success'),
                 
-            Stat::make('Cursos na Plataforma', Course::count())
-                ->description('Cursos criados')
+            Stat::make('Total Courses', Course::count())
+                ->description('Courses created')
                 ->descriptionIcon('heroicon-m-academic-cap')
                 ->color('primary'),
                 
-            Stat::make('Total de Lições', Lesson::count())
-                ->description('Aulas disponíveis')
+            Stat::make('Total Lessons', Lesson::count())
+                ->description('Lessons available')
                 ->descriptionIcon('heroicon-m-book-open')
                 ->color('info'),
         ];

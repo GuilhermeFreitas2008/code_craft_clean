@@ -28,7 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login() 
             ->colors([
-                'primary' => Color::Blue, // Cor principal de realce (links, botões, etc.)
+                'primary' => Color::Sky, // Cor principal de realce (links, botões, etc.)
                 'gray' => Color::Slate,   // Cor para fundos e textos secundários (cinza neutro para modo escuro)
             ])
             ->darkMode(true)

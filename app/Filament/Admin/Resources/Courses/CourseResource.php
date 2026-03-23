@@ -21,7 +21,7 @@ class CourseResource extends Resource
     // Ícone corrigido para a vossa versão
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel = 'Cursos';
+    protected static ?string $navigationLabel = 'Courses';
 
     public static function form(Schema $schema): Schema
     {

@@ -22,45 +22,48 @@ class CoursesTable
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('title')
-                    ->label('Título do Curso')
+                    ->label('Course Title')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('category.name')
-                    ->label('Categoria')
+                    ->label('Category')
                     ->sortable()
                     ->badge(),
 
                 TextColumn::make('difficulty.name')
-                    ->label('Dificuldade')
+                    ->label('Difficulty')
                     ->sortable()
-                    ->badge()
-                    ->color('warning'),
+                    ->badge(),
 
                 // Mostra um ícone Verde (Check) ou Vermelho (X)
                 IconColumn::make('is_public')
-                    ->label('Público')
+                    ->label('Public')
                     ->boolean()
+                    ->trueColor('primary')
+                    ->falseColor('gray')
                     ->toggleable(),
 
                 IconColumn::make('is_draft')
-                    ->label('Rascunho')
+                    ->label('Draft')
                     ->boolean()
+                    ->trueColor('primary')
+                    ->falseColor('gray')
                     ->toggleable(),
 
                 TextColumn::make('owner.username')
-                    ->label('Criado por')
+                    ->label('Created By')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('category_id')
-                    ->label('Categoria')
+                    ->label('Category')
                     ->relationship('category', 'name')
                     ->preload(),
                     
                 SelectFilter::make('difficulty_id')
-                    ->label('Dificuldade')
+                    ->label('Difficulty')
                     ->relationship('difficulty', 'name')
                     ->preload(),
             ])
