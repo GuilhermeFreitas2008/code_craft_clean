@@ -26,22 +26,19 @@ class UsersTable
                 TextColumn::make('username')
                     ->label('User Name')
                     ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+                    ->sortable(),
 
                 TextColumn::make('email')
                     ->label('Email address')
                     ->searchable()
                     ->sortable()
-                    ->copyable() // Ícone para copiar o email rapidamente
-                    ->toggleable(),
+                    ->copyable(),
 
                 TextColumn::make('role.name') 
                     ->label('Role')
                     ->badge()
                     ->color('primary') 
-                    ->sortable()
-                    ->toggleable(),
+                    ->sortable(),
 
                 TextColumn::make('slug')
                     ->searchable()

@@ -26,6 +26,17 @@ class CoursesTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('description')
+                    ->label('Description')
+                    ->limit(50)
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('slug')
+                    ->label('Slug')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('category.name')
                     ->label('Category')
                     ->sortable()
@@ -36,23 +47,33 @@ class CoursesTable
                     ->sortable()
                     ->badge(),
 
-                // Mostra um ícone Verde (Check) ou Vermelho (X)
                 IconColumn::make('is_public')
                     ->label('Public')
                     ->boolean()
                     ->trueColor('primary')
-                    ->falseColor('gray')
-                    ->toggleable(),
+                    ->falseColor('gray'),
+                    
 
                 IconColumn::make('is_draft')
                     ->label('Draft')
                     ->boolean()
                     ->trueColor('primary')
-                    ->falseColor('gray')
-                    ->toggleable(),
+                    ->falseColor('gray'),
 
                 TextColumn::make('owner.username')
                     ->label('Created By')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('created_at')
+                    ->label('Created At')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('updated_at')
+                    ->label('Last Updated')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
