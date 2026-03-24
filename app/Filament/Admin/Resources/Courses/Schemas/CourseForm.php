@@ -2,74 +2,77 @@
 
 namespace App\Filament\Admin\Resources\Courses\Schemas;
 
-use Filament\Schemas\Schema; 
-use Filament\Schemas\Components\Section; // <-- O SEGREDO ESTÁ AQUI! (Schemas e não Forms)
-
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Hidden;
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 class CourseForm
 {
-    public static function configure(Schema $schema): Schema 
+    public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->components([ // No Schema usa-se ->components()
-                Section::make('Detalhes do Curso')
-                    ->description('Informações principais e categorização.')
-                    ->schema([ // Dentro da Section continua a ser ->schema()
-                        TextInput::make('title')
-                            ->label('Título')
-                            ->required()
-                            ->maxLength(255),
+            ->components([
+                Wizard::make([
+                    Wizard\Step::make('Details')
+                        ->description('Main information and visibility')
+                        ->schema([
+                            TextInput::make('title')
+                                ->label('Title')
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
 
-                        TextInput::make('slug')
-                            ->label('Slug (URL)')
-                            ->required()
-                            ->maxLength(255),
+                            Select::make('category_id')
+                                ->relationship('category', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
 
-                        Select::make('category_id')
-                            ->label('Categoria')
-                            ->relationship('category', 'name')
-                            ->preload()
-                            ->searchable()
-                            ->required(),
+                            Select::make('difficulty_id')
+                                ->relationship('difficulty', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
 
-                        Select::make('difficulty_id')
-                            ->label('Dificuldade')
-                            ->relationship('difficulty', 'name')
-                            ->preload()
-                            ->searchable()
-                            ->required(),
-                            
-                        Select::make('created_by')
-                            ->label('Criado por')
-                            ->relationship('owner', 'username')
-                            ->default(fn () => Auth::id())
-                            ->searchable()
-                            ->required(),
-                    ])->columns(2),
+                            Select::make('created_by')
+                                ->label('Creator')
+                                ->relationship('owner', 'username')
+                                ->default(Auth::id())
+                                ->disabled()                  
+                                ->dehydrated(fn ($context) => $context === 'create')
+                                ->required(),
 
-                Section::make('Visibilidade e Estado')
-                    ->schema([
-                        Toggle::make('is_public')
-                            ->label('Curso Público')
-                            ->default(false),
-                            
-                        Toggle::make('is_draft')
-                            ->label('Em Rascunho')
-                            ->default(true),
-                    ])->columns(2),
+                            Hidden::make('slug')->required(),
+                            Hidden::make('is_draft')->default(true),
 
-                Section::make('Conteúdo')
-                    ->schema([
-                        Textarea::make('description')
-                            ->label('Descrição')
-                            ->required()
-                            ->rows(5),
-                    ]),
+                            Grid::make(1)->schema([
+                                Toggle::make('is_public')
+                                    ->label('Publish Course')
+                                    ->helperText('If disabled, it stays as a draft.')
+                                    ->live()
+                                    ->afterStateUpdated(fn ($state, $set) => $set('is_draft', !$state)),
+                            ]),
+                        ])->columns(2),
+
+                    Wizard\Step::make('Content')
+                        ->description('Course description')
+                        ->schema([
+                            Textarea::make('description')
+                                ->required()
+                                ->rows(5)
+                                ->columnSpanFull(),
+                        ]),
+                ])
+                ->extraAttributes([
+                    'style' => 'max-width: 1000px !important; width: 900px !important; margin-left: auto; margin-right: auto;'
+                ])
             ]);
     }
 }

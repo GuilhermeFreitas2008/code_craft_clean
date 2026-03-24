@@ -81,12 +81,24 @@ class CoursesTable
                 SelectFilter::make('category_id')
                     ->label('Category')
                     ->relationship('category', 'name')
+                    ->searchable()
                     ->preload(),
                     
                 SelectFilter::make('difficulty_id')
                     ->label('Difficulty')
                     ->relationship('difficulty', 'name')
+                    ->searchable()
                     ->preload(),
+
+                \Filament\Tables\Filters\TernaryFilter::make('is_public')
+                    ->label('Public Status')
+                    ->placeholder('All Courses')
+                    ->trueLabel('Only Public')
+                    ->falseLabel('Only Drafts')
+                    ->queries(
+                        true: fn ($query) => $query->where('is_public', true),
+                        false: fn ($query) => $query->where('is_public', false),
+                    ),
             ])
             ->recordActions([
                 // Apenas com cor e ícone (sem fundo sólido)

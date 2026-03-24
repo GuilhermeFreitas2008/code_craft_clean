@@ -11,9 +11,8 @@ class CreateCourse extends CreateRecord
 {
     protected static string $resource = CourseResource::class;
 
-    // ALTERADO PARA SCHEMA
-    public function form(Schema $schema): Schema 
+    protected function getRedirectUrl(): string
     {
-        return CourseForm::configure($schema);
+        return $this->getResource()::getUrl('index');
     }
 }

@@ -24,4 +24,9 @@ class EditCourse extends EditRecord
     {
         return CourseForm::configure($schema);
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

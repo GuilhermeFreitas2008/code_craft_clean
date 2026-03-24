@@ -10,6 +10,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
 
+use function Laravel\Prompts\search;
+
 class UserForm
 {
     public static function configure(Schema $schema): Schema
@@ -44,6 +46,7 @@ class UserForm
                                     ->label('Role')
                                     ->relationship('role', 'name')
                                     ->required()
+                                    ->searchable()
                                     ->preload(),
                             ])
                             ->columnSpan(2),
