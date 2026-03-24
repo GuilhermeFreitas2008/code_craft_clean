@@ -41,6 +41,7 @@ class UsersTable
                     ->sortable(),
 
                 TextColumn::make('slug')
+                    ->label('Slug')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 

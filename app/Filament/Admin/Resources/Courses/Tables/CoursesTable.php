@@ -18,6 +18,7 @@ class CoursesTable
         return $table
             ->columns([
                 TextColumn::make('id')
+                    ->label('ID')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -28,7 +29,7 @@ class CoursesTable
 
                 TextColumn::make('description')
                     ->label('Description')
-                    ->limit(50)
+                    ->limit(30)
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
