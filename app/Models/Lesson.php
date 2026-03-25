@@ -34,4 +34,31 @@ class Lesson extends Model
     {
         return $this->hasMany(Comment::class);
     }
+
+    protected static function booted()
+    {
+        static::creating(function ($lesson) {
+            // Empurra as aulas existentes para baixo
+            static::where('module_id', $lesson->module_id)
+                ->where('position', '>=', $lesson->position)
+                ->increment('position');
+        });
+
+        static::updating(function ($lesson) {
+            if ($lesson->isDirty('position')) {
+                $oldPos = $lesson->getOriginal('position');
+                $newPos = $lesson->position;
+
+                if ($newPos > $oldPos) {
+                    static::where('module_id', $lesson->module_id)
+                        ->whereBetween('position', [$oldPos + 1, $newPos])
+                        ->decrement('position');
+                } else {
+                    static::where('module_id', $lesson->module_id)
+                        ->whereBetween('position', [$newPos, $oldPos - 1])
+                        ->increment('position');
+                }
+            }
+        });
+    }
 }

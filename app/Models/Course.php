@@ -62,7 +62,7 @@ class Course extends Model
     }
 
     public function watchlistedBy()
-{
-    return $this->belongsToMany(User::class, 'watchlist');
-}
+    {
+        return $this->belongsToMany(User::class, 'watchlist');
+    }
 }
