@@ -17,7 +17,6 @@ class LessonForm
 {
     public static function configure(Schema $schema): Schema
     {
-        // Truque para o Intelephense ignorar a existência da classe deprecated
         $placeholderClass = 'Filament\Forms\Components\Placeholder';
 
         return $schema
@@ -59,6 +58,8 @@ class LessonForm
                                 ->required()
                                 ->live()
                                 ->searchable()
+                                // BLOQUEIO: Desabilitado se não houver module_id selecionado
+                                ->disabled(fn ($get) => ! $get('module_id'))
                                 ->options(function ($get, $record) {
                                     $moduleId = $get('module_id');
                                     if (!$moduleId) return [];
@@ -90,34 +91,50 @@ class LessonForm
                                 ->label('Video URL')
                                 ->url(),
 
-                            // GUIA ATUALIZADO BASEADO NO TEU MARKDOWN.TS
+                            // GUIA CLEAN COM TEXTO AMPLIADO
                             $placeholderClass::make('formatting_guide')
-                                ->label('📖 Guia de Formatação (Clique para ver)')
+                                ->label('📖 Guia de Formatação')
                                 ->content(fn () => new HtmlString('
-                                    <details class="cursor-pointer bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                        <summary class="font-bold text-sm text-primary-600 outline-none">Comandos suportados (Markdown-it & Highlight.js)</summary>
-                                        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-[11px] leading-relaxed border-t pt-4">
-                                            <div>
-                                                <p class="font-bold text-gray-700 mb-2 uppercase italic underline">Markdown Base</p>
-                                                <code># H1</code> | <code>## H2</code> | <code>### H3</code><br>
-                                                <code>**Negrito**</code> | <code>*Itálico*</code><br>
-                                                <code>> Citação</code> | <code>- Lista</code>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-gray-700 mb-2 uppercase italic underline">Highlight.js</p>
-                                                <p class="mb-1 text-gray-500">Usa três crases + linguagem:</p>
-                                                <code class="block bg-gray-200 p-1 rounded mb-1">```php</code>
-                                                <code class="block bg-gray-200 p-1 rounded mb-1">```javascript</code>
-                                                <code class="block bg-gray-200 p-1 rounded">```sql</code>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-gray-700 mb-2 uppercase italic underline">Ativo no Projeto</p>
-                                                <ul class="list-disc ml-3 space-y-1 text-gray-600">
-                                                    <li>🔗 <b>Links:</b> Colar a URL ativa o clique.</li>
-                                                    <li>🖼️ <b>Imagens:</b> Cantos arredondados (auto).</li>
-                                                    <li>🌐 <b>HTML:</b> Podes usar tags HTML puras.</li>
-                                                    <li>📋 <b>Código:</b> Gera bloco <code>hljs</code>.</li>
-                                                </ul>
+                                    <details class="cursor-pointer outline-none group">
+                                        <summary class="font-bold text-sm text-primary-600 hover:underline">
+                                            Comandos Suportados (Markdown | Código | Ativo)
+                                        </summary>
+                                        
+                                        <div style="margin-top: 50px; margin-bottom: 30px;">
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 80px;">
+                                                
+                                                <div>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown</p>
+                                                    <div style="font-size: 14px; line-height: 2.5;">
+                                                        # Título Principal<br>
+                                                        ## Subtítulo<br>
+                                                        **Texto em Negrito**<br>
+                                                        > Citação em destaque<br>
+                                                        - Lista de tópicos
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Blocos de Código</p>
+                                                    <div style="font-size: 14px; line-height: 2.5; font-family: monospace;">
+                                                        ```php<br>
+                                                        ```javascript<br>
+                                                        ```sql<br>
+                                                        ```html<br>
+                                                        <span style="color: #9ca3af; font-family: sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase;">(FECHAR SEMPRE COM ```)</span>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Ativo no Sistema</p>
+                                                    <div style="font-size: 13px; line-height: 2.5;">
+                                                        • Links clicáveis automáticos<br>
+                                                        • Suporte total a Iframes/HTML<br>
+                                                        • Estilização de Imagens<br>
+                                                        • Syntax Highlight (Hljs)
+                                                    </div>
+                                                </div>
+
                                             </div>
                                         </div>
                                     </details>
