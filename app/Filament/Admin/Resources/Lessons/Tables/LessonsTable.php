@@ -79,7 +79,7 @@ class LessonsTable
                 Filter::make('course_module_filter')
                     ->schema([
                         Select::make('course_id')
-                            ->label('Filter by Course')
+                            ->label('Course')
                             ->options(Course::pluck('title', 'id'))
                             ->searchable()
                             ->preload()
@@ -87,7 +87,7 @@ class LessonsTable
                             ->native(false),
 
                         Select::make('module_id')
-                            ->label('Filter by Module')
+                            ->label('Module')
                             ->placeholder(fn ($get) => $get('course_id') ? 'Select a module' : 'Select a course first')
                             ->options(function ($get) {
                                 $courseId = $get('course_id');

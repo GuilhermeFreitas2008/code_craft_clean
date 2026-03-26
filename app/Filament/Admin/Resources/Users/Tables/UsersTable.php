@@ -64,7 +64,7 @@ class UsersTable
             ])
             ->filters([
                 SelectFilter::make('role_id')
-                    ->label('Filter by Role')
+                    ->label('Role')
                     ->relationship('role', 'name')
                     ->preload(),
             ])

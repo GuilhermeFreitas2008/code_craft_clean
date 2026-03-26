@@ -22,4 +22,15 @@ class Resource extends Model
         return $this->belongsToMany(Lesson::class, 'lesson_resource')
                     ->withTimestamps();
     }
+    public static function getTypes(): array
+    {
+        return [
+            'pdf' => 'PDF',
+            'image' => 'Image',
+            'presentation' => 'Presentation',
+            'archive' => 'Archive (ZIP/RAR)',
+            'link' => 'Link/URL',
+            'other' => 'Other',
+        ];
+    }
 }

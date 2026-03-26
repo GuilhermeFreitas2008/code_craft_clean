@@ -64,7 +64,7 @@ class ModulesTable
             ->filters([
                 // Filtro por Curso conforme pediste
                 SelectFilter::make('course_id')
-                    ->label('Filter by Course')
+                    ->label('Course')
                     ->relationship('course', 'title')
                     ->searchable()
                     ->preload()
