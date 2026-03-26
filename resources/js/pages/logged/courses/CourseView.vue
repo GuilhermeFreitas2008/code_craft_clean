@@ -1,12 +1,12 @@
 <template>
   <CourseDisplay 
-    :course="courseData ?? undefined" 
-    :loading="courseStore.isLoading" 
+    :course="courseData" 
+    :loading="isLoading" 
   />
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useWatchlistStore } from '@/stores/watchlistStore'
@@ -21,8 +21,19 @@ const watchlistStore = useWatchlistStore()
 const courseStore = useCourseStore()
 const uiStore = useUiStore()
 
+// Estado local para controlar o loading inicial
+const isLoading = ref(true)
+
 const courseData = computed(() => {
-  if (!courseStore.currentCourseId || !courseStore.modules.length) return undefined
+  // Enquanto estiver a carregar, retorna undefined para mostrar skeleton
+  if (isLoading.value) {
+    return undefined
+  }
+  
+  // Se não tem dados, retorna undefined
+  if (!courseStore.currentCourseId || !courseStore.modules.length) {
+    return undefined
+  }
   
   const totalLessonsVal = courseStore.totalLessons
   const completedLessonsVal = courseStore.completedLessons
@@ -31,20 +42,22 @@ const courseData = computed(() => {
   return {
     id: courseStore.currentCourseId,
     title: courseStore.courseTitle,
-    description: 'Curso de programação',
+    description: courseStore.courseDescription || 'Sem descrição',
     progressPercentage: progressPercentage,
     isEnrolled: courseStore.isEnrolled,
-    tags: ['programação', 'web', 'javascript'],
-    lastUpdate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),
+    tags: courseStore.courseTopics.length > 0 ? courseStore.courseTopics : ['programação', 'web'],
+    lastUpdate: courseStore.courseLastUpdate,
     modules: courseStore.modules as any,
-    difficulty: 'intermediate',
-    category: 'programação'
+    difficulty: courseStore.courseDifficulty || 'intermediate',
+    category: courseStore.courseCategory || 'programação'
   }
 })
 
 onMounted(async () => {
   console.log('🔍 CourseView mounted, courseId:', courseId)
   
+  // Garantir que loading começa como true IMEDIATAMENTE
+  isLoading.value = true
   uiStore.setActiveMenu(null)
   
   if (userStore.isAuthenticated() && watchlistStore.items.length === 0) {
@@ -54,9 +67,8 @@ onMounted(async () => {
   if (courseId) {
     await courseStore.fetchCourse(courseId)
   }
-})
-
-watch(() => courseStore.updateTrigger, () => {
-  console.log('🔄 updateTrigger mudou, curso atualizado')
+  
+  // Só depois de carregar é que desativamos o loading
+  isLoading.value = false
 })
 </script>

@@ -14,21 +14,23 @@ export interface LikeCommentResponse {
 export const useCourseStore = defineStore('course', () => {
     const currentCourseId = ref<number | null>(null)
     const courseTitle = ref<string>('')
+    const courseDescription = ref<string>('')
+    const courseDifficulty = ref<string>('')
+    const courseCategory = ref<string>('')
+    const courseTopics = ref<string[]>([])
+    const courseLastUpdate = ref<string>('')
+    
     const modules = ref<Module[]>([])
     const currentLessonId = ref<number | null>(null)
     const isLoading = ref(false)
     const error = ref<string | null>(null)
-    const isEnrolled = ref<boolean>(false) // NOVO: estado de inscrição
+    const isEnrolled = ref<boolean>(false)
     
     const currentLessonResources = ref<Resource[]>([])
     const currentLessonComments = ref<CommentWithLikeStatus[]>([])
     
-    // TRIGGER PARA FORÇAR REATIVIDADE
     const updateTrigger = ref(0)
 
-    // ================================================
-    // FUNÇÃO AUXILIAR PARA MAPEAR COMENTÁRIOS COM AVATAR
-    // ================================================
     const mapCommentWithAvatar = (comment: any, allComments: any[], currentUserId?: number): CommentWithLikeStatus => {
         const userId = comment.userId || comment.user_id || comment.user?.id
         const userName = comment.userName || comment.user?.username || 'Unknown'
@@ -60,9 +62,6 @@ export const useCourseStore = defineStore('course', () => {
         }
     }
 
-    // ================================================
-    // Computed
-    // ================================================
     const currentLesson = computed<Lesson | null>(() => {
         if (!currentLessonId.value || !modules.value.length) return null
         
@@ -99,9 +98,6 @@ export const useCourseStore = defineStore('course', () => {
         return Math.round((completedLessons.value / totalLessons.value) * 100)
     })
 
-    // ================================================
-    // Buscar dados do curso
-    // ================================================
     const fetchCourse = async (courseId: number, headers = {}) => {
         const userStore = useUserStore()
         isLoading.value = true
@@ -111,12 +107,53 @@ export const useCourseStore = defineStore('course', () => {
             const courseResponse = await api.get(`/courses/${courseId}`, { headers })
             const courseData = courseResponse.data
             
+            console.log('📦 RESPOSTA COMPLETA DA API:', courseData)
+            
             currentCourseId.value = courseId
             courseTitle.value = courseData.title || 'Curso de Teste'
+            courseDescription.value = courseData.description || ''
+            
+            // DIFICULDADE - VEM DO RELACIONAMENTO
+            if (courseData.difficulty) {
+                courseDifficulty.value = courseData.difficulty.name
+                console.log('✅ Dificuldade carregada:', courseDifficulty.value)
+            } else {
+                courseDifficulty.value = 'intermediate'
+            }
+            
+            // CATEGORIA - VEM DO RELACIONAMENTO
+            if (courseData.category) {
+                courseCategory.value = courseData.category.name
+                console.log('✅ Categoria carregada:', courseCategory.value)
+            } else {
+                courseCategory.value = 'programação'
+            }
+            
+            // TÓPICOS - VEM DO RELACIONAMENTO
+            if (courseData.topics && Array.isArray(courseData.topics)) {
+                courseTopics.value = courseData.topics.map((topic: any) => topic.name)
+                console.log('✅ Tópicos carregados do relacionamento:', courseTopics.value)
+            } else {
+                courseTopics.value = []
+                console.warn('⚠️ Nenhum tópico encontrado no relacionamento')
+            }
+            
+            // Data de atualização em inglês
+            if (courseData.updated_at) {
+                const date = new Date(courseData.updated_at)
+                courseLastUpdate.value = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                })
+            } else {
+                courseLastUpdate.value = new Date().toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                })
+            }
             
             let completedLessonIds: number[] = []
             
-            // Verificar se está inscrito
             if (userStore.isAuthenticated()) {
                 try {
                     const enrollmentResponse = await api.get('/enrollments', {
@@ -130,7 +167,6 @@ export const useCourseStore = defineStore('course', () => {
                     isEnrolled.value = false
                 }
                 
-                // Buscar progresso se estiver inscrito
                 if (isEnrolled.value) {
                     try {
                         const progressResponse = await api.get('/user-progress', {
@@ -167,14 +203,12 @@ export const useCourseStore = defineStore('course', () => {
             
         } catch (err: any) {
             error.value = err.response?.data?.message || 'Erro ao carregar curso'
+            console.error('❌ Erro ao buscar curso:', err)
         } finally {
             isLoading.value = false
         }
     }
 
-    // ================================================
-    // Buscar recursos de uma lição
-    // ================================================
     const fetchLessonResources = async (lessonId: number, headers = {}) => {
         try {
             const response = await api.get(`/lessons/${lessonId}/resources`, { headers })
@@ -186,56 +220,50 @@ export const useCourseStore = defineStore('course', () => {
         }
     }
 
-    // ================================================
-// Buscar comentários de uma lição
-// ================================================
-const fetchLessonComments = async (lessonId: number, headers = {}) => {
-    try {
-        console.log('📥 Buscando comentários da lição:', lessonId)
-        const response = await api.get(`/lessons/${lessonId}/comments`, { headers })
-        
-        console.log('📦 Resposta da API (comentários):', response.data)
-        
-        const userStore = useUserStore()
-        const allComments = response.data
-        
-        const commentsWithAvatar: CommentWithLikeStatus[] = allComments.map((comment: any) => 
-            mapCommentWithAvatar(comment, allComments, userStore.user?.id)
-        )
-        
-        const commentMap = new Map<number, CommentWithLikeStatus>()
-        const topLevelComments: CommentWithLikeStatus[] = []
-        
-        commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
-            commentMap.set(comment.id, comment)
-        })
-        
-        commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
-            if (comment.parent_id) {
-                const parent = commentMap.get(comment.parent_id)
-                if (parent) {
-                    if (!parent.replies) parent.replies = []
-                    parent.replies.push(comment)
+    const fetchLessonComments = async (lessonId: number, headers = {}) => {
+        try {
+            console.log('📥 Buscando comentários da lição:', lessonId)
+            const response = await api.get(`/lessons/${lessonId}/comments`, { headers })
+            
+            console.log('📦 Resposta da API (comentários):', response.data)
+            
+            const userStore = useUserStore()
+            const allComments = response.data
+            
+            const commentsWithAvatar: CommentWithLikeStatus[] = allComments.map((comment: any) => 
+                mapCommentWithAvatar(comment, allComments, userStore.user?.id)
+            )
+            
+            const commentMap = new Map<number, CommentWithLikeStatus>()
+            const topLevelComments: CommentWithLikeStatus[] = []
+            
+            commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
+                commentMap.set(comment.id, comment)
+            })
+            
+            commentsWithAvatar.forEach((comment: CommentWithLikeStatus) => {
+                if (comment.parent_id) {
+                    const parent = commentMap.get(comment.parent_id)
+                    if (parent) {
+                        if (!parent.replies) parent.replies = []
+                        parent.replies.push(comment)
+                    }
+                } else {
+                    topLevelComments.push(comment)
                 }
-            } else {
-                topLevelComments.push(comment)
-            }
-        })
-        
-        console.log('✅ Comentários organizados:', topLevelComments)
-        
-        currentLessonComments.value = topLevelComments
-        return topLevelComments
-    } catch (err) {
-        console.error('❌ Erro ao buscar comentários:', err)
-        currentLessonComments.value = []
-        return []
+            })
+            
+            console.log('✅ Comentários organizados:', topLevelComments)
+            
+            currentLessonComments.value = topLevelComments
+            return topLevelComments
+        } catch (err) {
+            console.error('❌ Erro ao buscar comentários:', err)
+            currentLessonComments.value = []
+            return []
+        }
     }
-}
 
-    // ================================================
-    // Criar comentário
-    // ================================================
     const createComment = async (lessonId: number, content: string, parentId: number | null = null) => {
         try {
             const response = await api.post(`/lessons/${lessonId}/comments`, {
@@ -271,9 +299,6 @@ const fetchLessonComments = async (lessonId: number, headers = {}) => {
         }
     }
 
-    // ================================================
-    // Editar comentário
-    // ================================================
     const editComment = async (commentId: number, content: string) => {
         try {
             const response = await api.put(`/comments/${commentId}`, { content })
@@ -302,9 +327,6 @@ const fetchLessonComments = async (lessonId: number, headers = {}) => {
         }
     }
 
-    // ================================================
-    // Apagar comentário
-    // ================================================
     const deleteComment = async (commentId: number) => {
         try {
             await api.delete(`/comments/${commentId}`)
@@ -333,9 +355,6 @@ const fetchLessonComments = async (lessonId: number, headers = {}) => {
         }
     }
 
-    // ================================================
-    // Dar like em comentário
-    // ================================================
     const likeComment = async (commentId: number): Promise<LikeCommentResponse> => {
         try {
             const response = await api.post(`/comments/${commentId}/like`)
@@ -368,9 +387,6 @@ const fetchLessonComments = async (lessonId: number, headers = {}) => {
         }
     }
 
-    // ================================================
-    // Marcar/DESMARCAR lição como completa
-    // ================================================
     const markLessonComplete = async (lessonId: number) => {
         try {
             const response = await api.post(`/lessons/${lessonId}/complete`)
@@ -394,10 +410,6 @@ const fetchLessonComments = async (lessonId: number, headers = {}) => {
         }
     }
 
-    // ================================================
-    // NOVAS FUNÇÕES PARA ATUALIZAÇÃO OTIMISTA
-    // ================================================
-    
     const fetchUpdatedProgress = async (courseId: number) => {
         try {
             const response = await api.get('/user-progress', {
@@ -426,19 +438,18 @@ const fetchLessonComments = async (lessonId: number, headers = {}) => {
         updateTrigger.value++
     }
 
-    // ================================================
-    // Selecionar lição
-    // ================================================
     const selectLesson = (lessonId: number) => {
         currentLessonId.value = lessonId
     }
 
-    // ================================================
-    // Limpar store
-    // ================================================
     const clearCourse = () => {
         currentCourseId.value = null
         courseTitle.value = ''
+        courseDescription.value = ''
+        courseDifficulty.value = ''
+        courseCategory.value = ''
+        courseTopics.value = []
+        courseLastUpdate.value = ''
         modules.value = []
         currentLessonId.value = null
         currentLessonResources.value = []
@@ -450,6 +461,11 @@ const fetchLessonComments = async (lessonId: number, headers = {}) => {
     return {
         currentCourseId,
         courseTitle,
+        courseDescription,
+        courseDifficulty,
+        courseCategory,
+        courseTopics,
+        courseLastUpdate,
         modules,
         currentLessonId,
         currentLesson,

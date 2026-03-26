@@ -58,7 +58,6 @@ class LessonForm
                                 ->required()
                                 ->live()
                                 ->searchable()
-                                // BLOQUEIO: Desabilitado se não houver module_id selecionado
                                 ->disabled(fn ($get) => ! $get('module_id'))
                                 ->options(function ($get, $record) {
                                     $moduleId = $get('module_id');
@@ -91,26 +90,36 @@ class LessonForm
                                 ->label('Video URL')
                                 ->url(),
 
-                            // GUIA CLEAN COM TEXTO AMPLIADO
+                            // GUIA DE FORMATAÇÃO COM FOCO EM MARKDOWN (2 COLUNAS) E CÓDIGO (1 COLUNA)
                             $placeholderClass::make('formatting_guide')
                                 ->label('📖 Guia de Formatação')
                                 ->content(fn () => new HtmlString('
                                     <details class="cursor-pointer outline-none group">
                                         <summary class="font-bold text-sm text-primary-600 hover:underline">
-                                            Comandos Suportados (Markdown | Código | Ativo)
+                                            Comandos Suportados (Markdown Extendido | Blocos de Código)
                                         </summary>
                                         
                                         <div style="margin-top: 50px; margin-bottom: 30px;">
-                                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 80px;">
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 60px;">
                                                 
                                                 <div>
-                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown</p>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown Básico</p>
                                                     <div style="font-size: 14px; line-height: 2.5;">
-                                                        # Título Principal<br>
-                                                        ## Subtítulo<br>
-                                                        **Texto em Negrito**<br>
+                                                        # Título H1<br>
+                                                        ## Subtítulo H2<br>
+                                                        ### Título H3<br>
+                                                        **Negrito** e *Itálico*<br>
+                                                        ~~Texto tachado~~
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown Avançado</p>
+                                                    <div style="font-size: 14px; line-height: 2.5;">
                                                         > Citação em destaque<br>
-                                                        - Lista de tópicos
+                                                        - Lista com marcadores<br>
+                                                        1. Lista numerada<br>
+                                                        [Texto do Link](URL)
                                                     </div>
                                                 </div>
 
@@ -121,17 +130,7 @@ class LessonForm
                                                         ```javascript<br>
                                                         ```sql<br>
                                                         ```html<br>
-                                                        <span style="color: #9ca3af; font-family: sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase;">(FECHAR SEMPRE COM ```)</span>
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Ativo no Sistema</p>
-                                                    <div style="font-size: 13px; line-height: 2.5;">
-                                                        • Links clicáveis automáticos<br>
-                                                        • Suporte total a Iframes/HTML<br>
-                                                        • Estilização de Imagens<br>
-                                                        • Syntax Highlight (Hljs)
+                                                        <span style="color: #9ca3af; font-family: sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; display: block; margin-top: 6px;">(FECHAR SEMPRE COM ```)</span>
                                                     </div>
                                                 </div>
 

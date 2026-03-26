@@ -28,7 +28,7 @@
       >
         <main class="p-4 lg:p-8">
           <div class="mx-auto max-w-7xl">
-            <!-- Skeleton Loader -->
+            <!-- 1º PRIORIDADE: Skeleton Loader enquanto carrega -->
             <div v-if="loading" class="mx-auto max-w-7xl">
               <div class="mb-6">
                 <div class="h-6 w-24 animate-pulse rounded bg-white/5"></div>
@@ -113,20 +113,7 @@
               </div>
             </div>
 
-            <!-- Sem dados -->
-            <div v-else-if="!course" class="text-center py-12">
-              <AlertCircle :size="48" class="text-foreground/40 mx-auto mb-4" />
-              <h3 class="text-lg font-semibold text-foreground mb-2">Course not found</h3>
-              <p class="text-foreground/60">The course you're looking for doesn't exist or you don't have access.</p>
-              <button 
-                @click="goBack" 
-                class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-              >
-                Go Back
-              </button>
-            </div>
-
-            <!-- Conteúdo Real -->
+            <!-- 2º PRIORIDADE: Conteúdo Real do Curso -->
             <div v-else-if="course" class="mx-auto max-w-7xl">
               <!-- Back Button and Badges -->
               <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -327,6 +314,19 @@
                 </div>
               </div>
             </div>
+
+            <!-- 3º PRIORIDADE: Curso não encontrado (só aparece quando não está loading E não tem course) -->
+            <div v-else class="text-center py-12">
+              <AlertCircle :size="48" class="text-foreground/40 mx-auto mb-4" />
+              <h3 class="text-lg font-semibold text-foreground mb-2">Course not found</h3>
+              <p class="text-foreground/60">The course you're looking for doesn't exist or you don't have access.</p>
+              <button 
+                @click="goBack" 
+                class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+              >
+                Go Back
+              </button>
+            </div>
           </div>
         </main>
       </div>
@@ -473,12 +473,11 @@ const goBack = () => {
 }
 
 // ================================================
-// GO TO FIRST LESSON - CORRIGIDO
+// GO TO FIRST LESSON
 // ================================================
 const goToFirstLesson = async () => {
   if (!props.course) return
   
-  // Se NÃO está inscrito, inscreve primeiro
   if (!props.course.isEnrolled) {
     try {
       console.log('📝 A inscrever no curso:', props.course.id)
@@ -486,7 +485,6 @@ const goToFirstLesson = async () => {
         course_id: Number(props.course.id)
       })
       console.log('✅ Inscrição criada:', response.data)
-      // Atualizar o estado local
       props.course.isEnrolled = true
     } catch (error: any) {
       console.error('❌ Erro ao inscrever:', error.response?.data || error.message)
@@ -494,7 +492,6 @@ const goToFirstLesson = async () => {
     }
   }
   
-  // Vai para a primeira lição (já está inscrito ou acabou de inscrever)
   const firstModule = props.course.modules[0]
   if (firstModule && firstModule.lessons.length > 0) {
     const firstLessonId = firstModule.lessons[0].id

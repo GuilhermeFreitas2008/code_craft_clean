@@ -5,7 +5,6 @@ namespace App\Filament\Admin\Resources\Modules\Schemas;
 use App\Models\Module;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Hidden;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Schema;
@@ -18,7 +17,7 @@ class ModuleForm
         return $schema
             ->components([
                 Wizard::make([
-                    Wizard\Step::make('Details')
+                    Wizard\Step::make('Module Information')
                         ->description('Main information and hierarchy')
                         ->schema([
                             Select::make('course_id')
@@ -33,7 +32,7 @@ class ModuleForm
                                 ->columnSpanFull()
                                 ->afterStateUpdated(function ($state, $set) {
                                     if (!$state) return;
-                                    // No Create, sugere a próxima disponível
+                                    // Sugere a próxima posição disponível ao trocar de curso
                                     $next = (Module::where('course_id', $state)->max('position') ?? 0) + 1;
                                     $set('position', $next);
                                 }),
@@ -49,11 +48,12 @@ class ModuleForm
                                 ->required()
                                 ->live()
                                 ->searchable()
+                                // Bloqueia a posição até selecionar um curso
+                                ->disabled(fn ($get) => !$get('course_id'))
                                 ->options(function ($get, $record) {
                                     $courseId = $get('course_id');
                                     if (!$courseId) return [];
 
-                                    // Pegamos todos os módulos, EXCETO o que estamos a editar (se for Edit)
                                     $query = Module::where('course_id', $courseId);
                                     if ($record) {
                                         $query->where('id', '!=', $record->id);
@@ -63,13 +63,11 @@ class ModuleForm
                                     $count = $modules->count();
                                     $options = [];
 
-                                    // Oferece as posições existentes (para empurrar)
                                     foreach ($modules as $index => $mod) {
                                         $pos = $index + 1;
                                         $options[$pos] = "Position -> {$pos}: Replace '{$mod->title}'";
                                     }
                                     
-                                    // Oferece sempre a posição "No fim" (que é o count + 1)
                                     $lastPos = $count + 1;
                                     $options[$lastPos] = "Position -> {$lastPos}: (At the end)";
                                     
@@ -80,15 +78,6 @@ class ModuleForm
 
                             Hidden::make('slug')->required(),
                         ])->columns(2),
-
-                    Wizard\Step::make('Content')
-                        ->description('Module description')
-                        ->schema([
-                            Textarea::make('description')
-                                ->required()
-                                ->rows(5)
-                                ->columnSpanFull(),
-                        ]),
                 ])
                 ->extraAttributes([
                     'style' => 'max-width: 1000px !important; width: 900px !important; margin-left: auto; margin-right: auto;'
