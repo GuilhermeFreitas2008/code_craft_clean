@@ -42,6 +42,17 @@ class LessonsTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('resources.title')
+                    ->label('Resources')
+                    ->listWithLineBreaks()
+                    ->bulleted()
+                    ->badge()
+                    ->color('primary')
+                    ->searchable()
+                    ->limitList(2)
+                    ->expandableLimitedList() 
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('slug')
                     ->label('Slug')
                     ->searchable()

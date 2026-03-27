@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Lessons\Schemas;
 
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Models\Resource;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -90,7 +91,6 @@ class LessonForm
                                 ->label('Video URL')
                                 ->url(),
 
-                            // GUIA DE FORMATAÇÃO COM FOCO EM MARKDOWN (2 COLUNAS) E CÓDIGO (1 COLUNA)
                             $placeholderClass::make('formatting_guide')
                                 ->label('📖 Guia de Formatação')
                                 ->content(fn () => new HtmlString('
@@ -101,39 +101,25 @@ class LessonForm
                                         
                                         <div style="margin-top: 50px; margin-bottom: 30px;">
                                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 60px;">
-                                                
                                                 <div>
                                                     <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown Básico</p>
                                                     <div style="font-size: 14px; line-height: 2.5;">
-                                                        # Título H1<br>
-                                                        ## Subtítulo H2<br>
-                                                        ### Título H3<br>
-                                                        **Negrito** e *Itálico*<br>
-                                                        ~~Texto tachado~~
+                                                        # Título H1<br>## Subtítulo H2<br>### Título H3<br>**Negrito** e *Itálico*<br>~~Texto tachado~~
                                                     </div>
                                                 </div>
-
                                                 <div>
                                                     <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown Avançado</p>
                                                     <div style="font-size: 14px; line-height: 2.5;">
-                                                        > Citação em destaque<br>
-                                                        - Lista com marcadores<br>
-                                                        1. Lista numerada<br>
-                                                        [Texto do Link](URL)
+                                                        > Citação em destaque<br>- Lista com marcadores<br>1. Lista numerada<br>[Texto do Link](URL)
                                                     </div>
                                                 </div>
-
                                                 <div>
                                                     <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Blocos de Código</p>
                                                     <div style="font-size: 14px; line-height: 2.5; font-family: monospace;">
-                                                        ```php<br>
-                                                        ```javascript<br>
-                                                        ```sql<br>
-                                                        ```html<br>
+                                                        ```php<br>```javascript<br>```sql<br>```html<br>
                                                         <span style="color: #9ca3af; font-family: sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; display: block; margin-top: 6px;">(FECHAR SEMPRE COM ```)</span>
                                                     </div>
                                                 </div>
-
                                             </div>
                                         </div>
                                     </details>
@@ -147,6 +133,27 @@ class LessonForm
                                 ->columnSpanFull(),
 
                             Hidden::make('slug')->required(),
+                        ]),
+
+                    // NOVO PASSO ADICIONADO AQUI
+                    Wizard\Step::make('Resources')
+                        ->description('Manage lesson attachments')
+                        ->icon('heroicon-m-paper-clip')
+                        ->schema([
+                            Select::make('resources')
+                                ->label('Attach Resources')
+                                ->relationship('resources', 'title')
+                                ->multiple()
+                                ->preload()
+                                ->searchable()
+                                ->live()
+                                ->native(false)
+                                // Formata o label para aparecer "Título - TIPO"
+                                ->getOptionLabelFromRecordUsing(fn (Resource $record) => "{$record->title} - " . strtoupper($record->type))
+                                ->columnSpanFull(),
+                            
+                            $placeholderClass::make('resources_help')
+                                ->content('Select existing resources to attach to this lesson. You can search by title or resource type.'),
                         ]),
                 ])
                 ->extraAttributes([
