@@ -1,5 +1,4 @@
 <?php
-// app/Traits/HasAvatar.php
 
 namespace App\Traits;
 
@@ -24,7 +23,6 @@ trait HasAvatar
         
         try {
             $storage = new SupabaseStorage();
-            // Gerar URL nova sempre que for chamada
             return $storage->signedUrl($this->avatar_path);
         } catch (\Exception $e) {
             Log::error('Failed to generate avatar URL: ' . $e->getMessage());
@@ -35,7 +33,11 @@ trait HasAvatar
     public function uploadAvatar($file): ?string
     {
         try {
+            // Guardamos o caminho antigo antes de mudar
+            $oldPath = $this->avatar_path;
+            
             $filename = Str::uuid() . '.jpg';
+            // Dica: 'avatars' aqui costuma ser o nome do bucket ou pasta raiz
             $path = "avatars/{$this->id}/{$filename}";
             
             $manager = new ImageManager(new Driver());
@@ -44,18 +46,22 @@ trait HasAvatar
             $encodedImage = $image->toJpeg(85);
             
             $storage = new SupabaseStorage();
+            
+            // 1. Faz o upload do novo
             $storage->upload($path, $encodedImage->toString(), 'image/jpeg');
             
-            if ($this->avatar_path && $this->avatar_path !== $path) {
-                try {
-                    $storage->delete($this->avatar_path);
-                } catch (\Exception $e) {
-                    Log::warning('Failed to delete old avatar');
-                }
-            }
-            
+            // 2. Atualiza a base de dados
             $this->avatar_path = $path;
             $this->save();
+            
+            // 3. Só agora apaga o antigo (se existir e for diferente)
+            if ($oldPath && $oldPath !== $path) {
+                try {
+                    $storage->delete($oldPath);
+                } catch (\Exception $e) {
+                    Log::warning("Failed to delete old avatar at {$oldPath}: " . $e->getMessage());
+                }
+            }
             
             return $this->getAvatarUrl();
         } catch (\Exception $e) {
@@ -67,15 +73,24 @@ trait HasAvatar
     public function removeAvatar(): bool
     {
         if ($this->avatar_path) {
+            $pathToDelete = $this->avatar_path;
+
             try {
+                // 1. Primeiro limpamos a base de dados para feedback imediato ao user
+                $this->avatar_path = null;
+                $this->save();
+
+                // 2. Depois tentamos apagar no Supabase
                 $storage = new SupabaseStorage();
-                $storage->delete($this->avatar_path);
+                $storage->delete($pathToDelete);
+                
+                return true;
             } catch (\Exception $e) {
-                Log::warning('Failed to delete avatar');
+                // Se falhar o delete no bucket, o registo na DB já foi limpo, 
+                // apenas logamos para não quebrar a experiência do user.
+                Log::warning("Cloud avatar deletion failed for path {$pathToDelete}: " . $e->getMessage());
+                return true; 
             }
-            
-            $this->avatar_path = null;
-            $this->save();
         }
         
         return true;
