@@ -35,6 +35,7 @@ class ResourcesTable
                     ->color('primary')
                     ->limit(30)
                     ->copyable()
+                    ->copyableState(fn (string $state): string => $state)
                     ->tooltip('Clique para copiar a URL'),
 
                 TextColumn::make('size')
