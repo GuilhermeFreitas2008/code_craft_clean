@@ -207,7 +207,7 @@ const handleSettingsClick = () => {
 // Logout
 const handleLogout = async () => {
   await userStore.logout()
-  closeUserMenu()
+  router.replace('/login')
 }
 
 // Click outside handler

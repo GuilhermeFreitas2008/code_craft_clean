@@ -695,7 +695,7 @@ const savePreferences = async () => {
 // Logout
 const handleLogout = async () => {
   await userStore.logout()
-  router.push('/login')
+  router.replace('/login')
 }
 
 // Delete account functions

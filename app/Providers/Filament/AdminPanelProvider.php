@@ -27,6 +27,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login() 
+            ->favicon(asset('logo.svg?v=1'))
+            ->globalSearch(false)
             ->colors([
                 'primary' => Color::Sky, // Cor principal de realce (links, botões, etc.)
                 'gray' => Color::Slate,   // Cor para fundos e textos secundários (cinza neutro para modo escuro)

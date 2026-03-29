@@ -61,4 +61,10 @@ class Lesson extends Model
             }
         });
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'user_progress')
+                    ->wherePivot('completed', true);
+    }
 }

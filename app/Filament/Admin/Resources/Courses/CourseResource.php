@@ -18,8 +18,10 @@ class CourseResource extends Resource
 {
     protected static ?string $model = Course::class;
 
+    protected static ?int $navigationSort = 1;
+
     // Ícone corrigido para a vossa versão
-    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
     protected static ?string $navigationLabel = 'Courses';
 
