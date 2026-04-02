@@ -1,9 +1,7 @@
 <template>
   <header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
     <div class="flex h-16 items-center justify-between pl-5 pr-8">
-      <!-- Lado Esquerdo -->
       <div class="flex items-center space-x-2 lg:space-x-3">
-        <!-- Botão Toggle Sidebar -->
         <button 
           @click="$emit('toggle-sidebar')"
           class="hidden rounded-lg pr-2 text-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground lg:block"
@@ -15,10 +13,8 @@
           />
         </button>
 
-        <!-- Linha vertical -->
         <div class="hidden h-16 w-px bg-white/5 lg:block"></div>
 
-        <!-- Mobile Menu Toggle -->
         <button 
           @click="$emit('toggle-mobile-menu')"
           class="rounded-lg p-2 text-foreground/60 hover:bg-white/5 hover:text-foreground lg:hidden"
@@ -26,7 +22,6 @@
           <Menu :size="24" />
         </button>
         
-        <!-- Logo -->
         <button 
           @click="reloadPage"
           class="flex items-center space-x-1 lg:space-x-1 hover:opacity-80 transition-opacity duration-200"
@@ -37,104 +32,100 @@
         </button>
       </div>
 
-      <!-- Lado Direito - Avatar -->
-      <div class="relative" ref="userMenuContainer">
-        <button 
-          ref="userMenuButton"
-          @click="toggleUserMenu"
-          class="flex items-center space-x-3 rounded-lg p-2 hover:bg-white/5 transition-colors duration-200"
+      <div class="flex items-center space-x-4">
+        <a 
+          href="https://discord.gg/rfCEQFDd9N" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="hidden md:flex items-center space-x-2 rounded-full bg-[#5865F2] px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-[#4752C4] hover:shadow-[0_0_15px_rgba(88,101,242,0.4)] active:scale-95"
         >
-          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary overflow-hidden">
-            <img 
-              v-if="userAvatar"
-              :src="userAvatar" 
-              alt="Avatar"
-              class="w-full h-full object-cover"
-            />
-            <span v-else class="text-sm font-semibold">{{ userInitials }}</span>
-          </div>
-          <span class="hidden text-sm font-medium text-foreground lg:block">{{ userStore.user?.name || 'User' }}</span>
-        </button>
+          <img src="/images/Discord-icon.svg" alt="Discord" class="h-5 w-5" />
+          <span>Join Community</span>
+        </a>
 
-        <!-- Popup Menu com animação -->
-        <Transition name="popup" mode="out-in">
-          <div 
-            v-if="userMenuOpen"
-            ref="userMenuPopup"
-            class="absolute right-0 top-12 z-50 w-70 rounded-lg border border-border bg-card py-3 shadow-xl origin-top-right"
+        <div class="relative" ref="userMenuContainer">
+          <button 
+            ref="userMenuButton"
+            @click="toggleUserMenu"
+            class="flex items-center space-x-3 rounded-lg p-2 hover:bg-white/5 transition-colors duration-200"
           >
-            <!-- Perfil do Utilizador -->
-            <div class="px-1 py-3 border-b border-white/5">
-              <div class="flex items-center space-x-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary overflow-hidden">
-                  <img 
-                    v-if="userAvatar"
-                    :src="userAvatar" 
-                    alt="Avatar"
-                    class="w-full h-full object-cover"
-                  />
-                  <span v-else class="text-lg font-semibold">{{ userInitials }}</span>
-                </div>
-                <div class="flex flex-col">
-                  <span class="text-base font-medium text-foreground">{{ userStore.user?.name || 'User' }}</span>
-                  <span class="text-xs text-foreground/40">{{ userStore.user?.email || 'user@example.com' }}</span>
+            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary overflow-hidden">
+              <img 
+                v-if="userAvatar"
+                :src="userAvatar" 
+                alt="Avatar"
+                class="w-full h-full object-cover"
+              />
+              <span v-else class="text-sm font-semibold">{{ userInitials }}</span>
+            </div>
+            <span class="hidden text-sm font-medium text-foreground lg:block">{{ userStore.user?.name || 'User' }}</span>
+          </button>
+
+          <Transition name="popup" mode="out-in">
+            <div 
+              v-if="userMenuOpen"
+              ref="userMenuPopup"
+              class="absolute right-0 top-12 z-50 w-70 rounded-lg border border-border bg-card py-3 shadow-xl origin-top-right"
+            >
+              <div class="px-5 py-3 border-b border-white/5">
+                <div class="flex items-center space-x-3">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary overflow-hidden">
+                    <img 
+                      v-if="userAvatar"
+                      :src="userAvatar" 
+                      alt="Avatar"
+                      class="w-full h-full object-cover"
+                    />
+                    <span v-else class="text-lg font-semibold">{{ userInitials }}</span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-base font-medium text-foreground">{{ userStore.user?.name || 'User' }}</span>
+                    <span class="text-xs text-foreground/40">{{ userStore.user?.email || 'user@example.com' }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Opções do Menu -->
-            <div class="py-1">
-              <button
-                @click="handleProfileClick"
-                class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-foreground/80 transition-colors hover:bg-white/5 hover:text-foreground"
-              >
-                <User :size="18" />
-                <span>Profile</span>
-              </button>
-              
-              <button
-                @click="handleSettingsClick"
-                class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-foreground/80 transition-colors hover:bg-white/5 hover:text-foreground"
-              >
-                <Settings :size="18" />
-                <span>Settings</span>
-              </button>
-            </div>
-
-            <!-- Logout -->
-            <div class="border-t border-white/5 pt-1">
-              <button
-                @click="handleLogout"
-                :disabled="userStore.isLoading"
-                class="flex w-full items-center space-x-3 px-5 py-2 text-sm text-red-400 transition-colors hover:bg-white/5 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <LogOut v-if="!userStore.isLoading" :size="18" />
-                <svg 
-                  v-else
-                  class="h-4 w-4 animate-spin text-red-400" 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="none" 
-                  viewBox="0 0 24 24"
+              <div class="py-1">
+                <button
+                  @click="handleProfileClick"
+                  class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-foreground/80 transition-colors hover:bg-white/5 hover:text-foreground"
                 >
-                  <circle 
-                    class="opacity-25" 
-                    cx="12" 
-                    cy="12" 
-                    r="10" 
-                    stroke="currentColor" 
-                    stroke-width="4"
-                  />
-                  <path 
-                    class="opacity-75" 
-                    fill="currentColor" 
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>{{ userStore.isLoading ? 'Logging out...' : 'Logout' }}</span>
-              </button>
+                  <User :size="18" />
+                  <span>Profile</span>
+                </button>
+                
+                <button
+                  @click="handleSettingsClick"
+                  class="flex w-full items-center space-x-3 px-4 py-2 text-sm text-foreground/80 transition-colors hover:bg-white/5 hover:text-foreground"
+                >
+                  <Settings :size="18" />
+                  <span>Settings</span>
+                </button>
+              </div>
+
+              <div class="border-t border-white/5 pt-1">
+                <button
+                  @click="handleLogout"
+                  :disabled="userStore.isLoading"
+                  class="flex w-full items-center space-x-3 px-5 py-2 text-sm text-red-400 transition-colors hover:bg-white/5 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <LogOut v-if="!userStore.isLoading" :size="18" />
+                  <svg 
+                    v-else
+                    class="h-4 w-4 animate-spin text-red-400" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>{{ userStore.isLoading ? 'Logging out...' : 'Logout' }}</span>
+                </button>
+              </div>
             </div>
-          </div>
-        </Transition>
+          </Transition>
+        </div>
       </div>
     </div>
   </header>
@@ -162,7 +153,7 @@ defineEmits<{
   (e: 'toggle-sidebar'): void
 }>()
 
-// Computed para avatar e iniciais - USAR avatar_url
+// Computed para avatar e iniciais
 const userAvatar = computed(() => userStore.user?.avatar_url || userStore.user?.avatar || null)
 const userInitials = computed(() => {
   const name = userStore.user?.name

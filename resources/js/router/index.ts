@@ -7,6 +7,7 @@ import CourseView from '@/pages/logged/courses/CourseView.vue';
 import LessonView from '@/pages/logged/courses/LessonView.vue';
 import ProfileView from '@/pages/logged/profile/ProfileView.vue';
 import SettingsView from '@/pages/logged/profile/SettingsView.vue';
+import NotFound from '@/pages/error/NotFound.vue';
 
 
 const router = createRouter({
@@ -27,6 +28,8 @@ const router = createRouter({
         { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
         
         { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
+
+        { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound },
     ],
 });
 
