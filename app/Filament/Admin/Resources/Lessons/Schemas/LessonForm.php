@@ -92,32 +92,32 @@ class LessonForm
                                 ->url(),
 
                             $placeholderClass::make('formatting_guide')
-                                ->label('📖 Guia de Formatação')
+                                ->label('📖 Formatting Guide')
                                 ->content(fn () => new HtmlString('
                                     <details class="cursor-pointer outline-none group">
                                         <summary class="font-bold text-sm text-primary-600 hover:underline">
-                                            Comandos Suportados (Markdown Extendido | Blocos de Código)
+                                            Supported Commands (Extended Markdown | Code Blocks)
                                         </summary>
                                         
                                         <div style="margin-top: 50px; margin-bottom: 30px;">
                                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 60px;">
                                                 <div>
-                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown Básico</p>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Basic Markdown</p>
                                                     <div style="font-size: 14px; line-height: 2.5;">
-                                                        # Título H1<br>## Subtítulo H2<br>### Título H3<br>**Negrito** e *Itálico*<br>~~Texto tachado~~
+                                                        # H1 Title<br>## H2 Subtitle<br>### H3 Title<br>**Bold** and *Italic*<br>~~Strikethrough text~~
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Markdown Avançado</p>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Advanced Markdown</p>
                                                     <div style="font-size: 14px; line-height: 2.5;">
-                                                        > Citação em destaque<br>- Lista com marcadores<br>1. Lista numerada<br>[Texto do Link](URL)
+                                                        > Highlighted quote<br>- Bullet list<br>1. Numbered list<br>[Link Text](URL)
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Blocos de Código</p>
+                                                    <p style="font-weight: 800; color: #9ca3af; text-transform: uppercase; font-size: 11px; margin-bottom: 25px; letter-spacing: 1.5px;">Code Blocks</p>
                                                     <div style="font-size: 14px; line-height: 2.5; font-family: monospace;">
                                                         ```php<br>```javascript<br>```sql<br>```html<br>
-                                                        <span style="color: #9ca3af; font-family: sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; display: block; margin-top: 6px;">(FECHAR SEMPRE COM ```)</span>
+                                                        <span style="color: #9ca3af; font-family: sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; display: block; margin-top: 6px;">(ALWAYS CLOSE WITH ```)</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -135,7 +135,7 @@ class LessonForm
                             Hidden::make('slug')->required(),
                         ]),
 
-                    // NOVO PASSO ADICIONADO AQUI
+                    // NEW STEP ADDED HERE
                     Wizard\Step::make('Resources')
                         ->description('Manage lesson attachments')
                         ->icon('heroicon-m-paper-clip')
@@ -148,7 +148,7 @@ class LessonForm
                                 ->searchable()
                                 ->live()
                                 ->native(false)
-                                // Formata o label para aparecer "Título - TIPO"
+                                // Formats the label to show "Title - TYPE"
                                 ->getOptionLabelFromRecordUsing(fn (Resource $record) => "{$record->title} - " . strtoupper($record->type))
                                 ->columnSpanFull(),
                             
