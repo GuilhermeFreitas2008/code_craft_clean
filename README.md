@@ -8,7 +8,7 @@ O **Code Craft** é uma plataforma moderna de e-learning focada no ensino de pro
 
 A aplicação foi desenvolvida dividindo as responsabilidades entre o ecossistema do servidor (backend) e a interface do utilizador (frontend):
 
-* **Backend:** Laravel (v10/v11) & Filament PHP (Painel Administrativo)
+* **Backend:** Laravel (v12) & Filament PHP (Painel Administrativo)
 * **Frontend:** Vue.js 3, TypeScript & Vite
 * **Estilização:** Tailwind CSS & Lucide Vue (Ícones)
 * **Gestão de Estado:** Pinia
